@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "dataspace_backend"
+version = "0.1.0"
+description = "Proof of Business backend"
+authors = ["George J Padayatti <george.padayatti@igrant.io>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Django = "3.0.7"
+django-auditlog = "1.0.0"
+djangorestframework = "3.13.1"
+djangorestframework-simplejwt = "4.3.0"
+django-tenants = "3.4.2"
+django-cors-headers = "3.7.0"
+psycopg2-binary = "2.8.6"
+psycopg2 = "2.8.6"
+PyJWT = "1.7.1"
+drf-yasg = "1.20.0"
+gunicorn = "^20.1.0"
+django-filter = "21.1"
+django-rest-auth = "0.9.5"
+django-constance = "2.9.1"
+django-picklefield = "3.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

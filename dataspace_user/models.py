@@ -1,0 +1,25 @@
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.db import models
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+
+from dataspace_user.managers import DataspaceUserManager
+
+
+class DataspaceUser(AbstractBaseUser, PermissionsMixin):
+
+    email = models.EmailField(_("email address"), unique=True)
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    date_joined = models.DateTimeField(default=timezone.now)
+    fullname = models.CharField(max_length=250,null=True,blank=True)
+    address = models.CharField(max_length=250,null=True,blank=True)
+    country = models.CharField(max_length=250,null=True,blank=True)
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
+
+    objects = DataspaceUserManager()
+
+    def __str__(self):
+        return self.email
