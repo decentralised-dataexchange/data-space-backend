@@ -57,9 +57,10 @@ Dataspace Backend
 bootstrap                      Boostraps development environment
 build                          Builds the docker image
 build/docker/deployable        Builds deployable docker image for preview, staging and production
-build/docker/deployable_x86    Builds deployable docker image explicitly for x86 architecture
 deploy/production              Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
 deploy/staging                 Deploy to K8s cluster (e.g. make deploy/{preview,staging,staging})
+docs/bundle                    Bundle OpenAPI documentation
+docs/run                       Run OpenAPI documentation
 publish                        Publish latest production Docker image to docker hub
 run                            Run backend locally for development purposes
 setup                          Sets up development environment

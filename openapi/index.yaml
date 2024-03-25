@@ -37,31 +37,46 @@ info:
   version: 2024.3.1
 openapi: 3.1.0
 paths:
-  /service/data-disclosure-agreement:
+  /service/data-disclosure-agreement/:
     get:
       $ref: "./paths/listDataDisclosureAgreement.yaml"
-  /config/data-source:
+  /config/data-source/:
     get:
       $ref: "./paths/readDataSource.yaml"
     put:
       $ref: "./paths/updateDataSource.yaml"
-  /config/data-source/coverimage:
+  /config/data-source/coverimage/:
     get:
       $ref: "./paths/readDataSourceCoverImage.yaml"
     put:
       $ref: "./paths/updateDataSourceCoverImage.yaml"
-  /config/data-source/logoimage:
+  /config/data-source/logoimage/:
     get:
       $ref: "./paths/readDataSourceLogoImage.yaml"
     put:
       $ref: "./paths/updateDataSourceLogoImage.yaml"
+  /onboard/login/:
+    post:
+      $ref: "./paths/login.yaml"
+  /onboard/register/:
+    post:
+      $ref: "./paths/register.yaml"
+  /onboard/token/refresh/:
+    post:
+      $ref: "./paths/refreshtoken.yaml"
+  /onboard/admin/:
+    get:
+      $ref: "./paths/readAdmin.yaml"
 servers:
   - description: Development server
-    url: https://api.dataspace.dev/v2
+    url: http://localhost:8000
 tags:
   - description: This consists of endpoints available to organisation admins to manage data disclosure agreements and connections.
     name: config
     x-tag-expanded: true
   - description: This consists of endpoints towards data using services to list and connect to data sources, view data disclosure agreements and APIs.
     name: service
+    x-tag-expanded: true
+  - description: This consists of endpoints towards authentication and authorisation.
+    name: onboard
     x-tag-expanded: true

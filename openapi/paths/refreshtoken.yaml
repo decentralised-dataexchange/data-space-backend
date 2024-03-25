@@ -1,0 +1,26 @@
+summary: Refresh token
+description: This endpoint is used to refresh token
+operationId: "refreshToken"
+requestBody:
+  content:
+    application/json:
+      schema:
+        properties:
+          refresh:
+            type: string
+        type: object
+  required: true
+responses:
+  "200":
+    description: OK
+    content:
+      application/json:
+        schema:
+          properties:
+            access:
+              type: string
+          type: object
+security:
+  - BearerAuth: []
+tags:
+  - onboard

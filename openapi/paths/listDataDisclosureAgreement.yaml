@@ -6,7 +6,7 @@ parameters:
   - $ref: "../parameters/limit.yaml"
 responses:
   "200":
-    description: ""
+    description: OK
     content:
       application/json:
         schema:
@@ -31,7 +31,5 @@ responses:
               $ref: "../definitions/Pagination.yaml"
   "400":
     description: bad input parameter
-security:
-  - BearerAuth: []
 tags:
   - service
