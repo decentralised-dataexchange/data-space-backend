@@ -1,0 +1,18 @@
+type: object
+title: Verification
+properties:
+  id:
+    type: string
+  dataSourceId:
+    type: string
+  presentationExchangeId:
+    type: string
+  presentationState:
+    type: string
+  presentationRecord:
+    type: object
+required:
+  - id
+  - dataSourceId
+  - presentationExchangeId
+  - presentationState

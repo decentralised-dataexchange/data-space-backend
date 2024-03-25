@@ -1,0 +1,17 @@
+summary: Create verification
+description: This endpoint is used to send verification request to connected wallet of data source
+operationId: "createVerification"
+responses:
+  "200":
+    content:
+      application/json:
+        schema:
+          properties:
+            verification:
+              $ref: "../definitions/Verification.yaml"
+          type: object
+    description: OK
+security:
+  - BearerAuth: []
+tags:
+  - config

@@ -18,6 +18,8 @@ components:
       $ref: "./definitions/Pagination.yaml"
     Connection:
       $ref: "./definitions/Connection.yaml"
+    Verification:
+      $ref: "./definitions/Verification.yaml"
   securitySchemes:
     BearerAuth:
       bearerFormat: JWT
@@ -40,6 +42,11 @@ paths:
   /service/data-disclosure-agreement/:
     get:
       $ref: "./paths/listDataDisclosureAgreement.yaml"
+  /config/data-source/verification/:
+    get:
+      $ref: "./paths/readVerification.yaml"
+    post:
+      $ref: "./paths/createVerification.yaml"
   /config/data-source/:
     get:
       $ref: "./paths/readDataSource.yaml"
