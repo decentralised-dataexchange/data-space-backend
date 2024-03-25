@@ -1,10 +1,12 @@
 from django.contrib.auth import get_user_model
-from rest_framework import generics, permissions
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import permissions, status
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import (TokenObtainPairView,
+                                            TokenRefreshView)
 
-from .models import DataspaceUser
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (DataspaceUserSerializer,
                           RegisterDataspaceUserSerializer)
