@@ -1,29 +1,25 @@
 <h1 align="center">
-    Bolagsverket (Proof of Business) - MyCompany Wallet Portal Backend
+    Dataspace Portal Backend
 </h1>
 
 <p align="center">
-    <a href="/../../commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/L3-iGrant/pob-backend?style=flat"></a>
-    <a href="/../../issues" title="Open Issues"><img src="https://img.shields.io/github/issues/L3-iGrant/pob-backend?style=flat"></a>
+    <a href="/../../commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/decentralised-dataexchange/data-space-backend?style=flat"></a>
+    <a href="/../../issues" title="Open Issues"><img src="https://img.shields.io/github/issues/decentralised-dataexchange/data-space-backend?style=flat"></a>
 </p>
 
 <p align="center">
   <a href="#about">About</a> •
-  <a href="#release-status">Release Status</a> •
   <a href="#licensing">Licensing</a>
 </p>
 
 ## About
 
-This repository hosts the source code for Bolagsverket Proof-Of-Business project  (Portal backend)
-## Release Status
+This repository hosts the source code for Dataspace Portal Backend
 
-Release 1.0 - The release is in alpha demo stage. 
 ## Installation
 
 Requirements:
 - python 3.8.1.2
-
 
 ## Steps to run
 ### **Pre-requisite:**   
@@ -36,14 +32,14 @@ Requirements:
 1. Clone this repo
 
 ```sh
-$ git clone https://github.com/L3-iGrant/pob-backend
+$ git clone https://github.com/decentralised-dataexchange/data-space-backend
 ```
 
 
-2. Change the current direcotry to *pob-backend*
+2. Change the current direcotry to *dataspace-backend*
 
 ```bash
-cd pob-backend
+cd data-space-backend
 ```
 
 3. To get an overview of different commands available in the current project run
@@ -56,12 +52,12 @@ The following commands are currently supported
 
 ```bash
 ------------------------------------------------------------------------
-Bolagsverket (Proof Of Business) - Backend
+Dataspace Backend
 ------------------------------------------------------------------------
 bootstrap                      Boostraps development environment
+build                          Builds the docker image
 build/docker/deployable        Builds deployable docker image for preview, staging and production
 build/docker/deployable_x86    Builds deployable docker image explicitly for x86 architecture
-build                          Builds the docker image
 deploy/production              Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
 deploy/staging                 Deploy to K8s cluster (e.g. make deploy/{preview,staging,staging})
 publish                        Publish latest production Docker image to docker hub
@@ -88,8 +84,13 @@ email: admin@example.com
 password: admin
 ```
 
+## Contributing
+
+Feel free to improve the plugin and send us a pull request. If you find any problems, please create an issue in this repo.
 
 ## Licensing
-Copyright (c) 2022-25 Bolagsverket, Sweden
+Copyright (c) 2023-25 LCubed AB (iGrant.io), Sweden
+
+Licensed under the Apache 2.0 License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the LICENSE for the specific language governing permissions and limitations under the License.
