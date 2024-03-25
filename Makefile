@@ -1,5 +1,5 @@
 PROJECT := igrant
-APP     := pob-backend
+APP     := dataspace-backend
 NAME    = $(PROJECT)-$(APP)
 
 TERM_FLAGS ?= -ti
@@ -8,7 +8,7 @@ EXTRA_RUN_ARGS ?=
 
 VERSION   ?= $(shell git describe --tags --abbrev=0)
 CANDIDATE ?= "dev"
-CONTAINER_POB_BACKEND ?= "igrant_pob_backend_dev"
+CONTAINER_DATASPACE_BACKEND ?= "dataspace_backend"
 
 CONTAINER_DEFAULT_RUN_FLAGS := \
 	--rm $(TERM_FLAGS) \
@@ -40,7 +40,7 @@ DJANGO_SUPERUSER_USERNAME = admin
 .PHONY: help
 help:
 	@echo "------------------------------------------------------------------------"
-	@echo "Bolagsverket (Proof Of Business) - Backend"
+	@echo "Dataspace Backend"
 	@echo "------------------------------------------------------------------------"
 	@grep -E '^[0-9a-zA-Z_/%\-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
@@ -65,7 +65,7 @@ run: ## Run backend locally for development purposes
 		-e DJANGO_SUPERUSER_PASSWORD="${DJANGO_SUPERUSER_PASSWORD}" \
 		-v $(CURDIR)/db:/app/db \
 		-p 8000:8000 \
-		--name "${CONTAINER_POB_BACKEND}" \
+		--name "${CONTAINER_DATASPACE_BACKEND}" \
 		$(DOCKER_IMAGE):dev
 
 .PHONY: build/docker/deployable
@@ -87,10 +87,10 @@ publish: $(DEPLOY_VERSION_F ILE) ## Publish latest production Docker image to do
 	gcloud docker -- push $(DEPLOY_VERSION)
 
 deploy/production: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
-	kubectl set image deployment/demo-pob-backend demo-pob-backend=$(DEPLOY_VERSION) -n bolagsverket 
+	kubectl set image deployment/demo-dataspace-backend demo-dataspace-backend=$(DEPLOY_VERSION) -n bolagsverket 
 
 deploy/staging: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,staging})
-	kubectl set image deployment/pob-backend pob-backend=$(DEPLOY_VERSION) -n bolagsverket 
+	kubectl set image deployment/dataspace-backend dataspace-backend=$(DEPLOY_VERSION) -n bolagsverket 
 
 $(DEPLOY_VERSION_FILE):
 	@echo "Missing '$(DEPLOY_VERSION_FILE)' file. Run 'make build/docker/deployable'" >&2
