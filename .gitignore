@@ -1,0 +1,8 @@
+*.sqlite3
+.idea
+*.pyc
+__pycache__/
+deploy_version
+.DS_Store
+.bootstrap/
+staticfiles/
