@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 
-from dataspace_user.models import DataspaceUser
+from onboard.models import DataspaceUser
 
 
 class CustomUserCreationForm(UserCreationForm):
