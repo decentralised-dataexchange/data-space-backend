@@ -18,11 +18,11 @@ properties:
   description:
     type: string
 required:
-- id
-- coverImageUrl
-- logoUrl
-- name
-- sector
-- location
-- policyUrl
-- description
+  - id
+  - coverImageUrl
+  - logoUrl
+  - name
+  - sector
+  - location
+  - policyUrl
+  - description

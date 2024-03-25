@@ -2,6 +2,22 @@ components:
   schemas:
     Organisation:
       $ref: "./definitions/Organisation.yaml"
+    PersonalData:
+      $ref: "./definitions/PersonalData.yaml"
+    DataDisclosureAgreement:
+      $ref: "./definitions/DataDisclosureAgreement.yaml"
+    DataUsingService:
+      $ref: "./definitions/DataUsingService.yaml"
+    Proof:
+      $ref: "./definitions/Proof.yaml"
+    DataSharingRestriction:
+      $ref: "./definitions/DataSharingRestriction.yaml"
+    DataController:
+      $ref: "./definitions/DataController.yaml"
+    Pagination:
+      $ref: "./definitions/Pagination.yaml"
+    Connection:
+      $ref: "./definitions/Connection.yaml"
   securitySchemes:
     BearerAuth:
       bearerFormat: JWT
@@ -19,15 +35,33 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0
   title: Dataspace Portal API documentation
   version: 2024.3.1
-openapi: 3.0.3
+openapi: 3.1.0
 paths:
+  /service/data-disclosure-agreement:
+    get:
+      $ref: "./paths/listDataDisclosureAgreement.yaml"
+  /config/data-source:
+    get:
+      $ref: "./paths/readDataSource.yaml"
+    put:
+      $ref: "./paths/updateDataSource.yaml"
+  /config/data-source/coverimage:
+    get:
+      $ref: "./paths/readDataSourceCoverImage.yaml"
+    put:
+      $ref: "./paths/updateDataSourceCoverImage.yaml"
+  /config/data-source/logoimage:
+    get:
+      $ref: "./paths/readDataSourceLogoImage.yaml"
+    put:
+      $ref: "./paths/updateDataSourceLogoImage.yaml"
 servers:
   - description: Development server
     url: https://api.dataspace.dev/v2
 tags:
-  - description: This consists of endpoints for data sources
-    name: data-source
+  - description: This consists of endpoints available to organisation admins to manage data disclosure agreements and connections.
+    name: config
     x-tag-expanded: true
-  - description: This consists of endpoints for data using services
-    name: data-using-service
+  - description: This consists of endpoints towards data using services to list and connect to data sources, view data disclosure agreements and APIs.
+    name: service
     x-tag-expanded: true

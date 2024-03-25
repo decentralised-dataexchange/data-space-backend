@@ -1,0 +1,10 @@
+deprecated: false
+description: Get data source logo image
+operationId: getDataSourceLogoImage
+responses:
+  "200":
+    headers: {}
+security:
+  - BearerAuth: []
+tags:
+  - config

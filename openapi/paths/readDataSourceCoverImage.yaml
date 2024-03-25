@@ -1,0 +1,10 @@
+deprecated: false
+description: Get data source cover image
+operationId: getDataSourceCoverImage
+responses:
+  '200':
+    headers: {}
+security:
+- BearerAuth: []
+tags:
+- config

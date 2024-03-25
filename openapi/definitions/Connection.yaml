@@ -1,0 +1,7 @@
+type: object
+title: Connection
+properties:
+  invitationUrl:
+    type: string
+required:
+  - invitationUrl

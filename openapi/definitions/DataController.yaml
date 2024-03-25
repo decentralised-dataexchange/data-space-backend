@@ -1,0 +1,19 @@
+type: object
+title: Data Controller
+properties:
+  did:
+    type: string
+  name:
+    type: string
+  legalId:
+    type: string
+  url:
+    type: string
+  industrySector:
+    type: string
+required:
+  - did
+  - name
+  - legalId
+  - url
+  - industrySector

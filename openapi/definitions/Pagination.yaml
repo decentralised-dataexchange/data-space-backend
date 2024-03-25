@@ -1,0 +1,21 @@
+type: object
+title: Pagination
+properties:
+  currentPage:
+    type: integer
+    description: Current page number
+  totalItems:
+    type: integer
+    description: Total number of items available
+  totalPages:
+    type: integer
+    description: Total number of pages based on limit
+  limit:
+    type: integer
+    description: Number of items per page
+  hasPrevious:
+    type: boolean
+    description: Indicates if there's a previous page
+  hasNext:
+    type: boolean
+    description: Indicates if there's a next page
