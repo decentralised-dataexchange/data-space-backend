@@ -1,0 +1,60 @@
+components:
+  schemas:
+    Organisation:
+      type: object
+      title: Organisation
+      properties:
+        id:
+          type: string
+        coverImageUrl:
+          type: string
+        logoUrl:
+          type: string
+        name:
+          type: string
+        sector:
+          type: string
+        location:
+          type: string
+        policyUrl:
+          type: string
+        description:
+          type: string
+      required:
+        - id
+        - coverImageUrl
+        - logoUrl
+        - name
+        - sector
+        - location
+        - policyUrl
+        - description
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      description: Access token passed with Bearer prefix in Authorization header
+      scheme: bearer
+      type: http
+info:
+  contact:
+    email: support@igrant.io
+    name: iGrant.io
+    url: 'https://igrant.io'
+  description: 'iGrant.io (™) is a Swedish data exchange and verification service provider. It uses self-sovereign identity, verifiable credentials, a digital wallet and solid pod technologies, enabling a new level of interoperability and automating compliance with data regulations in a fully auditable manner.'
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0'
+  title: Dataspace Portal API documentation
+  version: 2024.3.1
+openapi: 3.0.3
+paths: null
+servers:
+  - description: Development server
+    url: 'https://api.dataspace.dev/v2'
+tags:
+  - description: This consists of endpoints for data sources
+    name: data-source
+    x-tag-expanded: true
+  - description: This consists of endpoints for data using services
+    name: data-using-service
+    x-tag-expanded: true
