@@ -1,6 +1,6 @@
-summary: Read verification
-description: This endpoint is used to read verification for a data source
-operationId: "readVerification"
+summary: Create verification
+description: This endpoint is used to send verification request to connected wallet of data source
+operationId: "configCreateVerification"
 responses:
   "200":
     content:

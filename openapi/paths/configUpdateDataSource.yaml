@@ -1,6 +1,6 @@
 summary: Update data source
 description: This endpoint is used to update data source
-operationId: "updateDataSource"
+operationId: "configUpdateDataSource"
 requestBody:
   content:
     application/json:

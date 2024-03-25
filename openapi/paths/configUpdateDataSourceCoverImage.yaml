@@ -1,6 +1,6 @@
 deprecated: false
 description: Update data source cover image
-operationId: updateDataSourceCoverImage
+operationId: configUpdateDataSourceCoverImage
 requestBody:
   content:
     multipart/form-data:

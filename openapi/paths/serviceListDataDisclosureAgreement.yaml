@@ -1,6 +1,6 @@
-summary: List all data disclosure agreements
-description: This endpoint is used to list all data disclosure agreements
-operationId: "listDataDisclosureAgreement"
+summary: List all listed data disclosure agreements
+description: This endpoint is used to list all listed data disclosure agreements
+operationId: "serviceListDataDisclosureAgreement"
 parameters:
   - $ref: "../parameters/offset.yaml"
   - $ref: "../parameters/limit.yaml"
