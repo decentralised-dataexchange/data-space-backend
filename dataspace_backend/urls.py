@@ -21,6 +21,5 @@ from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path(r"rest-auth/", include("rest_auth.urls")),
     path(r"onboard", include("onboard.urls"))
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
