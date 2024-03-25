@@ -56,6 +56,12 @@ bootstrap: .bootstrap ## Boostraps development environment
 
 setup: bootstrap ## Sets up development environment
 
+docs/run: ## Run OpenAPI documentation
+	make -C openapi run
+
+docs/bundle: ## Bundle OpenAPI documentation
+	make -C openapi bundle
+
 run: ## Run backend locally for development purposes
 	docker run \
 		$(CONTAINER_DEFAULT_RUN_FLAGS) \
@@ -70,11 +76,6 @@ run: ## Run backend locally for development purposes
 
 .PHONY: build/docker/deployable
 build/docker/deployable: ## Builds deployable docker image for preview, staging and production
-	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f resources/docker/Dockerfile .
-	echo "$(DOCKER_IMAGE):$(DOCKER_TAG)" > $(DEPLOY_VERSION_FILE)
-
-.PHONY: build/docker/deployable_x86
-build/docker/deployable_x86: ## Builds deployable docker image explicitly for x86 architecture
 	docker build --platform=linux/amd64 -t $(DOCKER_IMAGE):$(DOCKER_TAG) -f resources/docker/Dockerfile .
 	echo "$(DOCKER_IMAGE):$(DOCKER_TAG)" > $(DEPLOY_VERSION_FILE)
 

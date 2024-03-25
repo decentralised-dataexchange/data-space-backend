@@ -239,7 +239,7 @@ info:
   version: 2024.3.1
 openapi: 3.1.0
 paths:
-  /service/data-disclosure-agreement:
+  /service/data-disclosure-agreement/:
     get:
       summary: List all data disclosure agreements
       description: This endpoint is used to list all data disclosure agreements
@@ -260,7 +260,7 @@ paths:
             default: 10
       responses:
         '200':
-          description: ''
+          description: OK
           content:
             application/json:
               schema:
@@ -285,11 +285,9 @@ paths:
                     $ref: '#/components/schemas/Pagination'
         '400':
           description: bad input parameter
-      security:
-        - BearerAuth: []
       tags:
         - service
-  /config/data-source:
+  /config/data-source/:
     get:
       summary: Read data source
       description: This endpoint is used to read the data source details for the organisation admin
@@ -353,7 +351,7 @@ paths:
         - BearerAuth: []
       tags:
         - config
-  /config/data-source/coverimage:
+  /config/data-source/coverimage/:
     get:
       deprecated: false
       description: Get data source cover image
@@ -389,7 +387,7 @@ paths:
         - BearerAuth: []
       tags:
         - config
-  /config/data-source/logoimage:
+  /config/data-source/logoimage/:
     get:
       deprecated: false
       description: Get data source logo image
@@ -425,13 +423,141 @@ paths:
         - BearerAuth: []
       tags:
         - config
+  /onboard/login/:
+    post:
+      summary: Login
+      description: This endpoint is used to login as data source organisation admin
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  refresh:
+                    type: string
+                  access:
+                    type: string
+                type: object
+      security:
+        - BearerAuth: []
+      tags:
+        - onboard
+  /onboard/register/:
+    post:
+      summary: Register
+      description: This endpoint is used to register as data source organisation admin
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  id:
+                    type: string
+                  email:
+                    type: string
+                type: object
+      security:
+        - BearerAuth: []
+      tags:
+        - onboard
+  /onboard/token/refresh/:
+    post:
+      summary: Refresh token
+      description: This endpoint is used to refresh token
+      operationId: refreshToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                refresh:
+                  type: string
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  access:
+                    type: string
+                type: object
+      security:
+        - BearerAuth: []
+      tags:
+        - onboard
+  /onboard/admin/:
+    get:
+      summary: Read admin
+      description: This endpoint is used to read admin details
+      operationId: readAdmin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  email:
+                    type: string
+                  fullname:
+                    type: string
+                  address:
+                    type: string
+                  country:
+                    type: string
+                required:
+                  - id
+                  - email
+                  - fullname
+                  - address
+                  - country
+      security:
+        - BearerAuth: []
+      tags:
+        - onboard
 servers:
   - description: Development server
-    url: 'https://api.dataspace.dev/v2'
+    url: 'http://localhost:8000'
 tags:
   - description: This consists of endpoints available to organisation admins to manage data disclosure agreements and connections.
     name: config
     x-tag-expanded: true
   - description: 'This consists of endpoints towards data using services to list and connect to data sources, view data disclosure agreements and APIs.'
     name: service
+    x-tag-expanded: true
+  - description: This consists of endpoints towards authentication and authorisation.
+    name: onboard
     x-tag-expanded: true

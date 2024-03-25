@@ -1,0 +1,31 @@
+summary: Read admin
+description: This endpoint is used to read admin details
+operationId: "readAdmin"
+responses:
+  "200":
+    description: OK
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            id:
+              type: number
+            email:
+              type: string
+            fullname:
+              type: string
+            address:
+              type: string
+            country:
+              type: string
+          required:
+            - id
+            - email
+            - fullname
+            - address
+            - country
+security:
+  - BearerAuth: []
+tags:
+  - onboard
