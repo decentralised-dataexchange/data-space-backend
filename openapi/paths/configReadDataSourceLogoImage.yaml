@@ -1,6 +1,6 @@
 deprecated: false
 description: Get data source logo image
-operationId: getDataSourceLogoImage
+operationId: configReadDataSourceLogoImage
 responses:
   "200":
     headers: {}

@@ -1,6 +1,6 @@
 deprecated: false
 description: Get data source cover image
-operationId: getDataSourceCoverImage
+operationId: configReadDataSourceCoverImage
 responses:
   '200':
     headers: {}

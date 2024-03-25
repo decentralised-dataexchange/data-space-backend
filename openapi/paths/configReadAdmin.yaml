@@ -1,6 +1,6 @@
 summary: Read admin
 description: This endpoint is used to read admin details
-operationId: "readAdmin"
+operationId: "configReadAdmin"
 responses:
   "200":
     description: OK
@@ -28,4 +28,4 @@ responses:
 security:
   - BearerAuth: []
 tags:
-  - onboard
+  - config

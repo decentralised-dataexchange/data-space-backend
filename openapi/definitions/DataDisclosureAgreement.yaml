@@ -27,6 +27,13 @@ properties:
       $ref: "./PersonalData.yaml"
   codeOfConduct:
     type: string
+  status:
+    type: string
+    enum:
+      - listed
+      - unlisted
+      - awaitingForApproval
+      - rejected
 required:
   - language
   - version

@@ -1,6 +1,6 @@
 deprecated: false
 description: Update data source logo image
-operationId: updateDataSourceLogoImage
+operationId: configUpdateDataSourceLogoImage
 requestBody:
   content:
     multipart/form-data:

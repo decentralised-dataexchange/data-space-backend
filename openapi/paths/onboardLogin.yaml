@@ -1,6 +1,6 @@
 summary: Login
 description: This endpoint is used to login as data source organisation admin
-operationId: "login"
+operationId: "onboardLogin"
 requestBody:
   content:
     application/json:

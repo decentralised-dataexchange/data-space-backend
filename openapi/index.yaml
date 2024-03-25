@@ -41,39 +41,39 @@ openapi: 3.1.0
 paths:
   /service/data-disclosure-agreement/:
     get:
-      $ref: "./paths/listDataDisclosureAgreement.yaml"
+      $ref: "./paths/serviceListDataDisclosureAgreement.yaml"
   /config/data-source/verification/:
     get:
-      $ref: "./paths/readVerification.yaml"
+      $ref: "./paths/configReadVerification.yaml"
     post:
-      $ref: "./paths/createVerification.yaml"
+      $ref: "./paths/configCreateVerification.yaml"
   /config/data-source/:
     get:
-      $ref: "./paths/readDataSource.yaml"
+      $ref: "./paths/configReadDataSource.yaml"
     put:
-      $ref: "./paths/updateDataSource.yaml"
+      $ref: "./paths/configUpdateDataSource.yaml"
   /config/data-source/coverimage/:
     get:
-      $ref: "./paths/readDataSourceCoverImage.yaml"
+      $ref: "./paths/configReadDataSourceCoverImage.yaml"
     put:
-      $ref: "./paths/updateDataSourceCoverImage.yaml"
+      $ref: "./paths/configUpdateDataSourceCoverImage.yaml"
   /config/data-source/logoimage/:
     get:
-      $ref: "./paths/readDataSourceLogoImage.yaml"
+      $ref: "./paths/configReadDataSourceLogoImage.yaml"
     put:
-      $ref: "./paths/updateDataSourceLogoImage.yaml"
+      $ref: "./paths/configUpdateDataSourceLogoImage.yaml"
+  /config/admin/:
+    get:
+      $ref: "./paths/configReadAdmin.yaml"
   /onboard/login/:
     post:
-      $ref: "./paths/login.yaml"
+      $ref: "./paths/onboardLogin.yaml"
   /onboard/register/:
     post:
-      $ref: "./paths/register.yaml"
+      $ref: "./paths/onboardRegister.yaml"
   /onboard/token/refresh/:
     post:
-      $ref: "./paths/refreshtoken.yaml"
-  /onboard/admin/:
-    get:
-      $ref: "./paths/readAdmin.yaml"
+      $ref: "./paths/onboardRefreshtoken.yaml"
 servers:
   - description: Development server
     url: http://localhost:8000

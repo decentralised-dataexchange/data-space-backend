@@ -1,14 +1,12 @@
-summary: Register
-description: This endpoint is used to register as data source organisation admin
-operationId: "register"
+summary: Refresh token
+description: This endpoint is used to refresh token
+operationId: "onboardRefreshtoken"
 requestBody:
   content:
     application/json:
       schema:
         properties:
-          email:
-            type: string
-          password:
+          refresh:
             type: string
         type: object
   required: true
@@ -19,9 +17,7 @@ responses:
       application/json:
         schema:
           properties:
-            id:
-              type: string
-            email:
+            access:
               type: string
           type: object
 security:

@@ -1,6 +1,6 @@
 summary: Read data source
 description: This endpoint is used to read the data source details for the organisation admin
-operationId: "readDataSource"
+operationId: "configReadDataSource"
 responses:
   "200":
     content:

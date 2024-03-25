@@ -82,6 +82,13 @@ components:
             $ref: '#/components/schemas/PersonalData'
         codeOfConduct:
           type: string
+        status:
+          type: string
+          enum:
+            - listed
+            - unlisted
+            - awaitingForApproval
+            - rejected
       required:
         - language
         - version
@@ -327,8 +334,24 @@ paths:
                 properties:
                   verification:
                     $ref: '#/components/schemas/Verification'
-                required:
-                  - organisation
+                type: object
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+    post:
+      summary: Create verification
+      description: This endpoint is used to send verification request to connected wallet of data source
+      operationId: createVerification
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  verification:
+                    $ref: '#/components/schemas/Verification'
                 type: object
           description: OK
       security:
