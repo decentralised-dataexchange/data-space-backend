@@ -3,7 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from dataspace_user.managers import DataspaceUserManager
+from onboard.managers import DataspaceUserManager
 
 
 class DataspaceUser(AbstractBaseUser, PermissionsMixin):

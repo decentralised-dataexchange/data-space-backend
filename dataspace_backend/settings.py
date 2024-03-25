@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "constance",
     "constance.backends.database",
-    "dataspace_user",
+    "onboard",
     "rest_framework",
     "rest_framework.authtoken",
     "rest_auth",
@@ -129,10 +129,10 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-AUTH_USER_MODEL = "dataspace_user.DataspaceUser"
+AUTH_USER_MODEL = "onboard.DataspaceUser"
 
 REST_AUTH_SERIALIZERS = {
-    "TOKEN_SERIALIZER": "dataspace_user.serializers.CustomTokenSerializer"
+    "TOKEN_SERIALIZER": "onboard.serializers.CustomTokenSerializer"
 }
 
 REST_FRAMEWORK = {
