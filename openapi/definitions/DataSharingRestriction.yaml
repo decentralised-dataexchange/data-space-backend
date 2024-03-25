@@ -1,0 +1,22 @@
+type: object
+title: Data Sharing Restriction
+properties:
+  policyUrl:
+    type: string
+  jurisdiction:
+    type: string
+  industrySector:
+    type: string
+  dataRetentionPeriod:
+    type: number
+  geographicRestriction:
+    type: string
+  storageLocation:
+    type: string
+required:
+  - policyUrl
+  - jurisdiction
+  - industrySector
+  - dataRetentionPeriod
+  - geographicRestriction
+  - storageLocation

@@ -1,0 +1,34 @@
+type: object
+title: Data Using Service
+properties:
+  did:
+    type: string
+  name:
+    type: string
+  legalId:
+    type: string
+  url:
+    type: string
+  industrySector:
+    type: string
+  usagePurposes:
+    type: string
+  jurisdiction:
+    type: string
+  withdrawal:
+    type: string
+  privacyRights:
+    type: string
+  signatureContact:
+    type: string
+required:
+  - did
+  - name
+  - legalId
+  - url
+  - industrySector
+  - usagePurposes
+  - jurisdiction
+  - withdrawal
+  - privacyRights
+  - signatureContact

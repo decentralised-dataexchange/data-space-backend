@@ -29,6 +29,197 @@ components:
         - location
         - policyUrl
         - description
+    PersonalData:
+      title: Personal Data
+      type: object
+      properties:
+        attributeId:
+          type: string
+        attributeName:
+          type: string
+        attributeSensitive:
+          type: string
+        attributeCategory:
+          type: string
+      required:
+        - attributeId
+        - attributeName
+        - attributeSensitive
+        - attributeCategory
+    DataDisclosureAgreement:
+      title: Data Disclosure Agreement
+      type: object
+      properties:
+        language:
+          type: string
+        version:
+          type: string
+        templateId:
+          type: string
+        templateVersion:
+          type: string
+        dataController:
+          $ref: '#/components/schemas/DataController'
+        agreementPeriod:
+          type: number
+        dataSharingRestrictions:
+          $ref: '#/components/schemas/DataSharingRestriction'
+        purpose:
+          type: string
+        purposeDescription:
+          type: string
+        lawfulBasis:
+          type: string
+        personalData:
+          type: array
+          items:
+            $ref: '#/components/schemas/PersonalData'
+        codeOfConduct:
+          type: string
+      required:
+        - language
+        - version
+        - templateId
+        - templateVersion
+        - dataController
+        - agreementPeriod
+        - dataSharingRestrictions
+        - purpose
+        - purposeDescription
+        - lawfulBasis
+        - personalData
+        - codeOfConduct
+    DataUsingService:
+      type: object
+      title: Data Using Service
+      properties:
+        did:
+          type: string
+        name:
+          type: string
+        legalId:
+          type: string
+        url:
+          type: string
+        industrySector:
+          type: string
+        usagePurposes:
+          type: string
+        jurisdiction:
+          type: string
+        withdrawal:
+          type: string
+        privacyRights:
+          type: string
+        signatureContact:
+          type: string
+      required:
+        - did
+        - name
+        - legalId
+        - url
+        - industrySector
+        - usagePurposes
+        - jurisdiction
+        - withdrawal
+        - privacyRights
+        - signatureContact
+    Proof:
+      type: object
+      title: Proof
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        created:
+          type: string
+        verificationMethod:
+          type: string
+        proofPurpose:
+          type: string
+        proofValue:
+          type: string
+      required:
+        - id
+        - type
+        - created
+        - verificationMethod
+        - proofPurpose
+        - proofValue
+    DataSharingRestriction:
+      type: object
+      title: Data Sharing Restriction
+      properties:
+        policyUrl:
+          type: string
+        jurisdiction:
+          type: string
+        industrySector:
+          type: string
+        dataRetentionPeriod:
+          type: number
+        geographicRestriction:
+          type: string
+        storageLocation:
+          type: string
+      required:
+        - policyUrl
+        - jurisdiction
+        - industrySector
+        - dataRetentionPeriod
+        - geographicRestriction
+        - storageLocation
+    DataController:
+      type: object
+      title: Data Controller
+      properties:
+        did:
+          type: string
+        name:
+          type: string
+        legalId:
+          type: string
+        url:
+          type: string
+        industrySector:
+          type: string
+      required:
+        - did
+        - name
+        - legalId
+        - url
+        - industrySector
+    Pagination:
+      type: object
+      title: Pagination
+      properties:
+        currentPage:
+          type: integer
+          description: Current page number
+        totalItems:
+          type: integer
+          description: Total number of items available
+        totalPages:
+          type: integer
+          description: Total number of pages based on limit
+        limit:
+          type: integer
+          description: Number of items per page
+        hasPrevious:
+          type: boolean
+          description: Indicates if there's a previous page
+        hasNext:
+          type: boolean
+          description: Indicates if there's a next page
+    Connection:
+      type: object
+      title: Connection
+      properties:
+        invitationUrl:
+          type: string
+      required:
+        - invitationUrl
   securitySchemes:
     BearerAuth:
       bearerFormat: JWT
@@ -46,15 +237,201 @@ info:
     url: 'https://www.apache.org/licenses/LICENSE-2.0'
   title: Dataspace Portal API documentation
   version: 2024.3.1
-openapi: 3.0.3
-paths: null
+openapi: 3.1.0
+paths:
+  /service/data-disclosure-agreement:
+    get:
+      summary: List all data disclosure agreements
+      description: This endpoint is used to list all data disclosure agreements
+      operationId: listDataDisclosureAgreement
+      parameters:
+        - description: Requested index for start of resources to be provided in response requested by client
+          in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: Number of items returned per page. Requested number of resources to be provided in response requested by client
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataDisclosureAgreements:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        dataDisclosureAgreement:
+                          $ref: '#/components/schemas/DataDisclosureAgreement'
+                        api:
+                          type: array
+                          items:
+                            type: string
+                        connection:
+                          $ref: '#/components/schemas/Connection'
+                        dataSource:
+                          $ref: '#/components/schemas/Organisation'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          description: bad input parameter
+      security:
+        - BearerAuth: []
+      tags:
+        - service
+  /config/data-source:
+    get:
+      summary: Read data source
+      description: This endpoint is used to read the data source details for the organisation admin
+      operationId: readDataSource
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  dataSource:
+                    $ref: '#/components/schemas/Organisation'
+                required:
+                  - organisation
+                type: object
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+    put:
+      summary: Update data source
+      description: This endpoint is used to update data source
+      operationId: updateDataSource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                organisation:
+                  type: object
+                  properties:
+                    description:
+                      type: string
+                    location:
+                      type: string
+                    name:
+                      type: string
+                    policyUrl:
+                      type: string
+                    required:
+                      - name
+                      - location
+                      - description
+                      - policyUrl
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  organisation:
+                    $ref: '#/components/schemas/Organisation'
+                required:
+                  - organisation
+                type: object
+          description: Updated the organisation
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+  /config/data-source/coverimage:
+    get:
+      deprecated: false
+      description: Get data source cover image
+      operationId: getDataSourceCoverImage
+      responses:
+        '200':
+          headers: {}
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+    put:
+      deprecated: false
+      description: Update data source cover image
+      operationId: updateDataSourceCoverImage
+      requestBody:
+        content:
+          multipart/form-data:
+            encoding: {}
+            schema:
+              properties:
+                orgimage:
+                  format: binary
+                  type: string
+              required:
+                - orgimage
+              type: object
+        required: false
+      responses:
+        '200':
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+  /config/data-source/logoimage:
+    get:
+      deprecated: false
+      description: Get data source logo image
+      operationId: getDataSourceLogoImage
+      responses:
+        '200':
+          headers: {}
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+    put:
+      deprecated: false
+      description: Update data source logo image
+      operationId: updateDataSourceLogoImage
+      requestBody:
+        content:
+          multipart/form-data:
+            encoding: {}
+            schema:
+              properties:
+                orgimage:
+                  format: binary
+                  type: string
+              required:
+                - orgimage
+              type: object
+        required: false
+      responses:
+        '200':
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - config
 servers:
   - description: Development server
     url: 'https://api.dataspace.dev/v2'
 tags:
-  - description: This consists of endpoints for data sources
-    name: data-source
+  - description: This consists of endpoints available to organisation admins to manage data disclosure agreements and connections.
+    name: config
     x-tag-expanded: true
-  - description: This consists of endpoints for data using services
-    name: data-using-service
+  - description: 'This consists of endpoints towards data using services to list and connect to data sources, view data disclosure agreements and APIs.'
+    name: service
     x-tag-expanded: true

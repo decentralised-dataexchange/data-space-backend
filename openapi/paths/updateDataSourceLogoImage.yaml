@@ -1,0 +1,23 @@
+deprecated: false
+description: Update data source logo image
+operationId: updateDataSourceLogoImage
+requestBody:
+  content:
+    multipart/form-data:
+      encoding: {}
+      schema:
+        properties:
+          orgimage:
+            format: binary
+            type: string
+        required:
+          - orgimage
+        type: object
+  required: false
+responses:
+  "200":
+    description: OK
+security:
+  - BearerAuth: []
+tags:
+  - config

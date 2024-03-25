@@ -1,0 +1,7 @@
+name: limit
+in: query
+description: Number of items returned per page. Requested number of resources to be provided in response requested by client
+required: false
+schema:
+  type: integer
+  default: 10

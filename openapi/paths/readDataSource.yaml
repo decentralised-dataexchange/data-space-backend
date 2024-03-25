@@ -1,0 +1,19 @@
+summary: Read data source
+description: This endpoint is used to read the data source details for the organisation admin
+operationId: "readDataSource"
+responses:
+  "200":
+    content:
+      application/json:
+        schema:
+          properties:
+            dataSource:
+              $ref: ../definitions/Organisation.yaml
+          required:
+            - organisation
+          type: object
+    description: OK
+security:
+  - BearerAuth: []
+tags:
+  - config

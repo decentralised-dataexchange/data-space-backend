@@ -1,0 +1,37 @@
+summary: List all data disclosure agreements
+description: This endpoint is used to list all data disclosure agreements
+operationId: "listDataDisclosureAgreement"
+parameters:
+  - $ref: "../parameters/offset.yaml"
+  - $ref: "../parameters/limit.yaml"
+responses:
+  "200":
+    description: ""
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            dataDisclosureAgreements:
+              type: array
+              items:
+                type: object
+                properties:
+                  dataDisclosureAgreement:
+                    $ref: "../definitions/DataDisclosureAgreement.yaml"
+                  api:
+                    type: array
+                    items:
+                      type: string
+                  connection:
+                    $ref: "../definitions/Connection.yaml"
+                  dataSource:
+                    $ref: "../definitions/Organisation.yaml"
+            pagination:
+              $ref: "../definitions/Pagination.yaml"
+  "400":
+    description: bad input parameter
+security:
+  - BearerAuth: []
+tags:
+  - service
