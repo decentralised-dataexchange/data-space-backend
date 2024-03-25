@@ -20,6 +20,12 @@ components:
           type: string
         description:
           type: string
+        presentationExchangeId:
+          type: string
+        presentationState:
+          type: string
+        presentationRecord:
+          type: string
       required:
         - id
         - coverImageUrl
@@ -220,6 +226,25 @@ components:
           type: string
       required:
         - invitationUrl
+    Verification:
+      type: object
+      title: Verification
+      properties:
+        id:
+          type: string
+        dataSourceId:
+          type: string
+        presentationExchangeId:
+          type: string
+        presentationState:
+          type: string
+        presentationRecord:
+          type: object
+      required:
+        - id
+        - dataSourceId
+        - presentationExchangeId
+        - presentationState
   securitySchemes:
     BearerAuth:
       bearerFormat: JWT
@@ -281,12 +306,35 @@ paths:
                           $ref: '#/components/schemas/Connection'
                         dataSource:
                           $ref: '#/components/schemas/Organisation'
+                        verification:
+                          $ref: '#/components/schemas/Verification'
                   pagination:
                     $ref: '#/components/schemas/Pagination'
         '400':
           description: bad input parameter
       tags:
         - service
+  /config/data-source/verification/:
+    get:
+      summary: Read verification
+      description: This endpoint is used to read verification for a data source
+      operationId: readVerification
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  verification:
+                    $ref: '#/components/schemas/Verification'
+                required:
+                  - organisation
+                type: object
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - config
   /config/data-source/:
     get:
       summary: Read data source
@@ -300,6 +348,8 @@ paths:
                 properties:
                   dataSource:
                     $ref: '#/components/schemas/Organisation'
+                  verification:
+                    $ref: '#/components/schemas/Verification'
                 required:
                   - organisation
                 type: object

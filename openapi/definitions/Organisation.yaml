@@ -17,6 +17,12 @@ properties:
     type: string
   description:
     type: string
+  presentationExchangeId:
+    type: string
+  presentationState:
+    type: string
+  presentationRecord:
+    type: string
 required:
   - id
   - coverImageUrl

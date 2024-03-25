@@ -1,0 +1,17 @@
+summary: Read verification
+description: This endpoint is used to read verification for a data source
+operationId: "readVerification"
+responses:
+  "200":
+    content:
+      application/json:
+        schema:
+          properties:
+            verification:
+              $ref: "../definitions/Verification.yaml"
+          type: object
+    description: OK
+security:
+  - BearerAuth: []
+tags:
+  - config

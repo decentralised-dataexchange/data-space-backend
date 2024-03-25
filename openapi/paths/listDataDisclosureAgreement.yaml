@@ -27,6 +27,8 @@ responses:
                     $ref: "../definitions/Connection.yaml"
                   dataSource:
                     $ref: "../definitions/Organisation.yaml"
+                  verification:
+                    $ref: "../definitions/Verification.yaml"
             pagination:
               $ref: "../definitions/Pagination.yaml"
   "400":
