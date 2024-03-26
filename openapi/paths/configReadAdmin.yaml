@@ -7,24 +7,7 @@ responses:
     content:
       application/json:
         schema:
-          type: object
-          properties:
-            id:
-              type: number
-            email:
-              type: string
-            fullname:
-              type: string
-            address:
-              type: string
-            country:
-              type: string
-          required:
-            - id
-            - email
-            - fullname
-            - address
-            - country
+          $ref: "../definitions/OrganisationAdmin.yaml"
 security:
   - BearerAuth: []
 tags:

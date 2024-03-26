@@ -273,9 +273,9 @@ openapi: 3.1.0
 paths:
   /service/data-disclosure-agreement/:
     get:
-      summary: List all data disclosure agreements
-      description: This endpoint is used to list all data disclosure agreements
-      operationId: listDataDisclosureAgreement
+      summary: List all listed data disclosure agreements
+      description: This endpoint is used to list all listed data disclosure agreements
+      operationId: serviceListDataDisclosureAgreement
       parameters:
         - description: Requested index for start of resources to be provided in response requested by client
           in: query
@@ -322,10 +322,10 @@ paths:
       tags:
         - service
   /config/data-source/verification/:
-    get:
-      summary: Read verification
-      description: This endpoint is used to read verification for a data source
-      operationId: readVerification
+    post:
+      summary: Create verification
+      description: This endpoint is used to send verification request to connected wallet of data source
+      operationId: configCreateVerification
       responses:
         '200':
           content:
@@ -340,10 +340,10 @@ paths:
         - BearerAuth: []
       tags:
         - config
-    post:
-      summary: Create verification
-      description: This endpoint is used to send verification request to connected wallet of data source
-      operationId: createVerification
+    get:
+      summary: Read verification
+      description: This endpoint is used to read verification for a data source
+      operationId: configReadVerification
       responses:
         '200':
           content:
@@ -359,10 +359,53 @@ paths:
       tags:
         - config
   /config/data-source/:
+    post:
+      summary: Create data source
+      description: This endpoint is used to create data source
+      operationId: configCreateDataSource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                organisation:
+                  type: object
+                  properties:
+                    description:
+                      type: string
+                    location:
+                      type: string
+                    name:
+                      type: string
+                    policyUrl:
+                      type: string
+                    required:
+                      - name
+                      - location
+                      - description
+                      - policyUrl
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  organisation:
+                    $ref: '#/components/schemas/Organisation'
+                required:
+                  - organisation
+                type: object
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - config
     get:
       summary: Read data source
       description: This endpoint is used to read the data source details for the organisation admin
-      operationId: readDataSource
+      operationId: configReadDataSource
       responses:
         '200':
           content:
@@ -384,7 +427,7 @@ paths:
     put:
       summary: Update data source
       description: This endpoint is used to update data source
-      operationId: updateDataSource
+      operationId: configUpdateDataSource
       requestBody:
         content:
           application/json:
@@ -428,7 +471,7 @@ paths:
     get:
       deprecated: false
       description: Get data source cover image
-      operationId: getDataSourceCoverImage
+      operationId: configReadDataSourceCoverImage
       responses:
         '200':
           headers: {}
@@ -439,7 +482,7 @@ paths:
     put:
       deprecated: false
       description: Update data source cover image
-      operationId: updateDataSourceCoverImage
+      operationId: configUpdateDataSourceCoverImage
       requestBody:
         content:
           multipart/form-data:
@@ -464,7 +507,7 @@ paths:
     get:
       deprecated: false
       description: Get data source logo image
-      operationId: getDataSourceLogoImage
+      operationId: configReadDataSourceLogoImage
       responses:
         '200':
           headers: {}
@@ -475,7 +518,7 @@ paths:
     put:
       deprecated: false
       description: Update data source logo image
-      operationId: updateDataSourceLogoImage
+      operationId: configUpdateDataSourceLogoImage
       requestBody:
         content:
           multipart/form-data:
@@ -496,11 +539,37 @@ paths:
         - BearerAuth: []
       tags:
         - config
+  /config/admin/:
+    get:
+      summary: Read admin
+      description: This endpoint is used to read admin details
+      operationId: configReadAdmin
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  email:
+                    type: string
+                  name:
+                    type: string
+                required:
+                  - email
+                  - name
+      security:
+        - BearerAuth: []
+      tags:
+        - config
   /onboard/login/:
     post:
       summary: Login
       description: This endpoint is used to login as data source organisation admin
-      operationId: login
+      operationId: onboardLogin
       requestBody:
         content:
           application/json:
@@ -532,7 +601,7 @@ paths:
     post:
       summary: Register
       description: This endpoint is used to register as data source organisation admin
-      operationId: register
+      operationId: onboardRegister
       requestBody:
         content:
           application/json:
@@ -542,6 +611,8 @@ paths:
                   type: string
                 password:
                   type: string
+                name:
+                  type: string
               type: object
         required: true
       responses:
@@ -550,12 +621,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  id:
-                    type: string
-                  email:
-                    type: string
-                type: object
+                $ref: '#/paths/~1config~1admin~1/get/responses/200/content/application~1json/schema'
       security:
         - BearerAuth: []
       tags:
@@ -564,7 +630,7 @@ paths:
     post:
       summary: Refresh token
       description: This endpoint is used to refresh token
-      operationId: refreshToken
+      operationId: onboardRefreshtoken
       requestBody:
         content:
           application/json:
@@ -584,39 +650,6 @@ paths:
                   access:
                     type: string
                 type: object
-      security:
-        - BearerAuth: []
-      tags:
-        - onboard
-  /onboard/admin/:
-    get:
-      summary: Read admin
-      description: This endpoint is used to read admin details
-      operationId: readAdmin
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: number
-                  email:
-                    type: string
-                  fullname:
-                    type: string
-                  address:
-                    type: string
-                  country:
-                    type: string
-                required:
-                  - id
-                  - email
-                  - fullname
-                  - address
-                  - country
       security:
         - BearerAuth: []
       tags:

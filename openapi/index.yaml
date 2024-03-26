@@ -43,11 +43,13 @@ paths:
     get:
       $ref: "./paths/serviceListDataDisclosureAgreement.yaml"
   /config/data-source/verification/:
-    get:
-      $ref: "./paths/configReadVerification.yaml"
     post:
       $ref: "./paths/configCreateVerification.yaml"
+    get:
+      $ref: "./paths/configReadVerification.yaml"
   /config/data-source/:
+    post:
+      $ref: "./paths/configCreateDataSource.yaml"
     get:
       $ref: "./paths/configReadDataSource.yaml"
     put:
