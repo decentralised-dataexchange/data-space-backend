@@ -10,6 +10,8 @@ requestBody:
             type: string
           password:
             type: string
+          name:
+            type: string
         type: object
   required: true
 responses:
@@ -18,12 +20,7 @@ responses:
     content:
       application/json:
         schema:
-          properties:
-            id:
-              type: string
-            email:
-              type: string
-          type: object
+          $ref: "../definitions/OrganisationAdmin.yaml"
 security:
   - BearerAuth: []
 tags:
