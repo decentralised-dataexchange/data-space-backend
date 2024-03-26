@@ -565,6 +565,55 @@ paths:
         - BearerAuth: []
       tags:
         - config
+    put:
+      summary: Update admin
+      description: This endpoint is used to update admin details
+      operationId: configUpdateAdmin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                name:
+                  type: string
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1config~1admin~1/get/responses/200/content/application~1json/schema'
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+  /onboard/password/reset/:
+    post:
+      summary: Password reset
+      description: This endpoint is used to reset admin
+      operationId: onboardPasswordReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                oldPassword:
+                  type: string
+                newPassword1:
+                  type: string
+                newPassword2:
+                  type: string
+              type: object
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - onboard
   /onboard/login/:
     post:
       summary: Login

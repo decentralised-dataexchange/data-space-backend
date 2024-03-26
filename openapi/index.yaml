@@ -67,6 +67,11 @@ paths:
   /config/admin/:
     get:
       $ref: "./paths/configReadAdmin.yaml"
+    put:
+      $ref: "./paths/configUpdateAdmin.yaml"
+  /onboard/password/reset/:
+    post:
+      $ref: "./paths/onboardPasswordReset.yaml"
   /onboard/login/:
     post:
       $ref: "./paths/onboardLogin.yaml"
