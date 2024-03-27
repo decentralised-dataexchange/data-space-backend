@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import DataSourceView, DataSourceCoverImageView, DataSourceLogoImageView, AdminView
+from .views import DataSourceView, DataSourceCoverImageView, DataSourceLogoImageView, AdminView, DataSourceVerificationView
 
 urlpatterns = [
     path("data-source/", DataSourceView.as_view(), name="data_source"),
@@ -9,4 +9,6 @@ urlpatterns = [
          DataSourceLogoImageView.as_view(), name="logo_image"),
     path("admin/",
          AdminView.as_view(), name="admin"),
+    path("data-source/verification/",
+         DataSourceVerificationView.as_view(), name="verification"),
 ]
