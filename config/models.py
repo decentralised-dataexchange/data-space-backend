@@ -1,0 +1,38 @@
+from django.db import models
+from onboard.models import DataspaceUser
+from uuid import uuid4
+
+# Create your models here.
+
+
+class ImageModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    image_data = models.BinaryField()
+
+    def __str__(self):
+        return str(self.id)
+
+
+class DataSource(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    coverImageUrl = models.CharField(max_length=255)
+    logoUrl = models.CharField(max_length=255)
+    name = models.CharField(max_length=100)
+    sector = models.CharField(max_length=100)
+    location = models.CharField(max_length=100)
+    policyUrl = models.CharField(max_length=255)
+    description = models.TextField()
+    coverImageId = models.UUIDField(default=None, null=True, blank=True)
+    logoId = models.UUIDField(default=None, null=True, blank=True)
+    admin = models.OneToOneField(DataspaceUser, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
+class Verification(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    dataSourceId = models.ForeignKey(DataSource, on_delete=models.CASCADE)
+    presentationExchangeId = models.CharField(max_length=50, unique=True)
+    presentationState = models.CharField(max_length=50)
+    presentationRecord = models.CharField(max_length=50)
