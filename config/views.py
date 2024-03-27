@@ -4,6 +4,7 @@ from .models import DataSource, Verification, ImageModel
 from rest_framework.views import APIView
 from rest_framework import status, permissions
 from onboard.serializers import DataspaceUserSerializer
+from uuid import uuid4
 
 # Create your views here.
 
@@ -225,3 +226,101 @@ class AdminView(APIView):
             serializer.save()
             return JsonResponse(serializer.data)
         return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DataSourceVerificationView(APIView):
+    serializer_class = VerificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            datasource = DataSource.objects.get(admin=request.user)
+        except DataSource.DoesNotExist:
+            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            verification = Verification.objects.get(dataSourceId=datasource)
+            verification_serializer = self.serializer_class(
+                verification)
+        except Verification.DoesNotExist:
+            return JsonResponse({'error': 'Data source verification not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Construct the response data
+        response_data = {
+            'verification': verification_serializer.data,
+        }
+
+        return JsonResponse(response_data)
+
+    def post(self, request):
+        try:
+            datasource = DataSource.objects.get(admin=request.user)
+        except DataSource.DoesNotExist:
+            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Add dummy presentation
+        presentation_exchange_id = str(uuid4())
+
+        response = {
+            "verificationHistory": {
+                "id": "6603e82d8b3a694e41bf774a",
+                "autoPresent": False,
+                "connectionId": "4e0ca9c3-2537-46bb-8fd8-90868953f3ad",
+                "createdAt": "2024-03-27 09:34:37.016226Z",
+                "errorMsg": "",
+                "initiator": "self",
+                "presentationExchangeId": presentation_exchange_id,
+                "presentationRequest": {
+                    "name": "parking verify 1",
+                    "version": "2.0.0",
+                    "requestedAttributes": {
+                        "additionalProp1": {
+                            "name": "Car name",
+                            "restrictions": []
+                        },
+                        "additionalProp2": {
+                            "name": "Number",
+                            "restrictions": []
+                        }
+                    },
+                    "requestedPredicates": {},
+                    "nonce": "32417908491254422565941"
+                },
+                "role": "verifier",
+                "state": "request_sent",
+                "threadId": "84d0caa4-9fc8-43e9-96d8-514826538b09",
+                "trace": False,
+                "updatedAt": "2024-03-27 09:34:37.068448Z",
+                "verified": False,
+                "dataAgreementId": "87888023-350d-49e6-8c39-4cfe76635823",
+                "dataAgreementTemplateId": "e4eadd72-8f58-4be8-904a-d6c119ca2f00",
+                "dataAgreementStatus": "offer",
+                "dataAgreementProblemReport": ""
+            }
+        }
+        presentation_record = response['verificationHistory']
+
+        # Update or create Verification object
+        try:
+            verification = Verification.objects.get(dataSourceId=datasource)
+            verification.presentationExchangeId = presentation_exchange_id
+            verification.presentationState = "request_sent"
+            verification.presentationRecord = presentation_record
+            verification.save()
+        except Verification.DoesNotExist:
+            verification = Verification.objects.create(
+                dataSourceId=datasource,
+                presentationExchangeId=presentation_exchange_id,
+                presentationState="request_sent",
+                presentationRecord=presentation_record
+            )
+
+        # Serialize the verification object
+        verification_serializer = VerificationSerializer(verification)
+
+        # Construct the response data
+        response_data = {
+            'verification': verification_serializer.data,
+        }
+
+        return JsonResponse(response_data)

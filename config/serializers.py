@@ -5,8 +5,8 @@ from .models import DataSource, Verification
 class VerificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Verification
-        fields = ['id', 'dataSourceId', 'presentation_exchange_id',
-                  'presentation_state', 'presentation_record']
+        fields = ['id', 'dataSourceId', 'presentationExchangeId',
+                  'presentationState', 'presentationRecord']
 
 
 class DataSourceSerializer(serializers.ModelSerializer):
