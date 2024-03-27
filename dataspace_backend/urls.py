@@ -22,4 +22,5 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("onboard/", include("onboard.urls")),
+    path("config/", include("config.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

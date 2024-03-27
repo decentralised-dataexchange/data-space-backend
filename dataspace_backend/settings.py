@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "rest_auth",
     "corsheaders",
     "django_jsonfield_backport",
+    "config"
 ]
 
 MIDDLEWARE = [
