@@ -3,6 +3,7 @@ from .serializers import DataSourceSerializer, VerificationSerializer
 from .models import DataSource, Verification, ImageModel
 from rest_framework.views import APIView
 from rest_framework import status, permissions
+from onboard.serializers import DataspaceUserSerializer
 
 # Create your views here.
 
@@ -202,3 +203,25 @@ class DataSourceLogoImageView(APIView):
             return JsonResponse({'message': 'Image uploaded successfully'})
         else:
             return JsonResponse({'error': 'No image file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminView(APIView):
+    serializer_class = DataspaceUserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        serializer = self.serializer_class(request.user, many=False)
+        return JsonResponse(serializer.data)
+
+    def put(self, request):
+        admin = request.user
+        request_data = request.data
+        if 'name' not in request_data:
+            return JsonResponse({'error': 'Name field is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.serializer_class(
+            admin, data=request_data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

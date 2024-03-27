@@ -12,7 +12,7 @@ class RegisterDataspaceUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DataspaceUser
-        fields = ["id", "email", "password"]
+        fields = ["id", "email", "password", "name"]
 
     def create(self, validated_data):
         user = UserModel.objects.create_user(
@@ -25,7 +25,13 @@ class DataspaceUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DataspaceUser
-        fields = ["id", "email", "fullname", "address", "country"]
+        fields = ["id", "email", "name"]
+    
+    def update(self, admin, validated_data):
+        # Update only the "name" field if provided in the request
+        admin.name = validated_data.get('name', admin.name)
+        admin.save()
+        return admin
 
 
 class CustomTokenSerializer(serializers.ModelSerializer):
@@ -40,4 +46,4 @@ class DataspaceUsersSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DataspaceUser
-        fields = ["id", "email", "fullname", "address", "country"]
+        fields = ["id", "email", "name"]

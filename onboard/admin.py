@@ -25,17 +25,13 @@ class DataspaceUserAdmin(BaseUserAdmin):
         "email",
         "is_staff",
         "is_active",
-        "fullname",
-        "address",
-        "country",
+        "name",
     )
     list_filter = (
         "email",
         "is_staff",
         "is_active",
-        "fullname",
-        "address",
-        "country",
+        "name",
     )
     fieldsets = (
         (None, {"fields": ("email", "password")}),
@@ -45,9 +41,7 @@ class DataspaceUserAdmin(BaseUserAdmin):
                 "fields": (
                     "is_staff",
                     "is_active",
-                    "fullname",
-                    "address",
-                    "country",
+                    "name",
                 )
             },
         ),
@@ -63,9 +57,7 @@ class DataspaceUserAdmin(BaseUserAdmin):
                     "password2",
                     "is_staff",
                     "is_active",
-                    "fullname",
-                    "address",
-                    "country",
+                    "name",
                 ),
             },
         ),
