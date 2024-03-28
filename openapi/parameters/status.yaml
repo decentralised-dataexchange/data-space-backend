@@ -1,0 +1,6 @@
+description: To filter data disclosure agreements by status
+in: query
+name: status
+required: false
+schema:
+  $ref: "../definitions/Status.yaml"

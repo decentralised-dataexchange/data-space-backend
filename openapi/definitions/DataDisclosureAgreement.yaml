@@ -28,12 +28,7 @@ properties:
   codeOfConduct:
     type: string
   status:
-    type: string
-    enum:
-      - listed
-      - unlisted
-      - awaitingForApproval
-      - rejected
+    $ref: "./Status.yaml"
 required:
   - language
   - version

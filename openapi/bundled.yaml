@@ -83,12 +83,7 @@ components:
         codeOfConduct:
           type: string
         status:
-          type: string
-          enum:
-            - listed
-            - unlisted
-            - awaitingForApproval
-            - rejected
+          $ref: '#/components/schemas/Status'
       required:
         - language
         - version
@@ -252,6 +247,15 @@ components:
         - dataSourceId
         - presentationExchangeId
         - presentationState
+    Status:
+      type: string
+      title: Data Disclosure Agreement Status
+      enum:
+        - unlisted
+        - awaitingForApproval
+        - approved
+        - rejected
+        - listed
   securitySchemes:
     BearerAuth:
       bearerFormat: JWT
@@ -271,25 +275,16 @@ info:
   version: 2024.3.1
 openapi: 3.1.0
 paths:
-  /service/data-disclosure-agreement/:
+  /service/data-disclosure-agreements/:
     get:
-      summary: List all listed data disclosure agreements
-      description: This endpoint is used to list all listed data disclosure agreements
+      summary: List data disclosure agreements with 'listed' status
+      description: |
+        This endpoint is used to list data disclosure agreements with 'listed' status. 
+        At present this endpoint will only return the latest revision of the data disclosure agreement.
       operationId: serviceListDataDisclosureAgreement
       parameters:
-        - description: Requested index for start of resources to be provided in response requested by client
-          in: query
-          name: offset
-          required: false
-          schema:
-            type: integer
-        - name: limit
-          in: query
-          description: Number of items returned per page. Requested number of resources to be provided in response requested by client
-          required: false
-          schema:
-            type: integer
-            default: 10
+        - $ref: '#/paths/~1config~1data-disclosure-agreements~1/get/parameters/0'
+        - $ref: '#/paths/~1config~1data-disclosure-agreements~1/get/parameters/1'
       responses:
         '200':
           description: OK
@@ -304,6 +299,7 @@ paths:
                       type: object
                       properties:
                         dataDisclosureAgreement:
+                          description: Data disclosure agreement
                           $ref: '#/components/schemas/DataDisclosureAgreement'
                         api:
                           type: array
@@ -321,6 +317,135 @@ paths:
           description: bad input parameter
       tags:
         - service
+  '/config/data-disclosure-agreement/{dataDisclosureAgreementId}':
+    get:
+      summary: Read data disclosure agreement
+      description: |
+        This endpoint is used to read data disclosure agreement by ID.
+      operationId: configReadDataDisclosureAgreement
+      parameters:
+        - description: Unique ID of an object
+          in: path
+          name: dataDisclosureAgreementId
+          required: true
+          schema:
+            type: string
+        - description: Version of an object. It follows semantic versioning (x.y.z).
+          in: query
+          name: version
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataDisclosureAgreement:
+                    $ref: '#/components/schemas/DataDisclosureAgreement'
+          description: ''
+        '400':
+          description: bad input parameter
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+    delete:
+      summary: Delete data disclosure agreement
+      description: |
+        This endpoint is used to delete data disclosure agreement by ID.
+      operationId: configDeleteDataDisclosureAgreement
+      parameters:
+        - $ref: '#/paths/~1config~1data-disclosure-agreement~1%7BdataDisclosureAgreementId%7D/get/parameters/0'
+      responses:
+        '204':
+          description: OK
+        '400':
+          description: bad input parameter
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+  '/config/data-disclosure-agreement/{dataDisclosureAgreementId}/status':
+    put:
+      summary: Update data disclosure agreement status
+      description: |
+        This endpoint is used to update data disclosure agreement status. 
+        Approved and rejected status are reserved for super admins to choose.
+      operationId: configUpdateDataDisclosureAgreementStatus
+      parameters:
+        - $ref: '#/paths/~1config~1data-disclosure-agreement~1%7BdataDisclosureAgreementId%7D/get/parameters/0'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                status:
+                  $ref: '#/components/schemas/Status'
+              type: object
+        required: true
+      responses:
+        '204':
+          description: OK
+        '400':
+          description: bad input parameter
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+  /config/data-disclosure-agreements/:
+    get:
+      summary: List data disclosure agreements
+      description: This endpoint is used to list data disclosure agreements
+      operationId: configListDataDisclosureAgreement
+      parameters:
+        - description: Requested index for start of resources to be provided in response requested by client
+          in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: Number of items returned per page. Requested number of resources to be provided in response requested by client
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - description: To filter data disclosure agreements by status
+          in: query
+          name: status
+          required: false
+          schema:
+            $ref: '#/components/schemas/Status'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataDisclosureAgreements:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        dataDisclosureAgreement:
+                          $ref: '#/components/schemas/DataDisclosureAgreement'
+                        revisions:
+                          type: array
+                          description: List of previous data disclosure agreements
+                          items:
+                            $ref: '#/components/schemas/DataDisclosureAgreement'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          description: bad input parameter
+      tags:
+        - config
   /config/data-source/verification/:
     post:
       summary: Create verification
@@ -589,7 +714,7 @@ paths:
         - BearerAuth: []
       tags:
         - config
-  /onboard/password/reset/:
+  /config/admin/reset-password/:
     post:
       summary: Password reset
       description: This endpoint is used to reset admin
@@ -613,7 +738,7 @@ paths:
       security:
         - BearerAuth: []
       tags:
-        - onboard
+        - config
   /onboard/login/:
     post:
       summary: Login
