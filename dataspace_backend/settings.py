@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_jsonfield_backport",
     "config",
-    "webhook"
+    "webhook",
+    "connection"
 ]
 
 MIDDLEWARE = [
