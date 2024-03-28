@@ -20,6 +20,8 @@ components:
       $ref: "./definitions/Connection.yaml"
     Verification:
       $ref: "./definitions/Verification.yaml"
+    Status:
+      $ref: "./definitions/Status.yaml"
   securitySchemes:
     BearerAuth:
       bearerFormat: JWT
@@ -39,9 +41,20 @@ info:
   version: 2024.3.1
 openapi: 3.1.0
 paths:
-  /service/data-disclosure-agreement/:
+  /service/data-disclosure-agreements/:
     get:
       $ref: "./paths/serviceListDataDisclosureAgreement.yaml"
+  /config/data-disclosure-agreement/{dataDisclosureAgreementId}:
+    get:
+      $ref: "./paths/configReadDataDisclosureAgreement.yaml"
+    delete:
+      $ref: "./paths/configDeleteDataDisclosureAgreement.yaml"
+  /config/data-disclosure-agreement/{dataDisclosureAgreementId}/status:
+    put:
+      $ref: "./paths/configUpdateDataDisclosureAgreementStatus.yaml"
+  /config/data-disclosure-agreements/:
+    get:
+      $ref: "./paths/configListDataDisclosureAgreement.yaml"
   /config/data-source/verification/:
     post:
       $ref: "./paths/configCreateVerification.yaml"
@@ -69,9 +82,9 @@ paths:
       $ref: "./paths/configReadAdmin.yaml"
     put:
       $ref: "./paths/configUpdateAdmin.yaml"
-  /onboard/password/reset/:
+  /config/admin/reset-password/:
     post:
-      $ref: "./paths/onboardPasswordReset.yaml"
+      $ref: "./paths/configPasswordReset.yaml"
   /onboard/login/:
     post:
       $ref: "./paths/onboardLogin.yaml"

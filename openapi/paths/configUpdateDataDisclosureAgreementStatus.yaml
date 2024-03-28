@@ -1,0 +1,25 @@
+summary: Update data disclosure agreement status
+description: |
+  This endpoint is used to update data disclosure agreement status. 
+  Approved and rejected status are reserved for super admins to choose.
+operationId: configUpdateDataDisclosureAgreementStatus
+parameters:
+  - $ref: "../parameters/path/dataAgreementId.yaml"
+requestBody:
+  content:
+    application/json:
+      schema:
+        properties:
+          status:
+            $ref: "../definitions/Status.yaml"
+        type: object
+  required: true
+responses:
+  "204":
+    description: "OK"
+  "400":
+    description: bad input parameter
+security:
+  - BearerAuth: []
+tags:
+  - config

@@ -1,0 +1,15 @@
+summary: Delete data disclosure agreement
+description: |
+  This endpoint is used to delete data disclosure agreement by ID.
+operationId: configDeleteDataDisclosureAgreement
+parameters:
+  - $ref: "../parameters/path/dataAgreementId.yaml"
+responses:
+  "204":
+    description: OK
+  "400":
+    description: bad input parameter
+security:
+  - BearerAuth: []
+tags:
+  - config
