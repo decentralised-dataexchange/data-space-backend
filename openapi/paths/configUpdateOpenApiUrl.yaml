@@ -1,0 +1,28 @@
+summary: Update Open API URL
+description: This endpoint is used to update Open API URL for data source
+operationId: "configUpdateOpenApiUrl"
+requestBody:
+  content:
+    application/json:
+      schema:
+        properties:
+          dataSource:
+            type: object
+            properties:
+              openApiUrl:
+                type: string
+        type: object
+  required: true
+responses:
+  "200":
+    content:
+      application/json:
+        schema:
+          properties:
+            dataSource:
+              $ref: ../definitions/Organisation.yaml
+    description: "Updated the organisation"
+security:
+  - BearerAuth: []
+tags:
+  - config

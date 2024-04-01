@@ -17,6 +17,8 @@ properties:
     type: string
   description:
     type: string
+  openApiUrl:
+    type: string
 required:
   - id
   - coverImageUrl
