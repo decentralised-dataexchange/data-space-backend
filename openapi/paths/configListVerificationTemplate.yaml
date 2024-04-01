@@ -1,0 +1,32 @@
+summary: List verification templates
+description: This endpoint is used to list verification templates
+operationId: "configListVerificationTemplate"
+responses:
+  "200":
+    description: OK
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            verificationTemplates:
+              type: array
+              items:
+                type: object
+                properties:
+                  verificationTemplateName:
+                    type: string
+                  walletName:
+                    type: string
+                  walletLocation:
+                    type: string
+                  issuerName:
+                    type: string
+                  issuerLocation:
+                    type: string
+                  issuerLogoUrl:
+                    type: string
+  "400":
+    description: bad input parameter
+tags:
+  - config
