@@ -6,7 +6,7 @@ requestBody:
     application/json:
       schema:
         properties:
-          organisation:
+          dataSource:
             type: object
             properties:
               description:
@@ -30,11 +30,10 @@ responses:
       application/json:
         schema:
           properties:
-            organisation:
+            dataSource:
               $ref: ../definitions/Organisation.yaml
-          required:
-            - organisation
-          type: object
+            verification:
+              $ref: "../definitions/Verification.yaml"
     description: "Updated the organisation"
 security:
   - BearerAuth: []

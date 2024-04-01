@@ -11,8 +11,6 @@ responses:
               $ref: ../definitions/Organisation.yaml
             verification:
               $ref: "../definitions/Verification.yaml"
-          required:
-            - organisation
           type: object
     description: OK
 security:
