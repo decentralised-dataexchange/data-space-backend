@@ -20,6 +20,8 @@ components:
           type: string
         description:
           type: string
+        openApiUrl:
+          type: string
       required:
         - id
         - coverImageUrl
@@ -379,16 +381,21 @@ info:
   version: 2024.3.1
 openapi: 3.1.0
 paths:
-  /service/data-disclosure-agreements/:
+  /service/data-sources/:
     get:
-      summary: List data disclosure agreements with 'listed' status
+      summary: List data source
       description: |
-        This endpoint is used to list data disclosure agreements with 'listed' status. 
-        At present this endpoint will only return the latest revision of the data disclosure agreement.
-      operationId: serviceListDataDisclosureAgreement
+        This endpoint is used to list data source
+      operationId: serviceListDataSource
       parameters:
         - $ref: '#/paths/~1config~1connections~1/get/parameters/0'
         - $ref: '#/paths/~1config~1connections~1/get/parameters/1'
+        - name: dataSourceId
+          in: query
+          description: Filter by data source ID
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -397,20 +404,25 @@ paths:
               schema:
                 type: object
                 properties:
-                  dataDisclosureAgreements:
+                  dataSources:
                     type: array
                     items:
                       type: object
                       properties:
-                        dataDisclosureAgreement:
+                        dataDisclosureAgreements:
+                          type: array
                           description: Data disclosure agreement
-                          $ref: '#/components/schemas/DataDisclosureAgreement'
+                          items:
+                            type: object
+                            properties:
+                              dataDisclosureAgreement:
+                                $ref: '#/components/schemas/DataDisclosureAgreement'
+                              connection:
+                                $ref: '#/components/schemas/InvitationUrl'
                         api:
                           type: array
                           items:
                             type: string
-                        connection:
-                          $ref: '#/components/schemas/InvitationUrl'
                         dataSource:
                           $ref: '#/components/schemas/Organisation'
                         verification:
@@ -421,6 +433,70 @@ paths:
           description: bad input parameter
       tags:
         - service
+  /config/verification/templates:
+    get:
+      summary: List verification templates
+      description: This endpoint is used to list verification templates
+      operationId: configListVerificationTemplate
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verificationTemplates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        verificationTemplateName:
+                          type: string
+                        walletName:
+                          type: string
+                        walletLocation:
+                          type: string
+                        issuerName:
+                          type: string
+                        issuerLocation:
+                          type: string
+                        issuerLogoUrl:
+                          type: string
+        '400':
+          description: bad input parameter
+      tags:
+        - config
+  /config/open-api/url:
+    put:
+      summary: Update Open API URL
+      description: This endpoint is used to update Open API URL for data source
+      operationId: configUpdateOpenApiUrl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                dataSource:
+                  type: object
+                  properties:
+                    openApiUrl:
+                      type: string
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  dataSource:
+                    $ref: '#/components/schemas/Organisation'
+          description: Updated the organisation
+      security:
+        - BearerAuth: []
+      tags:
+        - config
   /config/connection/:
     post:
       summary: Create connection with data intermediary
