@@ -1,0 +1,12 @@
+deprecated: false
+description: Get data source logo image
+operationId: serviceReadDataSourceLogoImage
+parameters:
+  - $ref: "../parameters/path/dataSourceId.yaml"
+responses:
+  "200":
+    headers: {}
+security:
+  - BearerAuth: []
+tags:
+  - service
