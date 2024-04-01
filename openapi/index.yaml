@@ -47,9 +47,15 @@ info:
   version: 2024.3.1
 openapi: 3.1.0
 paths:
-  /service/data-disclosure-agreements/:
+  /service/data-sources/:
     get:
-      $ref: "./paths/serviceListDataDisclosureAgreement.yaml"
+      $ref: "./paths/serviceListDataSource.yaml"
+  /config/verification/templates:
+    get:
+      $ref: "./paths/configListVerificationTemplate.yaml"
+  /config/open-api/url:
+    put:
+      $ref: "./paths/configUpdateOpenApiUrl.yaml"
   /config/connection/:
     post:
       $ref: "./paths/configCreateConnection.yaml"
