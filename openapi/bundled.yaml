@@ -381,6 +381,39 @@ info:
   version: 2024.3.1
 openapi: 3.1.0
 paths:
+  '/service/data-source/{dataSourceId}/coverimage':
+    get:
+      deprecated: false
+      description: Get data source cover image
+      operationId: serviceReadDataSourceCoverImage
+      parameters:
+        - $ref: '#/paths/~1service~1data-source~1%7BdataSourceId%7D~1logoimage/get/parameters/0'
+      responses:
+        '200':
+          headers: {}
+      security:
+        - BearerAuth: []
+      tags:
+        - service
+  '/service/data-source/{dataSourceId}/logoimage':
+    get:
+      deprecated: false
+      description: Get data source logo image
+      operationId: serviceReadDataSourceLogoImage
+      parameters:
+        - description: Unique ID of an object
+          in: path
+          name: dataSourceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          headers: {}
+      security:
+        - BearerAuth: []
+      tags:
+        - service
   /service/data-sources/:
     get:
       summary: List data source

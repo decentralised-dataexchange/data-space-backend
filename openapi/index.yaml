@@ -47,6 +47,12 @@ info:
   version: 2024.3.1
 openapi: 3.1.0
 paths:
+  /service/data-source/{dataSourceId}/coverimage:
+    get:
+      $ref: "./paths/serviceReadDataSourceCoverImage.yaml"
+  /service/data-source/{dataSourceId}/logoimage:
+    get:
+      $ref: "./paths/serviceReadDataSourceLogoImage.yaml"
   /service/data-sources/:
     get:
       $ref: "./paths/serviceListDataSource.yaml"
