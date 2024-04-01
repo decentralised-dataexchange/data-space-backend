@@ -1,0 +1,51 @@
+title: Connection Record
+type: object
+properties:
+  accept:
+    type: string
+  invitation_key:
+    type: string
+  created_at:
+    type: string
+  state:
+    type: string
+  initiator:
+    type: string
+  routing_state:
+    type: string
+  invitation_mode:
+    type: string
+  their_label:
+    type: string
+  their_did:
+    type: string
+  connection_id:
+    type: string
+  updated_at:
+    type: string
+  my_did:
+    type: string
+  controller_details:
+    type: object
+    properties: {}
+    required: []
+  org_flag:
+    type: boolean
+  marketplace_flag:
+    type: boolean
+required:
+- accept
+- invitation_key
+- created_at
+- state
+- initiator
+- routing_state
+- invitation_mode
+- their_label
+- their_did
+- connection_id
+- updated_at
+- my_did
+- controller_details
+- org_flag
+- marketplace_flag

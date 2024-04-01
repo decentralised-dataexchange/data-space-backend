@@ -20,12 +20,6 @@ components:
           type: string
         description:
           type: string
-        presentationExchangeId:
-          type: string
-        presentationState:
-          type: string
-        presentationRecord:
-          type: string
       required:
         - id
         - coverImageUrl
@@ -220,14 +214,28 @@ components:
         hasNext:
           type: boolean
           description: Indicates if there's a next page
-    Connection:
+    InvitationUrl:
       type: object
-      title: Connection
+      title: InvitationUrl
       properties:
         invitationUrl:
           type: string
       required:
         - invitationUrl
+    Connection:
+      type: object
+      title: Connection
+      properties:
+        id:
+          type: string
+        connectionId:
+          type: string
+        connectionRecord:
+          $ref: '#/components/schemas/ConnectionRecord'
+        connectionState:
+          type: string
+        dataSourceId:
+          type: string
     Verification:
       type: object
       title: Verification
@@ -256,6 +264,102 @@ components:
         - approved
         - rejected
         - listed
+    ConnectionRecord:
+      title: Connection Record
+      type: object
+      properties:
+        accept:
+          type: string
+        invitation_key:
+          type: string
+        created_at:
+          type: string
+        state:
+          type: string
+        initiator:
+          type: string
+        routing_state:
+          type: string
+        invitation_mode:
+          type: string
+        their_label:
+          type: string
+        their_did:
+          type: string
+        connection_id:
+          type: string
+        updated_at:
+          type: string
+        my_did:
+          type: string
+        controller_details:
+          type: object
+          properties: {}
+          required: []
+        org_flag:
+          type: boolean
+        marketplace_flag:
+          type: boolean
+      required:
+        - accept
+        - invitation_key
+        - created_at
+        - state
+        - initiator
+        - routing_state
+        - invitation_mode
+        - their_label
+        - their_did
+        - connection_id
+        - updated_at
+        - my_did
+        - controller_details
+        - org_flag
+        - marketplace_flag
+    CreateConnectionResponse:
+      title: Create Connection Response
+      type: object
+      properties:
+        connection:
+          type: object
+          properties:
+            connectionId:
+              type: string
+            invitation:
+              type: object
+              properties:
+                '@type':
+                  type: string
+                '@id':
+                  type: string
+                serviceEndpoint:
+                  type: string
+                label:
+                  type: string
+                imageUrl:
+                  type: string
+                recipientKeys:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - '@type'
+                - '@id'
+                - serviceEndpoint
+                - label
+                - imageUrl
+                - recipientKeys
+            invitationUrl:
+              type: string
+          required:
+            - connectionId
+            - invitation
+            - invitationUrl
+        firebaseDynamicLink:
+          type: string
+      required:
+        - connection
+        - firebaseDynamicLink
   securitySchemes:
     BearerAuth:
       bearerFormat: JWT
@@ -283,8 +387,8 @@ paths:
         At present this endpoint will only return the latest revision of the data disclosure agreement.
       operationId: serviceListDataDisclosureAgreement
       parameters:
-        - $ref: '#/paths/~1config~1data-disclosure-agreements~1/get/parameters/0'
-        - $ref: '#/paths/~1config~1data-disclosure-agreements~1/get/parameters/1'
+        - $ref: '#/paths/~1config~1connections~1/get/parameters/0'
+        - $ref: '#/paths/~1config~1connections~1/get/parameters/1'
       responses:
         '200':
           description: OK
@@ -306,7 +410,7 @@ paths:
                           items:
                             type: string
                         connection:
-                          $ref: '#/components/schemas/Connection'
+                          $ref: '#/components/schemas/InvitationUrl'
                         dataSource:
                           $ref: '#/components/schemas/Organisation'
                         verification:
@@ -317,7 +421,82 @@ paths:
           description: bad input parameter
       tags:
         - service
-  '/config/data-disclosure-agreement/{dataDisclosureAgreementId}':
+  /config/connection/:
+    post:
+      summary: Create connection with data intermediary
+      description: This endpoint is used to establish connection with data intermediary
+      operationId: configCreateConnection
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateConnectionResponse'
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+  /config/connections/:
+    get:
+      summary: List connections
+      description: This endpoint is used to list connections
+      operationId: configListConnection
+      parameters:
+        - description: Requested index for start of resources to be provided in response requested by client
+          in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          description: Number of items returned per page. Requested number of resources to be provided in response requested by client
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  connections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Connection'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          description: bad input parameter
+      tags:
+        - config
+  '/config/connection/{connectionId}/':
+    delete:
+      summary: Delete connection
+      description: |
+        This endpoint is used to delete connection by ID.
+      operationId: configDeleteConnection
+      parameters:
+        - description: Unique ID of an object
+          in: path
+          name: connectionId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: OK
+        '400':
+          description: bad input parameter
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+  '/config/data-disclosure-agreement/{dataDisclosureAgreementId}/':
     get:
       summary: Read data disclosure agreement
       description: |
@@ -358,7 +537,7 @@ paths:
         This endpoint is used to delete data disclosure agreement by ID.
       operationId: configDeleteDataDisclosureAgreement
       parameters:
-        - $ref: '#/paths/~1config~1data-disclosure-agreement~1%7BdataDisclosureAgreementId%7D/get/parameters/0'
+        - $ref: '#/paths/~1config~1data-disclosure-agreement~1%7BdataDisclosureAgreementId%7D~1/get/parameters/0'
       responses:
         '204':
           description: OK
@@ -368,7 +547,7 @@ paths:
         - BearerAuth: []
       tags:
         - config
-  '/config/data-disclosure-agreement/{dataDisclosureAgreementId}/status':
+  '/config/data-disclosure-agreement/{dataDisclosureAgreementId}/status/':
     put:
       summary: Update data disclosure agreement status
       description: |
@@ -376,7 +555,7 @@ paths:
         Approved and rejected status are reserved for super admins to choose.
       operationId: configUpdateDataDisclosureAgreementStatus
       parameters:
-        - $ref: '#/paths/~1config~1data-disclosure-agreement~1%7BdataDisclosureAgreementId%7D/get/parameters/0'
+        - $ref: '#/paths/~1config~1data-disclosure-agreement~1%7BdataDisclosureAgreementId%7D~1/get/parameters/0'
       requestBody:
         content:
           application/json:
@@ -401,19 +580,8 @@ paths:
       description: This endpoint is used to list data disclosure agreements
       operationId: configListDataDisclosureAgreement
       parameters:
-        - description: Requested index for start of resources to be provided in response requested by client
-          in: query
-          name: offset
-          required: false
-          schema:
-            type: integer
-        - name: limit
-          in: query
-          description: Number of items returned per page. Requested number of resources to be provided in response requested by client
-          required: false
-          schema:
-            type: integer
-            default: 10
+        - $ref: '#/paths/~1config~1connections~1/get/parameters/0'
+        - $ref: '#/paths/~1config~1connections~1/get/parameters/1'
         - description: To filter data disclosure agreements by status
           in: query
           name: status
@@ -493,7 +661,7 @@ paths:
           application/json:
             schema:
               properties:
-                organisation:
+                dataSource:
                   type: object
                   properties:
                     description:
@@ -517,11 +685,10 @@ paths:
             application/json:
               schema:
                 properties:
-                  organisation:
+                  dataSource:
                     $ref: '#/components/schemas/Organisation'
-                required:
-                  - organisation
-                type: object
+                  verification:
+                    $ref: '#/components/schemas/Verification'
           description: OK
       security:
         - BearerAuth: []
@@ -541,8 +708,6 @@ paths:
                     $ref: '#/components/schemas/Organisation'
                   verification:
                     $ref: '#/components/schemas/Verification'
-                required:
-                  - organisation
                 type: object
           description: OK
       security:
@@ -558,7 +723,7 @@ paths:
           application/json:
             schema:
               properties:
-                organisation:
+                dataSource:
                   type: object
                   properties:
                     description:
@@ -582,11 +747,10 @@ paths:
             application/json:
               schema:
                 properties:
-                  organisation:
+                  dataSource:
                     $ref: '#/components/schemas/Organisation'
-                required:
-                  - organisation
-                type: object
+                  verification:
+                    $ref: '#/components/schemas/Verification'
           description: Updated the organisation
       security:
         - BearerAuth: []

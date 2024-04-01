@@ -16,12 +16,18 @@ components:
       $ref: "./definitions/DataController.yaml"
     Pagination:
       $ref: "./definitions/Pagination.yaml"
+    InvitationUrl:
+      $ref: "./definitions/InvitationUrl.yaml"
     Connection:
       $ref: "./definitions/Connection.yaml"
     Verification:
       $ref: "./definitions/Verification.yaml"
     Status:
       $ref: "./definitions/Status.yaml"
+    ConnectionRecord:
+      $ref: "./definitions/ConnectionRecord.yaml"
+    CreateConnectionResponse:
+      $ref: "./definitions/CreateConnectionResponse.yaml"
   securitySchemes:
     BearerAuth:
       bearerFormat: JWT
@@ -44,12 +50,21 @@ paths:
   /service/data-disclosure-agreements/:
     get:
       $ref: "./paths/serviceListDataDisclosureAgreement.yaml"
-  /config/data-disclosure-agreement/{dataDisclosureAgreementId}:
+  /config/connection/:
+    post:
+      $ref: "./paths/configCreateConnection.yaml"
+  /config/connections/:
+    get:
+      $ref: "./paths/configListConnection.yaml"
+  /config/connection/{connectionId}/:
+    delete:
+      $ref: "./paths/configDeleteConnection.yaml"
+  /config/data-disclosure-agreement/{dataDisclosureAgreementId}/:
     get:
       $ref: "./paths/configReadDataDisclosureAgreement.yaml"
     delete:
       $ref: "./paths/configDeleteDataDisclosureAgreement.yaml"
-  /config/data-disclosure-agreement/{dataDisclosureAgreementId}/status:
+  /config/data-disclosure-agreement/{dataDisclosureAgreementId}/status/:
     put:
       $ref: "./paths/configUpdateDataDisclosureAgreementStatus.yaml"
   /config/data-disclosure-agreements/:

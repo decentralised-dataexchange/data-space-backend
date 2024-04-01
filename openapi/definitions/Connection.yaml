@@ -1,7 +1,13 @@
 type: object
 title: Connection
 properties:
-  invitationUrl:
+  id:
     type: string
-required:
-  - invitationUrl
+  connectionId:
+    type: string
+  connectionRecord:
+    $ref: "../definitions/ConnectionRecord.yaml"
+  connectionState:
+    type: string
+  dataSourceId:
+    type: string

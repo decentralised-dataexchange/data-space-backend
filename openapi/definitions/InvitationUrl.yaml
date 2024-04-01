@@ -1,0 +1,7 @@
+type: object
+title: InvitationUrl
+properties:
+  invitationUrl:
+    type: string
+required:
+  - invitationUrl

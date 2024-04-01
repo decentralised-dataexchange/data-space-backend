@@ -27,7 +27,7 @@ responses:
                     items:
                       type: string
                   connection:
-                    $ref: "../definitions/Connection.yaml"
+                    $ref: "../definitions/InvitationUrl.yaml"
                   dataSource:
                     $ref: "../definitions/Organisation.yaml"
                   verification:
