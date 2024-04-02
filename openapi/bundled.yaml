@@ -1104,6 +1104,8 @@ paths:
 servers:
   - description: Development server
     url: 'http://localhost:8000'
+  - description: Live server
+    url: 'https://api.nxd.foundation'
 tags:
   - description: This consists of endpoints available to organisation admins to manage data disclosure agreements and connections.
     name: config
