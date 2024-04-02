@@ -48,7 +48,9 @@ INSTALLED_APPS = [
     "django_jsonfield_backport",
     "config",
     "webhook",
-    "connection"
+    "connection",
+    "data_disclosure_agreement",
+    "jsonfield"
 ]
 
 MIDDLEWARE = [

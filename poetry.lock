@@ -76,6 +76,18 @@ python-versions = ">=3.6"
 Django = ">=2.2"
 
 [[package]]
+name = "django-jsonfield"
+version = "1.4.1"
+description = "JSONField for django models"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+Django = ">=1.11"
+six = "*"
+
+[[package]]
 name = "django-jsonfield-backport"
 version = "1.0.5"
 description = "Backport of the cross-DB JSONField model and form fields from Django 3.1."
@@ -250,7 +262,7 @@ python-versions = ">=3.8"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "1bc1c0c759e4309d3d0c38689b8b43f40ca205c1fc388d4d26724b9319e6ca9b"
+content-hash = "563a5761a288e1ee46c0113b4a4f28f2eede918055b4333f70c5bdfa0d224341"
 
 [metadata.files]
 asgiref = [
@@ -276,6 +288,10 @@ django-cors-headers = [
 django-filter = [
     {file = "django-filter-21.1.tar.gz", hash = "sha256:632a251fa8f1aadb4b8cceff932bb52fe2f826dd7dfe7f3eac40e5c463d6836e"},
     {file = "django_filter-21.1-py3-none-any.whl", hash = "sha256:f4a6737a30104c98d2e2a5fb93043f36dd7978e0c7ddc92f5998e85433ea5063"},
+]
+django-jsonfield = [
+    {file = "django-jsonfield-1.4.1.tar.gz", hash = "sha256:f789a0ea1f80b48aff7d6c36dd356ce125dbf1b7cd97a82d315607ac758f50ff"},
+    {file = "django_jsonfield-1.4.1-py2.py3-none-any.whl", hash = "sha256:ccb2fe623e1bf7799e49c593b0a89a85084ef8d3debbf26d92a54e27b5305d72"},
 ]
 django-jsonfield-backport = [
     {file = "django-jsonfield-backport-1.0.5.tar.gz", hash = "sha256:40c39b1f1bade47bd2715664de14983f2e0a96175f65abbad2688029c255c685"},
