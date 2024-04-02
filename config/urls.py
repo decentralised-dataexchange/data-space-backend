@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import DataSourceView, DataSourceCoverImageView, DataSourceLogoImageView, AdminView, DataSourceVerificationView, VerificationTemplateView
+from .views import DataSourceView, DataSourceCoverImageView, DataSourceLogoImageView, AdminView, DataSourceVerificationView, VerificationTemplateView, DataSourceOpenApiUrlView
 from connection.views import DISPConnectionView, DISPConnectionsView
 from data_disclosure_agreement.views import DataDisclosureAgreementsView
 
@@ -23,4 +23,6 @@ urlpatterns = [
          name="data_disclosure_agreements"),
     path("verification/templates", VerificationTemplateView.as_view(),
          name="verification_templates"),
+    path("open-api/url", DataSourceOpenApiUrlView.as_view(),
+         name="open_api_url"),
 ]
