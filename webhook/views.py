@@ -36,20 +36,20 @@ def receive_invitation(request):
     response = request.body
     response = json.loads(response)
     connection_id = response["data"]["connection"]["connectionId"]
+    connection_state = response["data"]["connection"]["connectionState"]
     connection_data = response["data"]["connection"]
     connection_data.pop("id", None)
 
     try:
         connection = Connection.objects.get(
             connectionId=connection_id)
-    except Verification.DoesNotExist:
+    except Connection.DoesNotExist:
         connection = None
     
     if connection:
         if connection.state != "active":
-            for key, value in connection_data.items():
-                        setattr(connection, key, value)
-                    
+            connection.connectionState = connection_state
+            connection.connectionRecord = connection_data
             connection.save()
 
     return HttpResponse(status=status.HTTP_200_OK)
