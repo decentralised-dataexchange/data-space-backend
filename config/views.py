@@ -21,12 +21,14 @@ class DataSourceView(APIView):
         if DataSource.objects.filter(admin=admin).exists():
             return JsonResponse({'error': 'A DataSource already exists for this admin'}, status=status.HTTP_400_BAD_REQUEST)
 
-        request_data = request.data.get("organisation", {})
+        request_data = request.data.get("dataSource", {})
 
         request_data["coverImageUrl"] = "https://" + \
             request.get_host() + "/config/data-source/coverimage/"
         request_data["logoUrl"] = "https://" + \
             request.get_host() + "/config/data-source/logoimage/"
+        
+        request_data["openApiUrl"] = ""
 
         # Create and validate the DataSource serializer
         serializer = self.serializer_class(data=request_data)
@@ -37,7 +39,7 @@ class DataSourceView(APIView):
 
             # Serialize the created instance to match the response format
             response_serializer = self.serializer_class(datasource)
-            return JsonResponse({'organisation': response_serializer.data}, status=status.HTTP_201_CREATED)
+            return JsonResponse({'dataSource': response_serializer.data}, status=status.HTTP_201_CREATED)
 
         return JsonResponse({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -100,7 +102,7 @@ class DataSourceView(APIView):
 
         # Serialize the updated DataSource instance
         serializer = self.serializer_class(datasource)
-        return JsonResponse({'organisation': serializer.data}, status=status.HTTP_200_OK)
+        return JsonResponse({'dataSource': serializer.data}, status=status.HTTP_200_OK)
 
 
 class DataSourceCoverImageView(APIView):
@@ -146,7 +148,7 @@ class DataSourceCoverImageView(APIView):
             image.save()
 
             datasource.coverImageUrl = "https://" + \
-                request.get_host() + "/config/data-source/coverimage/"
+                request.get_host() + "/service/data-source/" + datasource.id + "/coverimage"
 
             datasource.save()
 
@@ -198,7 +200,7 @@ class DataSourceLogoImageView(APIView):
             image.save()
 
             datasource.logoUrl = "https://" + \
-                request.get_host() + "/config/data-source/logoimage/"
+                request.get_host() + "/service/data-source/" + datasource.id + "/logoimage"
             datasource.save()
 
             return JsonResponse({'message': 'Image uploaded successfully'})
@@ -349,3 +351,31 @@ class VerificationTemplateView(APIView):
         }
 
         return JsonResponse(response_data)
+    
+class DataSourceOpenApiUrlView(APIView):
+    serializer_class = DataSourceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        data = request.data.get('dataSource', {})
+
+        # Get the DataSource instance associated with the current user
+        try:
+            datasource = DataSource.objects.get(admin=request.user)
+        except DataSource.DoesNotExist:
+            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the fields if they are not empty
+        if data.get('openApiUrl'):
+            datasource.openApiUrl = data['openApiUrl']
+        else:
+            return JsonResponse({'error': 'Missing mandatory field openApiUrl'}, status=status.HTTP_400_BAD_REQUEST)
+        # Save the updated DataSource instance
+        datasource.save()
+
+        # Serialize the updated DataSource instance
+        serializer = self.serializer_class(datasource)
+        return JsonResponse({'dataSource': serializer.data}, status=status.HTTP_200_OK)
+
+
+
