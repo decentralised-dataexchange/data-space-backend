@@ -2,6 +2,8 @@ from django.urls import path, include
 from .views import DataSourceView, DataSourceCoverImageView, DataSourceLogoImageView, AdminView, DataSourceVerificationView, VerificationTemplateView, DataSourceOpenApiUrlView
 from connection.views import DISPConnectionView, DISPConnectionsView
 from data_disclosure_agreement.views import DataDisclosureAgreementsView
+from rest_auth.views import PasswordChangeView
+from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
     path("data-source/", DataSourceView.as_view(), name="data_source"),
@@ -25,4 +27,6 @@ urlpatterns = [
          name="verification_templates"),
     path("open-api/url", DataSourceOpenApiUrlView.as_view(),
          name="open_api_url"),
+    path("admin/reset-password/",
+         csrf_exempt(PasswordChangeView.as_view()), name="password_reset")
 ]
