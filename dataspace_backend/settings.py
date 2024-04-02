@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     "webhook",
     "connection",
     "data_disclosure_agreement",
-    "jsonfield"
+    "jsonfield",
+    "service"
 ]
 
 MIDDLEWARE = [

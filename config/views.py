@@ -148,7 +148,7 @@ class DataSourceCoverImageView(APIView):
             image.save()
 
             datasource.coverImageUrl = "https://" + \
-                request.get_host() + "/service/data-source/" + datasource.id + "/coverimage"
+                request.get_host() + "/service/data-source/" + str(datasource.id) + "/coverimage"
 
             datasource.save()
 
@@ -200,7 +200,7 @@ class DataSourceLogoImageView(APIView):
             image.save()
 
             datasource.logoUrl = "https://" + \
-                request.get_host() + "/service/data-source/" + datasource.id + "/logoimage"
+                request.get_host() + "/service/data-source/" + str(datasource.id) + "/logoimage"
             datasource.save()
 
             return JsonResponse({'message': 'Image uploaded successfully'})
