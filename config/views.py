@@ -1,6 +1,6 @@
 from django.http import JsonResponse, HttpResponse
-from .serializers import DataSourceSerializer, VerificationSerializer
-from .models import DataSource, Verification, ImageModel
+from .serializers import DataSourceSerializer, VerificationSerializer, VerificationTemplateSerializer
+from .models import DataSource, Verification, ImageModel, VerificationTemplate
 from rest_framework.views import APIView
 from rest_framework import status, permissions
 from onboard.serializers import DataspaceUserSerializer
@@ -321,6 +321,31 @@ class DataSourceVerificationView(APIView):
         # Construct the response data
         response_data = {
             'verification': verification_serializer.data,
+        }
+
+        return JsonResponse(response_data)
+
+
+class VerificationTemplateView(APIView):
+    serializer_class = VerificationTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            datasource = DataSource.objects.get(admin=request.user)
+        except DataSource.DoesNotExist:
+            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            verification_templates = VerificationTemplate.objects.filter(dataSourceId=datasource)
+            verification_template_serializer = self.serializer_class(
+                verification_templates, many=True)
+        except VerificationTemplate.DoesNotExist:
+            return JsonResponse({'error': 'Verification templates not found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Construct the response data
+        response_data = {
+            'verificationTemplates': verification_template_serializer.data,
         }
 
         return JsonResponse(response_data)

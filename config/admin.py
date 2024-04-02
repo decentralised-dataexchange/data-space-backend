@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import DataSource,ImageModel
+from .models import DataSource,Verification, VerificationTemplate
 
 # Register your models here.
 admin.site.register(DataSource)
+admin.site.register(Verification)
+admin.site.register(VerificationTemplate)
