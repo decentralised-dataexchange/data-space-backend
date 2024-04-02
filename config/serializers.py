@@ -14,7 +14,7 @@ class DataSourceSerializer(serializers.ModelSerializer):
         model = DataSource
         fields = [
             'id', 'coverImageUrl', 'logoUrl', 'name', 'sector', 'location',
-            'policyUrl', 'description'
+            'policyUrl', 'description', 'openApiUrl'
         ]
         read_only_fields = ['id']
 
