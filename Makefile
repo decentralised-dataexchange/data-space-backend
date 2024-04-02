@@ -44,18 +44,6 @@ help:
 	@echo "------------------------------------------------------------------------"
 	@grep -E '^[0-9a-zA-Z_/%\-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-.bootstrap:
-	git clone git@github.com:L3-iGrant/bootstrap.git "$(CURDIR)/.bootstrap"
-	git --git-dir=$(CURDIR)/.bootstrap/.git --work-tree=$(CURDIR)/.bootstrap checkout cors
-
-.PHONY: bootstrap
-bootstrap: .bootstrap ## Boostraps development environment
-	git -C $(CURDIR)/.bootstrap fetch --all --prune
-	git -C $(CURDIR)/.bootstrap reset --hard origin/cors
-	make -C .bootstrap bootstrap
-
-setup: bootstrap ## Sets up development environment
-
 docs/run: ## Run OpenAPI documentation
 	make -C openapi run
 
@@ -87,11 +75,8 @@ build: ## Builds the docker image
 publish: $(DEPLOY_VERSION_F ILE) ## Publish latest production Docker image to docker hub
 	gcloud docker -- push $(DEPLOY_VERSION)
 
-deploy/production: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,production})
-	kubectl set image deployment/demo-dataspace-backend demo-dataspace-backend=$(DEPLOY_VERSION) -n bolagsverket 
-
 deploy/staging: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,staging})
-	kubectl set image deployment/dataspace-backend dataspace-backend=$(DEPLOY_VERSION) -n bolagsverket 
+	kubectl set image deployment/dataspace-backend dataspace-backend=$(DEPLOY_VERSION) -n dataspace 
 
 $(DEPLOY_VERSION_FILE):
 	@echo "Missing '$(DEPLOY_VERSION_FILE)' file. Run 'make build/docker/deployable'" >&2
