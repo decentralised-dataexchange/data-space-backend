@@ -38,6 +38,10 @@ class Verification(models.Model):
     presentationState = models.CharField(max_length=50)
     presentationRecord = models.CharField(max_length=50)
 
+    def __str__(self):
+        return str(self.id)
+
+
 
 class VerificationTemplate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)

@@ -1,6 +1,6 @@
 def paginate_queryset(queryset, request):
-    offset = request.query_params.get('offset', 0)  # Get the 'offset' query parameter (default to 0)
-    limit = request.query_params.get('limit', 10)  # Get the 'limit' query parameter (default to 10)
+    offset = request.GET.get('offset')
+    limit = request.GET.get('limit')
 
     try:
         offset = int(offset)

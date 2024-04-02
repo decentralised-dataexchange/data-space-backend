@@ -24,4 +24,5 @@ urlpatterns = [
     path("onboard/", include("onboard.urls")),
     path("config/", include("config.urls")),
     path('webhook/', include("webhook.urls")),
+    path('service/', include("service.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
