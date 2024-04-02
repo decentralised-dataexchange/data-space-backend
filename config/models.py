@@ -36,3 +36,18 @@ class Verification(models.Model):
     presentationExchangeId = models.CharField(max_length=50, unique=True)
     presentationState = models.CharField(max_length=50)
     presentationRecord = models.CharField(max_length=50)
+
+
+class VerificationTemplate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    verificationTemplateName = models.CharField(
+        max_length=255, null=True, blank=True)
+    walletName = models.CharField(max_length=255, null=True, blank=True)
+    walletLocation = models.CharField(max_length=255, null=True, blank=True)
+    issuerName = models.CharField(max_length=255, null=True, blank=True)
+    issuerLocation = models.CharField(max_length=255, null=True, blank=True)
+    issuerLogoUrl = models.CharField(max_length=255, null=True, blank=True)
+    dataSourceId = models.ForeignKey(DataSource, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.verificationTemplateName
