@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import DataSource, Verification
+from .models import DataSource, Verification, VerificationTemplate
 
 
 class VerificationSerializer(serializers.ModelSerializer):
@@ -17,3 +17,9 @@ class DataSourceSerializer(serializers.ModelSerializer):
             'policyUrl', 'description'
         ]
         read_only_fields = ['id']
+
+
+class VerificationTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VerificationTemplate
+        exclude = ['dataSourceId']
