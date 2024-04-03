@@ -4,15 +4,19 @@ def paginate_queryset(queryset, request):
 
     try:
         offset = int(offset)
-    except ValueError:
+    except (ValueError,TypeError):
         offset = 0
 
     try:
         limit = int(limit)
-    except ValueError:
+    except (ValueError,TypeError):
         limit = 10
 
-    total_items = queryset.count()  # Total items in the queryset
+    # Total items in the queryset
+    try:
+        total_items = queryset.count()
+    except TypeError:
+        total_items = len(queryset)
 
     offset = max(offset, 0)
     limit = max(0, min(limit, 100))  
