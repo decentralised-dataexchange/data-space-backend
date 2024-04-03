@@ -5,6 +5,12 @@ from connection.models import Connection
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 import json
+from data_disclosure_agreement.models import DataDisclosureAgreement
+from django.db.models.signals import post_save
+from data_disclosure_agreement.signals import (
+    query_ddas_and_update_is_latest_flag_to_false_for_previous_versions,
+)
+
 
 # Create your views here.
 @csrf_exempt
@@ -12,12 +18,15 @@ import json
 def verify_certificate(request):
     response = request.body
     response = json.loads(response)
-    presentation_exchange_id = response["data"]["presentation"]["presentationExchangeId"]
+    presentation_exchange_id = response["data"]["presentation"][
+        "presentationExchangeId"
+    ]
     presentation_state = response["data"]["presentation"]["state"]
     presentation_record = response["data"]["presentation"]
     try:
         verification = Verification.objects.get(
-            presentationExchangeId=presentation_exchange_id)
+            presentationExchangeId=presentation_exchange_id
+        )
     except Verification.DoesNotExist:
         verification = None
 
@@ -29,25 +38,24 @@ def verify_certificate(request):
 
     return HttpResponse(status=status.HTTP_200_OK)
 
+
 @csrf_exempt
 @require_POST
 def receive_invitation(request):
-    
+
     response = request.body
     response = json.loads(response)
-    connection_id = response["data"]["connection"]["connectionId"]
-    connection_state = response["data"]["connection"]["connectionState"]
-    connection_data = response["data"]["connection"]
-    connection_data.pop("id", None)
+    connection_id = response["connection_id"]
+    connection_state = response["state"]
+    connection_data = response
 
     try:
-        connection = Connection.objects.get(
-            connectionId=connection_id)
+        connection = Connection.objects.get(connectionId=connection_id)
     except Connection.DoesNotExist:
         connection = None
-    
+
     if connection:
-        if connection.state != "active":
+        if connection.connectionState != "active":
             connection.connectionState = connection_state
             connection.connectionRecord = connection_data
             connection.save()
@@ -55,3 +63,50 @@ def receive_invitation(request):
     return HttpResponse(status=status.HTTP_200_OK)
 
 
+@csrf_exempt
+@require_POST
+def receive_data_disclosure_agreement(request):
+
+    response = request.body
+    response = json.loads(response)
+    connection_id = response["connection_id"]
+    dda_version = response["dda"]["version"]
+    dda_template_id = response["template_id"]
+
+    dda_connection = {"invitationUrl": response["connection_url"]}
+
+    try:
+        connection = Connection.objects.get(connectionId=connection_id)
+    except Connection.DoesNotExist:
+        connection = None
+
+    if connection:
+        data_disclosure_agreement = {
+            "language": response["dda"]["language"],
+            "version": response["dda"]["version"],
+            "templateId": dda_template_id,
+            "dataController": response["dda"]["dataController"],
+            "agreementPeriod": response["dda"]["agreementPeriod"],
+            "dataSharingRestrictions": response["dda"]["dataSharingRestrictions"],
+            "purpose": response["dda"]["purpose"],
+            "purposeDescription": response["dda"]["purposeDescription"],
+            "lawfulBasis": response["dda"]["lawfulBasis"],
+            "personalData": response["dda"]["personalData"],
+            "codeOfConduct": response["dda"]["codeOfConduct"],
+            "connection": dda_connection,
+            "status": "unlisted",
+        }
+        post_save.connect(
+            query_ddas_and_update_is_latest_flag_to_false_for_previous_versions,
+            DataDisclosureAgreement,
+        )
+
+        dda = DataDisclosureAgreement.objects.create(
+            version=dda_version,
+            templateId=dda_template_id,
+            dataSourceId=connection.dataSourceId,
+            dataDisclosureAgreementRecord=data_disclosure_agreement,
+        )
+        dda.save()
+
+    return HttpResponse(status=status.HTTP_200_OK)
