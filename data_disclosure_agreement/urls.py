@@ -4,8 +4,8 @@ from .views import DataDisclosureAgreementView, DataDisclosureAgreementUpdateVie
 
 urlpatterns = [
 
-    path("/<uuid:dataDisclosureAgreementId>",
+    path("/<uuid:dataDisclosureAgreementId>/",
          DataDisclosureAgreementView.as_view(), name="dataDisclosureAgreement"),
-    path("/<uuid:dataDisclosureAgreementId>/status",
+    path("/<uuid:dataDisclosureAgreementId>/status/",
          DataDisclosureAgreementUpdateView.as_view(), name="update_data_disclosure_agreement_status"),
 ]
