@@ -10,7 +10,5 @@ requestBody:
 responses:
   "200":
     description: "OK"
-security:
-  - BearerAuth: []
 tags:
-  - config
+  - webhook

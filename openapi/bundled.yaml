@@ -434,10 +434,8 @@ paths:
       responses:
         '200':
           description: OK
-      security:
-        - BearerAuth: []
       tags:
-        - config
+        - webhook
   /webhook/topic/present_proof/:
     post:
       summary: Create webhook present proof
@@ -887,10 +885,8 @@ paths:
       responses:
         '200':
           description: OK
-      security:
-        - BearerAuth: []
       tags:
-        - config
+        - webhook
   /webhook/topic/published_data_disclosure_agreement/:
     post:
       summary: Create webhook data disclosure agreement
@@ -1024,10 +1020,8 @@ paths:
       responses:
         '200':
           description: OK
-      security:
-        - BearerAuth: []
       tags:
-        - config
+        - webhook
   '/service/data-source/{dataSourceId}/coverimage':
     get:
       deprecated: false
@@ -1038,8 +1032,6 @@ paths:
       responses:
         '200':
           headers: {}
-      security:
-        - BearerAuth: []
       tags:
         - service
   '/service/data-source/{dataSourceId}/logoimage':
@@ -1057,8 +1049,6 @@ paths:
       responses:
         '200':
           headers: {}
-      security:
-        - BearerAuth: []
       tags:
         - service
   /service/data-sources/:
@@ -1147,6 +1137,8 @@ paths:
           description: bad input parameter
       tags:
         - config
+      security:
+        - BearerAuth: []
   /config/open-api/url:
     put:
       summary: Update Open API URL
@@ -1230,6 +1222,8 @@ paths:
           description: bad input parameter
       tags:
         - config
+      security:
+        - BearerAuth: []
   '/config/connection/{connectionId}/':
     delete:
       summary: Delete connection
@@ -1370,6 +1364,8 @@ paths:
           description: bad input parameter
       tags:
         - config
+      security:
+        - BearerAuth: []
   /config/data-source/verification/:
     post:
       summary: Create verification
@@ -1687,8 +1683,6 @@ paths:
                   access:
                     type: string
                 type: object
-      security:
-        - BearerAuth: []
       tags:
         - onboard
   /onboard/register/:
@@ -1716,8 +1710,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/paths/~1config~1admin~1/get/responses/200/content/application~1json/schema'
-      security:
-        - BearerAuth: []
       tags:
         - onboard
   /onboard/token/refresh/:
@@ -1762,4 +1754,7 @@ tags:
     x-tag-expanded: true
   - description: This consists of endpoints towards authentication and authorisation.
     name: onboard
+    x-tag-expanded: true
+  - description: This consists of endpoints towards webhook.
+    name: webhook
     x-tag-expanded: true

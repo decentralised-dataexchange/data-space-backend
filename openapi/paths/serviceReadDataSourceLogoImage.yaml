@@ -6,7 +6,5 @@ parameters:
 responses:
   "200":
     headers: {}
-security:
-  - BearerAuth: []
 tags:
   - service
