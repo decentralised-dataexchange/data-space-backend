@@ -1,6 +1,7 @@
 from django.db import models
 from onboard.models import DataspaceUser
 from uuid import uuid4
+from jsonfield.fields import JSONField
 
 # Create your models here.
 
@@ -36,7 +37,7 @@ class Verification(models.Model):
     dataSourceId = models.ForeignKey(DataSource, on_delete=models.CASCADE)
     presentationExchangeId = models.CharField(max_length=50, unique=True)
     presentationState = models.CharField(max_length=50)
-    presentationRecord = models.CharField(max_length=50)
+    presentationRecord = JSONField()
 
     def __str__(self):
         return str(self.id)
@@ -53,6 +54,7 @@ class VerificationTemplate(models.Model):
     issuerLocation = models.CharField(max_length=255, null=True, blank=True)
     issuerLogoUrl = models.CharField(max_length=255, null=True, blank=True)
     dataSourceId = models.ForeignKey(DataSource, on_delete=models.CASCADE)
+    dataAgreementId = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.verificationTemplateName

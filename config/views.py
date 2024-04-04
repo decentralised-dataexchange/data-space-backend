@@ -1,10 +1,16 @@
 from django.http import JsonResponse, HttpResponse
-from .serializers import DataSourceSerializer, VerificationSerializer, VerificationTemplateSerializer
+from .serializers import (
+    DataSourceSerializer,
+    VerificationSerializer,
+    VerificationTemplateSerializer,
+)
 from .models import DataSource, Verification, ImageModel, VerificationTemplate
 from rest_framework.views import APIView
 from rest_framework import status, permissions
 from onboard.serializers import DataspaceUserSerializer
-from uuid import uuid4
+from connection.models import Connection
+from dataspace_backend.settings import DATA_MARKETPLACE_DW_URL, DATA_MARKETPLACE_APIKEY
+import requests
 
 # Create your views here.
 
@@ -19,15 +25,20 @@ class DataSourceView(APIView):
 
         # Check if a DataSource with the same admin already exists
         if DataSource.objects.filter(admin=admin).exists():
-            return JsonResponse({'error': 'A DataSource already exists for this admin'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "A DataSource already exists for this admin"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         request_data = request.data.get("dataSource", {})
 
-        request_data["coverImageUrl"] = "https://" + \
-            request.get_host() + "/config/data-source/coverimage/"
-        request_data["logoUrl"] = "https://" + \
-            request.get_host() + "/config/data-source/logoimage/"
-        
+        request_data["coverImageUrl"] = (
+            "https://" + request.get_host() + "/config/data-source/coverimage/"
+        )
+        request_data["logoUrl"] = (
+            "https://" + request.get_host() + "/config/data-source/logoimage/"
+        )
+
         request_data["openApiUrl"] = ""
 
         # Create and validate the DataSource serializer
@@ -35,74 +46,82 @@ class DataSourceView(APIView):
         if serializer.is_valid():
 
             datasource = DataSource.objects.create(
-                admin=admin, **serializer.validated_data)
+                admin=admin, **serializer.validated_data
+            )
 
             # Serialize the created instance to match the response format
             response_serializer = self.serializer_class(datasource)
-            return JsonResponse({'dataSource': response_serializer.data}, status=status.HTTP_201_CREATED)
+            return JsonResponse(
+                {"dataSource": response_serializer.data}, status=status.HTTP_201_CREATED
+            )
 
-        return JsonResponse({'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return JsonResponse(
+            {"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
+        )
 
     def get(self, request):
 
         try:
             datasource = DataSource.objects.get(admin=request.user)
         except DataSource.DoesNotExist:
-            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Serialize the DataSource instance
         datasource_serializer = self.serializer_class(datasource)
 
         try:
             verification = Verification.objects.get(dataSourceId=datasource)
-            verification_serializer = self.verification_serializer_class(
-                verification)
+            verification_serializer = self.verification_serializer_class(verification)
             verification_data = verification_serializer.data
         except Verification.DoesNotExist:
             # If no Verification exists, return empty data
             verification_data = {
-                'id': '',
-                'dataSourceId': '',
-                'presentationExchangeId': '',
-                'presentationState': '',
-                'presentationRecord': {},
+                "id": "",
+                "dataSourceId": "",
+                "presentationExchangeId": "",
+                "presentationState": "",
+                "presentationRecord": {},
             }
 
         # Construct the response data
         response_data = {
-            'dataSource': datasource_serializer.data,
-            'verification': verification_data,
+            "dataSource": datasource_serializer.data,
+            "verification": verification_data,
         }
 
         return JsonResponse(response_data)
 
     def put(self, request):
-        data = request.data.get('organisation', {})
+        data = request.data.get("organisation", {})
 
         # Get the DataSource instance associated with the current user
         try:
             datasource = DataSource.objects.get(admin=request.user)
         except DataSource.DoesNotExist:
-            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Update the fields if they are not empty
-        if data.get('description'):
-            datasource.description = data['description']
-        if data.get('location'):
-            datasource.location = data['location']
-        if data.get('name'):
-            datasource.name = data['name']
-        if data.get('policyUrl'):
-            datasource.policyUrl = data['policyUrl']
-        if data.get('sector'):
-            datasource.sector = data['sector']
+        if data.get("description"):
+            datasource.description = data["description"]
+        if data.get("location"):
+            datasource.location = data["location"]
+        if data.get("name"):
+            datasource.name = data["name"]
+        if data.get("policyUrl"):
+            datasource.policyUrl = data["policyUrl"]
+        if data.get("sector"):
+            datasource.sector = data["sector"]
 
         # Save the updated DataSource instance
         datasource.save()
 
         # Serialize the updated DataSource instance
         serializer = self.serializer_class(datasource)
-        return JsonResponse({'dataSource': serializer.data}, status=status.HTTP_200_OK)
+        return JsonResponse({"dataSource": serializer.data}, status=status.HTTP_200_OK)
 
 
 class DataSourceCoverImageView(APIView):
@@ -113,25 +132,31 @@ class DataSourceCoverImageView(APIView):
             # Get the DataSource instance
             datasource = DataSource.objects.get(admin=request.user)
         except DataSource.DoesNotExist:
-            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             image = ImageModel.objects.get(pk=datasource.coverImageId)
         except ImageModel.DoesNotExist:
-            return JsonResponse({'error': 'Cover image not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Cover image not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Return the binary image data as the HTTP response
-        return HttpResponse(image.image_data, content_type='image/jpeg')
+        return HttpResponse(image.image_data, content_type="image/jpeg")
 
     def put(self, request):
 
-        uploaded_image = request.FILES.get('orgimage')
+        uploaded_image = request.FILES.get("orgimage")
 
         try:
             # Get the DataSource instance
             datasource = DataSource.objects.get(admin=request.user)
         except DataSource.DoesNotExist:
-            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         if uploaded_image:
             # Read the binary data from the uploaded image file
@@ -147,14 +172,21 @@ class DataSourceCoverImageView(APIView):
 
             image.save()
 
-            datasource.coverImageUrl = "https://" + \
-                request.get_host() + "/service/data-source/" + str(datasource.id) + "/coverimage"
+            datasource.coverImageUrl = (
+                "https://"
+                + request.get_host()
+                + "/service/data-source/"
+                + str(datasource.id)
+                + "/coverimage"
+            )
 
             datasource.save()
 
-            return JsonResponse({'message': 'Image uploaded successfully'})
+            return JsonResponse({"message": "Image uploaded successfully"})
         else:
-            return JsonResponse({'error': 'No image file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class DataSourceLogoImageView(APIView):
@@ -165,25 +197,31 @@ class DataSourceLogoImageView(APIView):
             # Get the DataSource instance
             datasource = DataSource.objects.get(admin=request.user)
         except DataSource.DoesNotExist:
-            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             image = ImageModel.objects.get(pk=datasource.logoId)
         except ImageModel.DoesNotExist:
-            return JsonResponse({'error': 'Logo image not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Logo image not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Return the binary image data as the HTTP response
-        return HttpResponse(image.image_data, content_type='image/jpeg')
+        return HttpResponse(image.image_data, content_type="image/jpeg")
 
     def put(self, request):
 
-        uploaded_image = request.FILES.get('orgimage')
+        uploaded_image = request.FILES.get("orgimage")
 
         try:
             # Get the DataSource instance
             datasource = DataSource.objects.get(admin=request.user)
         except DataSource.DoesNotExist:
-            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         if uploaded_image:
             # Read the binary data from the uploaded image file
@@ -199,13 +237,20 @@ class DataSourceLogoImageView(APIView):
 
             image.save()
 
-            datasource.logoUrl = "https://" + \
-                request.get_host() + "/service/data-source/" + str(datasource.id) + "/logoimage"
+            datasource.logoUrl = (
+                "https://"
+                + request.get_host()
+                + "/service/data-source/"
+                + str(datasource.id)
+                + "/logoimage"
+            )
             datasource.save()
 
-            return JsonResponse({'message': 'Image uploaded successfully'})
+            return JsonResponse({"message": "Image uploaded successfully"})
         else:
-            return JsonResponse({'error': 'No image file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class AdminView(APIView):
@@ -219,11 +264,12 @@ class AdminView(APIView):
     def put(self, request):
         admin = request.user
         request_data = request.data
-        if 'name' not in request_data:
-            return JsonResponse({'error': 'Name field is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if "name" not in request_data:
+            return JsonResponse(
+                {"error": "Name field is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        serializer = self.serializer_class(
-            admin, data=request_data, partial=True)
+        serializer = self.serializer_class(admin, data=request_data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return JsonResponse(serializer.data)
@@ -238,18 +284,22 @@ class DataSourceVerificationView(APIView):
         try:
             datasource = DataSource.objects.get(admin=request.user)
         except DataSource.DoesNotExist:
-            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             verification = Verification.objects.get(dataSourceId=datasource)
-            verification_serializer = self.serializer_class(
-                verification)
+            verification_serializer = self.serializer_class(verification)
         except Verification.DoesNotExist:
-            return JsonResponse({'error': 'Data source verification not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source verification not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Construct the response data
         response_data = {
-            'verification': verification_serializer.data,
+            "verification": verification_serializer.data,
         }
 
         return JsonResponse(response_data)
@@ -258,63 +308,70 @@ class DataSourceVerificationView(APIView):
         try:
             datasource = DataSource.objects.get(admin=request.user)
         except DataSource.DoesNotExist:
-            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Add dummy presentation
-        presentation_exchange_id = str(uuid4())
+        try:
+            connection = Connection.objects.get(dataSourceId=datasource)
+        except Connection.DoesNotExist:
+            return JsonResponse(
+                {"error": "DISP Connection not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        response = {
-            "verificationHistory": {
-                "id": "6603e82d8b3a694e41bf774a",
-                "autoPresent": False,
-                "connectionId": "4e0ca9c3-2537-46bb-8fd8-90868953f3ad",
-                "createdAt": "2024-03-27 09:34:37.016226Z",
-                "errorMsg": "",
-                "initiator": "self",
-                "presentationExchangeId": presentation_exchange_id,
-                "presentationRequest": {
-                    "name": "parking verify 1",
-                    "version": "2.0.0",
-                    "requestedAttributes": {
-                        "additionalProp1": {
-                            "name": "Car name",
-                            "restrictions": []
-                        },
-                        "additionalProp2": {
-                            "name": "Number",
-                            "restrictions": []
-                        }
-                    },
-                    "requestedPredicates": {},
-                    "nonce": "32417908491254422565941"
-                },
-                "role": "verifier",
-                "state": "request_sent",
-                "threadId": "84d0caa4-9fc8-43e9-96d8-514826538b09",
-                "trace": False,
-                "updatedAt": "2024-03-27 09:34:37.068448Z",
-                "verified": False,
-                "dataAgreementId": "87888023-350d-49e6-8c39-4cfe76635823",
-                "dataAgreementTemplateId": "e4eadd72-8f58-4be8-904a-d6c119ca2f00",
-                "dataAgreementStatus": "offer",
-                "dataAgreementProblemReport": ""
-            }
+        try:
+            verificationTemplate = VerificationTemplate.objects.get(
+                dataSourceId=datasource
+            )
+        except VerificationTemplate.DoesNotExist:
+            return JsonResponse(
+                {"error": "Verification template not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data_agreement_id = verificationTemplate.dataAgreementId
+        connection_id = connection.connectionId
+        payload = {
+            "connection_id": connection_id,
+            "data_agreement_id": data_agreement_id,
         }
-        presentation_record = response['verificationHistory']
+        url = (
+            f"{DATA_MARKETPLACE_DW_URL}/present-proof/data-agreement-negotiation/offer"
+        )
+        authorization_header = DATA_MARKETPLACE_APIKEY
+        response = requests.post(
+            url, json=payload, headers={"Authorization": authorization_header}
+        )
+        try:
+            response = requests.post(
+                url, headers={"Authorization": authorization_header}
+            )
+            response.raise_for_status()
+            response = response.json()
+        except requests.exceptions.RequestException as e:
+            return JsonResponse(
+                {"error": f"Error calling digital wallet: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        presentation_exchange_id = response["presentation_exchange_id"]
+        presentation_state = response["state"]
+        presentation_record = response
 
         # Update or create Verification object
         try:
             verification = Verification.objects.get(dataSourceId=datasource)
             verification.presentationExchangeId = presentation_exchange_id
-            verification.presentationState = "request_sent"
+            verification.presentationState = presentation_state
             verification.presentationRecord = presentation_record
             verification.save()
         except Verification.DoesNotExist:
             verification = Verification.objects.create(
                 dataSourceId=datasource,
                 presentationExchangeId=presentation_exchange_id,
-                presentationState="request_sent",
-                presentationRecord=presentation_record
+                presentationState=presentation_state,
+                presentationRecord=presentation_record,
             )
 
         # Serialize the verification object
@@ -322,7 +379,7 @@ class DataSourceVerificationView(APIView):
 
         # Construct the response data
         response_data = {
-            'verification': verification_serializer.data,
+            "verification": verification_serializer.data,
         }
 
         return JsonResponse(response_data)
@@ -336,46 +393,57 @@ class VerificationTemplateView(APIView):
         try:
             datasource = DataSource.objects.get(admin=request.user)
         except DataSource.DoesNotExist:
-            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
-            verification_templates = VerificationTemplate.objects.filter(dataSourceId=datasource)
+            verification_templates = VerificationTemplate.objects.filter(
+                dataSourceId=datasource
+            )
             verification_template_serializer = self.serializer_class(
-                verification_templates, many=True)
+                verification_templates, many=True
+            )
         except VerificationTemplate.DoesNotExist:
-            return JsonResponse({'error': 'Verification templates not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Verification templates not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Construct the response data
         response_data = {
-            'verificationTemplates': verification_template_serializer.data,
+            "verificationTemplates": verification_template_serializer.data,
         }
 
         return JsonResponse(response_data)
-    
+
+
 class DataSourceOpenApiUrlView(APIView):
     serializer_class = DataSourceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def put(self, request):
-        data = request.data.get('dataSource', {})
+        data = request.data.get("dataSource", {})
 
         # Get the DataSource instance associated with the current user
         try:
             datasource = DataSource.objects.get(admin=request.user)
         except DataSource.DoesNotExist:
-            return JsonResponse({'error': 'Data source not found'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Update the fields if they are not empty
-        if data.get('openApiUrl'):
-            datasource.openApiUrl = data['openApiUrl']
+        if data.get("openApiUrl"):
+            datasource.openApiUrl = data["openApiUrl"]
         else:
-            return JsonResponse({'error': 'Missing mandatory field openApiUrl'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(
+                {"error": "Missing mandatory field openApiUrl"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         # Save the updated DataSource instance
         datasource.save()
 
         # Serialize the updated DataSource instance
         serializer = self.serializer_class(datasource)
-        return JsonResponse({'dataSource': serializer.data}, status=status.HTTP_200_OK)
-
-
-
+        return JsonResponse({"dataSource": serializer.data}, status=status.HTTP_200_OK)
