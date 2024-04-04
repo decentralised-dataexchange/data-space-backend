@@ -1,0 +1,16 @@
+summary: Create webhook data disclosure agreement
+description: This endpoint is used to create webhook data disclosure agreement
+operationId: "createWebhookDataDisclosureAgreement"
+requestBody:
+  content:
+    application/json:
+      schema:
+        $ref: "../definitions/PublishDataDisclosureAgreementWebhookEvent.yaml"
+  required: true
+responses:
+  "200":
+    description: "OK"
+security:
+  - BearerAuth: []
+tags:
+  - config

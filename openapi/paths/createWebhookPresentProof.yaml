@@ -1,0 +1,16 @@
+summary: Create webhook present proof
+description: This endpoint is used to create webhook present proof
+operationId: "createWebhookPresentProof"
+requestBody:
+  content:
+    application/json:
+      schema:
+        $ref: "../definitions/PresentProofWebhookEvent.yaml"
+  required: true
+responses:
+  "200":
+    description: "OK"
+security:
+  - BearerAuth: []
+tags:
+  - config

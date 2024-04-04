@@ -47,6 +47,15 @@ info:
   version: 2024.3.1
 openapi: 3.1.0
 paths:
+  /webhook/topic/connections/:
+    post:
+      $ref: "./paths/createWebhookConnection.yaml"
+  /webhook/topic/present_proof/:
+    post:
+      $ref: "./paths/createWebhookPresentProof.yaml"
+  /webhook/topic/published_data_disclosure_agreement/:
+    post:
+      $ref: "./paths/createWebhookDataDisclosureAgreement.yaml"
   /service/data-source/{dataSourceId}/coverimage:
     get:
       $ref: "./paths/serviceReadDataSourceCoverImage.yaml"

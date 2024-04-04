@@ -1,0 +1,40 @@
+title: Connection Webhook Event
+type: object
+properties:
+  initiator:
+    type: string
+  connection_id:
+    type: string
+  accept:
+    type: string
+  routing_state:
+    type: string
+  updated_at:
+    type: string
+  state:
+    type: string
+  created_at:
+    type: string
+  their_did:
+    type: string
+  invitation_key:
+    type: string
+  invitation_mode:
+    type: string
+  my_did:
+    type: string
+  their_label:
+    type: string
+required:
+- initiator
+- connection_id
+- accept
+- routing_state
+- updated_at
+- state
+- created_at
+- their_did
+- invitation_key
+- invitation_mode
+- my_did
+- their_label
