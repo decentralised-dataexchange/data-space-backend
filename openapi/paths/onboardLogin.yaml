@@ -24,7 +24,5 @@ responses:
             access:
               type: string
           type: object
-security:
-  - BearerAuth: []
 tags:
   - onboard

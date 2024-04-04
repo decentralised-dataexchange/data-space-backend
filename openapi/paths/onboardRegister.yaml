@@ -21,7 +21,5 @@ responses:
       application/json:
         schema:
           $ref: "../definitions/OrganisationAdmin.yaml"
-security:
-  - BearerAuth: []
 tags:
   - onboard

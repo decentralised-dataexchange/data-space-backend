@@ -145,3 +145,6 @@ tags:
   - description: This consists of endpoints towards authentication and authorisation.
     name: onboard
     x-tag-expanded: true
+  - description: This consists of endpoints towards webhook.
+    name: webhook
+    x-tag-expanded: true

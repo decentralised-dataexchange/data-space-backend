@@ -30,3 +30,5 @@ responses:
     description: bad input parameter
 tags:
   - config
+security:
+- BearerAuth: []
