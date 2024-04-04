@@ -1,0 +1,120 @@
+title: Publish Data Disclosure Agreement Webhook Event
+type: object
+properties:
+  connection_url:
+    type: string
+  updated_at:
+    type: string
+  created_at:
+    type: string
+  industry_sector:
+    type: string
+  connection_id:
+    type: string
+  template_id:
+    type: string
+  dda:
+    type: object
+    properties:
+      "@context":
+        type: array
+        items:
+          type: string
+      "@id":
+        type: string
+      "@type":
+        type: array
+        items:
+          type: string
+      version:
+        type: string
+      language:
+        type: string
+      dataController:
+        type: object
+        properties:
+          did:
+            type: string
+          name:
+            type: string
+          legalId:
+            type: string
+          url:
+            type: string
+          industrySector:
+            type: string
+        required:
+        - did
+        - name
+        - legalId
+        - url
+        - industrySector
+      agreementPeriod:
+        type: number
+      dataSharingRestrictions:
+        type: object
+        properties:
+          policyUrl:
+            type: string
+          jurisdiction:
+            type: string
+          industrySector:
+            type: string
+          dataRetentionPeriod:
+            type: number
+          geographicRestriction:
+            type: string
+          storageLocation:
+            type: string
+        required:
+        - policyUrl
+        - jurisdiction
+        - industrySector
+        - dataRetentionPeriod
+        - geographicRestriction
+        - storageLocation
+      purpose:
+        type: string
+      purposeDescription:
+        type: string
+      lawfulBasis:
+        type: string
+      personalData:
+        type: array
+        items:
+          type: object
+          properties:
+            attributeId:
+              type: string
+            attributeName:
+              type: string
+            attributeDescription:
+              type: string
+          required:
+          - attributeId
+          - attributeName
+          - attributeDescription
+      codeOfConduct:
+        type: string
+    required:
+    - "@context"
+    - "@id"
+    - "@type"
+    - version
+    - language
+    - dataController
+    - agreementPeriod
+    - dataSharingRestrictions
+    - purpose
+    - purposeDescription
+    - lawfulBasis
+    - personalData
+    - codeOfConduct
+required:
+- connection_url
+- updated_at
+- created_at
+- industry_sector
+- connection_id
+- template_id
+- dda

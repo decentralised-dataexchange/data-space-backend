@@ -381,6 +381,653 @@ info:
   version: 2024.3.1
 openapi: 3.1.0
 paths:
+  /webhook/topic/connections/:
+    post:
+      summary: Create webhook connection
+      description: This endpoint is used to create webhook connection
+      operationId: createWebhookConnection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: Connection Webhook Event
+              type: object
+              properties:
+                initiator:
+                  type: string
+                connection_id:
+                  type: string
+                accept:
+                  type: string
+                routing_state:
+                  type: string
+                updated_at:
+                  type: string
+                state:
+                  type: string
+                created_at:
+                  type: string
+                their_did:
+                  type: string
+                invitation_key:
+                  type: string
+                invitation_mode:
+                  type: string
+                my_did:
+                  type: string
+                their_label:
+                  type: string
+              required:
+                - initiator
+                - connection_id
+                - accept
+                - routing_state
+                - updated_at
+                - state
+                - created_at
+                - their_did
+                - invitation_key
+                - invitation_mode
+                - my_did
+                - their_label
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+  /webhook/topic/present_proof/:
+    post:
+      summary: Create webhook present proof
+      description: This endpoint is used to create webhook present proof
+      operationId: createWebhookPresentProof
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: Present Proof Webhook Event
+              type: object
+              properties:
+                data_agreement_id:
+                  type: string
+                trace:
+                  type: boolean
+                presentation_request:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    version:
+                      type: string
+                    requested_attributes:
+                      type: object
+                      properties:
+                        additionalProp1:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            restrictions:
+                              type: array
+                              items: {}
+                          required:
+                            - name
+                            - restrictions
+                        additionalProp2:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            restrictions:
+                              type: array
+                              items: {}
+                          required:
+                            - name
+                            - restrictions
+                      required:
+                        - additionalProp1
+                        - additionalProp2
+                    requested_predicates:
+                      type: object
+                      properties: {}
+                      required: []
+                    nonce:
+                      type: string
+                  required:
+                    - name
+                    - version
+                    - requested_attributes
+                    - requested_predicates
+                    - nonce
+                updated_at:
+                  type: string
+                created_at:
+                  type: string
+                initiator:
+                  type: string
+                auto_present:
+                  type: boolean
+                presentation_request_dict:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                    '@id':
+                      type: string
+                    ~data-agreement-context:
+                      type: object
+                      properties:
+                        message_type:
+                          type: string
+                        message:
+                          type: object
+                          properties:
+                            '@type':
+                              type: string
+                            '@id':
+                              type: string
+                            created_time:
+                              type: string
+                            from:
+                              type: string
+                            body:
+                              type: object
+                              properties:
+                                '@context':
+                                  type: array
+                                  items:
+                                    type: string
+                                id:
+                                  type: string
+                                version:
+                                  type: number
+                                template_id:
+                                  type: string
+                                template_version:
+                                  type: number
+                                data_controller_name:
+                                  type: string
+                                data_controller_url:
+                                  type: string
+                                purpose:
+                                  type: string
+                                purpose_description:
+                                  type: string
+                                lawful_basis:
+                                  type: string
+                                method_of_use:
+                                  type: string
+                                data_policy:
+                                  type: object
+                                  properties:
+                                    data_retention_period:
+                                      type: number
+                                    policy_URL:
+                                      type: string
+                                    jurisdiction:
+                                      type: string
+                                    industry_sector:
+                                      type: string
+                                    geographic_restriction:
+                                      type: string
+                                    storage_location:
+                                      type: string
+                                  required:
+                                    - data_retention_period
+                                    - policy_URL
+                                    - jurisdiction
+                                    - industry_sector
+                                    - geographic_restriction
+                                    - storage_location
+                                personal_data:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      attribute_id:
+                                        type: string
+                                      attribute_name:
+                                        type: string
+                                      attribute_sensitive:
+                                        type: boolean
+                                      attribute_category:
+                                        type: string
+                                      attribute_description:
+                                        type: string
+                                    required:
+                                      - attribute_id
+                                      - attribute_name
+                                      - attribute_sensitive
+                                      - attribute_category
+                                      - attribute_description
+                                dpia:
+                                  type: object
+                                  properties:
+                                    dpia_date:
+                                      type: string
+                                    dpia_summary_url:
+                                      type: string
+                                  required:
+                                    - dpia_date
+                                    - dpia_summary_url
+                                event:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      id:
+                                        type: string
+                                      time_stamp:
+                                        type: string
+                                      did:
+                                        type: string
+                                      state:
+                                        type: string
+                                    required:
+                                      - id
+                                      - time_stamp
+                                      - did
+                                      - state
+                                proof:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                    type:
+                                      type: string
+                                    created:
+                                      type: string
+                                    verificationMethod:
+                                      type: string
+                                    proofPurpose:
+                                      type: string
+                                    proofValue:
+                                      type: string
+                                  required:
+                                    - id
+                                    - type
+                                    - created
+                                    - verificationMethod
+                                    - proofPurpose
+                                    - proofValue
+                                data_subject_did:
+                                  type: string
+                              required:
+                                - '@context'
+                                - id
+                                - version
+                                - template_id
+                                - template_version
+                                - data_controller_name
+                                - data_controller_url
+                                - purpose
+                                - purpose_description
+                                - lawful_basis
+                                - method_of_use
+                                - data_policy
+                                - personal_data
+                                - dpia
+                                - event
+                                - proof
+                                - data_subject_did
+                            to:
+                              type: string
+                          required:
+                            - '@type'
+                            - '@id'
+                            - created_time
+                            - from
+                            - body
+                            - to
+                      required:
+                        - message_type
+                        - message
+                    request_presentations~attach:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          '@id':
+                            type: string
+                          mime-type:
+                            type: string
+                          data:
+                            type: object
+                            properties:
+                              base64:
+                                type: string
+                            required:
+                              - base64
+                        required:
+                          - '@id'
+                          - mime-type
+                          - data
+                    comment:
+                      type: string
+                  required:
+                    - '@type'
+                    - '@id'
+                    - ~data-agreement-context
+                    - request_presentations~attach
+                    - comment
+                state:
+                  type: string
+                data_agreement_status:
+                  type: string
+                presentation_exchange_id:
+                  type: string
+                thread_id:
+                  type: string
+                connection_id:
+                  type: string
+                data_agreement_template_id:
+                  type: string
+                role:
+                  type: string
+                data_agreement:
+                  type: object
+                  properties:
+                    '@context':
+                      type: array
+                      items:
+                        type: string
+                    id:
+                      type: string
+                    version:
+                      type: number
+                    template_id:
+                      type: string
+                    template_version:
+                      type: number
+                    data_controller_name:
+                      type: string
+                    data_controller_url:
+                      type: string
+                    purpose:
+                      type: string
+                    purpose_description:
+                      type: string
+                    lawful_basis:
+                      type: string
+                    method_of_use:
+                      type: string
+                    data_policy:
+                      type: object
+                      properties:
+                        data_retention_period:
+                          type: number
+                        policy_URL:
+                          type: string
+                        jurisdiction:
+                          type: string
+                        industry_sector:
+                          type: string
+                        geographic_restriction:
+                          type: string
+                        storage_location:
+                          type: string
+                      required:
+                        - data_retention_period
+                        - policy_URL
+                        - jurisdiction
+                        - industry_sector
+                        - geographic_restriction
+                        - storage_location
+                    personal_data:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          attribute_id:
+                            type: string
+                          attribute_name:
+                            type: string
+                          attribute_sensitive:
+                            type: boolean
+                          attribute_category:
+                            type: string
+                          attribute_description:
+                            type: string
+                        required:
+                          - attribute_id
+                          - attribute_name
+                          - attribute_sensitive
+                          - attribute_category
+                          - attribute_description
+                    dpia:
+                      type: object
+                      properties:
+                        dpia_date:
+                          type: string
+                        dpia_summary_url:
+                          type: string
+                      required:
+                        - dpia_date
+                        - dpia_summary_url
+                    event:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          time_stamp:
+                            type: string
+                          did:
+                            type: string
+                          state:
+                            type: string
+                        required:
+                          - id
+                          - time_stamp
+                          - did
+                          - state
+                    proof:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          type: string
+                        created:
+                          type: string
+                        verificationMethod:
+                          type: string
+                        proofPurpose:
+                          type: string
+                        proofValue:
+                          type: string
+                      required:
+                        - id
+                        - type
+                        - created
+                        - verificationMethod
+                        - proofPurpose
+                        - proofValue
+                    data_subject_did:
+                      type: string
+                  required:
+                    - '@context'
+                    - id
+                    - version
+                    - template_id
+                    - template_version
+                    - data_controller_name
+                    - data_controller_url
+                    - purpose
+                    - purpose_description
+                    - lawful_basis
+                    - method_of_use
+                    - data_policy
+                    - personal_data
+                    - dpia
+                    - event
+                    - proof
+                    - data_subject_did
+              required:
+                - data_agreement_id
+                - trace
+                - presentation_request
+                - updated_at
+                - created_at
+                - initiator
+                - auto_present
+                - presentation_request_dict
+                - state
+                - data_agreement_status
+                - presentation_exchange_id
+                - thread_id
+                - connection_id
+                - data_agreement_template_id
+                - role
+                - data_agreement
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - config
+  /webhook/topic/published_data_disclosure_agreement/:
+    post:
+      summary: Create webhook data disclosure agreement
+      description: This endpoint is used to create webhook data disclosure agreement
+      operationId: createWebhookDataDisclosureAgreement
+      requestBody:
+        content:
+          application/json:
+            schema:
+              title: Publish Data Disclosure Agreement Webhook Event
+              type: object
+              properties:
+                connection_url:
+                  type: string
+                updated_at:
+                  type: string
+                created_at:
+                  type: string
+                industry_sector:
+                  type: string
+                connection_id:
+                  type: string
+                template_id:
+                  type: string
+                dda:
+                  type: object
+                  properties:
+                    '@context':
+                      type: array
+                      items:
+                        type: string
+                    '@id':
+                      type: string
+                    '@type':
+                      type: array
+                      items:
+                        type: string
+                    version:
+                      type: string
+                    language:
+                      type: string
+                    dataController:
+                      type: object
+                      properties:
+                        did:
+                          type: string
+                        name:
+                          type: string
+                        legalId:
+                          type: string
+                        url:
+                          type: string
+                        industrySector:
+                          type: string
+                      required:
+                        - did
+                        - name
+                        - legalId
+                        - url
+                        - industrySector
+                    agreementPeriod:
+                      type: number
+                    dataSharingRestrictions:
+                      type: object
+                      properties:
+                        policyUrl:
+                          type: string
+                        jurisdiction:
+                          type: string
+                        industrySector:
+                          type: string
+                        dataRetentionPeriod:
+                          type: number
+                        geographicRestriction:
+                          type: string
+                        storageLocation:
+                          type: string
+                      required:
+                        - policyUrl
+                        - jurisdiction
+                        - industrySector
+                        - dataRetentionPeriod
+                        - geographicRestriction
+                        - storageLocation
+                    purpose:
+                      type: string
+                    purposeDescription:
+                      type: string
+                    lawfulBasis:
+                      type: string
+                    personalData:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          attributeId:
+                            type: string
+                          attributeName:
+                            type: string
+                          attributeDescription:
+                            type: string
+                        required:
+                          - attributeId
+                          - attributeName
+                          - attributeDescription
+                    codeOfConduct:
+                      type: string
+                  required:
+                    - '@context'
+                    - '@id'
+                    - '@type'
+                    - version
+                    - language
+                    - dataController
+                    - agreementPeriod
+                    - dataSharingRestrictions
+                    - purpose
+                    - purposeDescription
+                    - lawfulBasis
+                    - personalData
+                    - codeOfConduct
+              required:
+                - connection_url
+                - updated_at
+                - created_at
+                - industry_sector
+                - connection_id
+                - template_id
+                - dda
+        required: true
+      responses:
+        '200':
+          description: OK
+      security:
+        - BearerAuth: []
+      tags:
+        - config
   '/service/data-source/{dataSourceId}/coverimage':
     get:
       deprecated: false
@@ -781,7 +1428,7 @@ paths:
                       type: string
                     policyUrl:
                       type: string
-                    required:
+                    sector:
                       - name
                       - location
                       - description
@@ -997,11 +1644,11 @@ paths:
           application/json:
             schema:
               properties:
-                oldPassword:
+                old_password:
                   type: string
-                newPassword1:
+                new_password1:
                   type: string
-                newPassword2:
+                new_password2:
                   type: string
               type: object
         required: true
