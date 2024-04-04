@@ -9,4 +9,6 @@ then
     python manage.py createsuperuser --noinput
 fi
 
+python manage.py collectstatic
+
 exec "$@"
