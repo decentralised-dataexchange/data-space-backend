@@ -18,11 +18,9 @@ from data_disclosure_agreement.signals import (
 def verify_certificate(request):
     response = request.body
     response = json.loads(response)
-    presentation_exchange_id = response["data"]["presentation"][
-        "presentationExchangeId"
-    ]
-    presentation_state = response["data"]["presentation"]["state"]
-    presentation_record = response["data"]["presentation"]
+    presentation_exchange_id = response["presentation_exchange_id"]
+    presentation_state = response["state"]
+    presentation_record = response
     try:
         verification = Verification.objects.get(
             presentationExchangeId=presentation_exchange_id
