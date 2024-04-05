@@ -7,7 +7,12 @@ from .serializers import (
 )
 from .models import DataSource, Verification, ImageModel, VerificationTemplate
 from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from rest_framework import status, permissions
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_auth.serializers import PasswordChangeSerializer
+from rest_auth.views import sensitive_post_parameters_m
 from onboard.serializers import DataspaceUserSerializer
 from connection.models import Connection
 from dataspace_backend.settings import DATA_MARKETPLACE_DW_URL, DATA_MARKETPLACE_APIKEY
@@ -16,15 +21,25 @@ import requests
 # Create your views here.
 
 
-def construct_cover_image_url(baseurl: str, is_public_endpoint: bool = False):
+def construct_cover_image_url(
+    baseurl: str,
+    data_source_id: str,
+    is_public_endpoint: bool = False
+):
     protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
-    endpoint = "/service/data-source/logoimage/" if is_public_endpoint else "/config/data-source/logoimage/"
+    url_prefix = "service" if is_public_endpoint else "config"
+    endpoint = f"/{url_prefix}/data-source/{data_source_id}/coverimage/"
     return f"{protocol}{baseurl}{endpoint}"
 
 
-def construct_logo_image_url(baseurl: str, is_public_endpoint: bool = False):
+def construct_logo_image_url(
+    baseurl: str,
+    data_source_id: str,
+    is_public_endpoint: bool = False
+):
     protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
-    endpoint = "/service/data-source/logoimage/" if is_public_endpoint else "/config/data-source/logoimage/"
+    url_prefix = "service" if is_public_endpoint else "config"
+    endpoint = f"/{url_prefix}/data-source/{data_source_id}/logoimage/"
     return f"{protocol}{baseurl}{endpoint}"
 
 
@@ -45,14 +60,8 @@ class DataSourceView(APIView):
 
         request_data = request.data.get("dataSource", {})
 
-        request_data["coverImageUrl"] = construct_cover_image_url(
-            baseurl=request.get_host(),
-            is_public_endpoint=False
-        )
-        request_data["logoUrl"] = construct_logo_image_url(
-            baseurl=request.get_host(),
-            is_public_endpoint=False
-        )
+        request_data["coverImageUrl"] = "nil"
+        request_data["logoUrl"] = "nil"
 
         request_data["openApiUrl"] = ""
 
@@ -63,6 +72,20 @@ class DataSourceView(APIView):
             datasource = DataSource.objects.create(
                 admin=admin, **serializer.validated_data
             )
+
+            # TODO: Add default cover image and logo image URL
+            # Update data source with cover and logo image URL
+            datasource.coverImageUrl = construct_cover_image_url(
+                baseurl=request.get_host(),
+                data_source_id=str(datasource.id),
+                is_public_endpoint=True
+            )
+            datasource.logoUrl = construct_logo_image_url(
+                baseurl=request.get_host(),
+                data_source_id=str(datasource.id),
+                is_public_endpoint=True
+            )
+            datasource.save()
 
             # Serialize the created instance to match the response format
             response_serializer = self.serializer_class(datasource)
@@ -189,6 +212,7 @@ class DataSourceCoverImageView(APIView):
 
             datasource.coverImageUrl = construct_cover_image_url(
                 baseurl=request.get_host(),
+                data_source_id=str(datasource.id),
                 is_public_endpoint=True
             )
 
@@ -251,6 +275,7 @@ class DataSourceLogoImageView(APIView):
 
             datasource.logoUrl = construct_logo_image_url(
                 baseurl=request.get_host(),
+                data_source_id=str(datasource.id),
                 is_public_endpoint=True
             )
             datasource.save()
@@ -456,3 +481,24 @@ class DataSourceOpenApiUrlView(APIView):
         # Serialize the updated DataSource instance
         serializer = self.serializer_class(datasource)
         return JsonResponse({"dataSource": serializer.data}, status=status.HTTP_200_OK)
+
+
+class PasswordChangeView(GenericAPIView):
+    """
+    Calls Django Auth SetPasswordForm save method.
+
+    Accepts the following POST parameters: new_password1, new_password2
+    Returns the success/fail message.
+    """
+    serializer_class = PasswordChangeSerializer
+    permission_classes = (IsAuthenticated,)
+
+    @sensitive_post_parameters_m
+    def dispatch(self, *args, **kwargs):
+        return super(PasswordChangeView, self).dispatch(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "New password has been saved."})

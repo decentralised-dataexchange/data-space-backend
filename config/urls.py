@@ -2,7 +2,7 @@ from django.urls import path, include
 from .views import DataSourceView, DataSourceCoverImageView, DataSourceLogoImageView, AdminView, DataSourceVerificationView, VerificationTemplateView, DataSourceOpenApiUrlView
 from connection.views import DISPConnectionView, DISPConnectionsView
 from data_disclosure_agreement.views import DataDisclosureAgreementsView
-from rest_auth.views import PasswordChangeView
+from config.views import PasswordChangeView
 from django.views.decorators.csrf import csrf_exempt
 
 urlpatterns = [
