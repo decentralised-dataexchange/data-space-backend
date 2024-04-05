@@ -46,9 +46,13 @@ class DataDisclosureAgreementView(APIView):
         serializer = self.serializer_class(
             data_disclosure_agreement, context={"request": request}
         )
+        dda = serializer.data["dataDisclosureAgreementRecord"]
+        dda['status'] = serializer.data['status']
+        dda['isLatestVersion'] = serializer.data['isLatestVersion']
         response_data = {
-            "dataDisclosureAgreement": serializer.data["dataDisclosureAgreementRecord"],
+            "dataDisclosureAgreement": dda,
         }
+
         return JsonResponse(response_data)
 
     def delete(self, request, dataDisclosureAgreementId):
@@ -116,8 +120,9 @@ class DataDisclosureAgreementsView(APIView):
                         temp_dda = dda["dataDisclosureAgreementRecord"]
                     else:
                         revisions.append(dda["dataDisclosureAgreementRecord"])
-                temp_dda["revisions"] = revisions
-                ddas.append(temp_dda)
+                if temp_dda:
+                    temp_dda["revisions"] = revisions
+                    ddas.append(temp_dda)
         else:
             temp_dda = {}
             for dda_template_id in data_disclosure_agreements_template_ids:
