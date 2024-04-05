@@ -64,7 +64,7 @@ class DataSourcesView(View):
             data_sources = DataSource.objects.filter(pk=dataSourceId_param)
         else:
             data_sources = DataSource.objects.all()
-            
+
         data_sources, pagination_data = paginate_queryset(data_sources, request)
         serialized_data_sources = []
         for data_source in data_sources:
@@ -84,11 +84,16 @@ class DataSourcesView(View):
                 data_disclosure_agreement_serializer = (
                     DataDisclosureAgreementsSerializer(dda_for_template_id)
                 )
-                ddas.append(
-                    data_disclosure_agreement_serializer.data[
-                        "dataDisclosureAgreementRecord"
+                dda = data_disclosure_agreement_serializer.data[
+                    "dataDisclosureAgreementRecord"
+                ]
+
+                if dda:
+                    dda["status"] = data_disclosure_agreement_serializer.data["status"]
+                    dda["isLatestVersion"] = data_disclosure_agreement_serializer.data[
+                        "isLatestVersion"
                     ]
-                )
+                    ddas.append(dda)
 
             try:
                 verification = Verification.objects.get(dataSourceId=data_source)
