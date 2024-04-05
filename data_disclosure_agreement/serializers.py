@@ -11,4 +11,4 @@ class DataDisclosureAgreementsSerializer(serializers.ModelSerializer):
 class DataDisclosureAgreementSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataDisclosureAgreement
-        fields = ['dataDisclosureAgreementRecord']
+        fields = ['dataDisclosureAgreementRecord','status','isLatestVersion']
