@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import DataDisclosureAgreement
+from customadminsite.admin import myadminsite
 
 # Register your models here.
-admin.site.register(DataDisclosureAgreement)
+myadminsite.register(DataDisclosureAgreement)
