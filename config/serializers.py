@@ -22,4 +22,3 @@ class DataSourceSerializer(serializers.ModelSerializer):
 class VerificationTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = VerificationTemplate
-        exclude = ['dataSourceId']

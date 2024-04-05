@@ -355,9 +355,7 @@ class DataSourceVerificationView(APIView):
             )
 
         try:
-            verificationTemplate = VerificationTemplate.objects.get(
-                dataSourceId=datasource
-            )
+            verificationTemplate = VerificationTemplate.objects.first()
         except VerificationTemplate.DoesNotExist:
             return JsonResponse(
                 {"error": "Verification template not found"},
@@ -368,18 +366,15 @@ class DataSourceVerificationView(APIView):
         connection_id = connection.connectionId
         payload = {
             "connection_id": connection_id,
-            "data_agreement_id": data_agreement_id,
+            "template_id": data_agreement_id,
         }
         url = (
             f"{DATA_MARKETPLACE_DW_URL}/present-proof/data-agreement-negotiation/offer"
         )
         authorization_header = DATA_MARKETPLACE_APIKEY
-        response = requests.post(
-            url, json=payload, headers={"Authorization": authorization_header}
-        )
         try:
             response = requests.post(
-                url, headers={"Authorization": authorization_header}
+                url, headers={"Authorization": authorization_header}, json=payload
             )
             response.raise_for_status()
             response = response.json()
@@ -432,12 +427,14 @@ class VerificationTemplateView(APIView):
             )
 
         try:
-            verification_templates = VerificationTemplate.objects.filter(
-                dataSourceId=datasource
+            vt_objects = VerificationTemplate.objects.all()
+            vt_serialiser = self.serializer_class(
+                vt_objects, many=True
             )
-            verification_template_serializer = self.serializer_class(
-                verification_templates, many=True
-            )
+            verification_templates = vt_serialiser.data
+            for verification_template in verification_templates:
+                verification_template["walletName"] = datasource.name
+                verification_template["walletLocation"] = datasource.location
         except VerificationTemplate.DoesNotExist:
             return JsonResponse(
                 {"error": "Verification templates not found"},
@@ -446,7 +443,7 @@ class VerificationTemplateView(APIView):
 
         # Construct the response data
         response_data = {
-            "verificationTemplates": verification_template_serializer.data,
+            "verificationTemplates": vt_serialiser.data,
         }
 
         return JsonResponse(response_data)
