@@ -17,6 +17,7 @@ from onboard.serializers import DataspaceUserSerializer
 from connection.models import Connection
 from dataspace_backend.settings import DATA_MARKETPLACE_DW_URL, DATA_MARKETPLACE_APIKEY
 import requests
+from dataspace_backend import settings
 
 # Create your views here.
 
@@ -41,6 +42,25 @@ def construct_logo_image_url(
     url_prefix = "service" if is_public_endpoint else "config"
     endpoint = f"/{url_prefix}/data-source/{data_source_id}/logoimage/"
     return f"{protocol}{baseurl}{endpoint}"
+
+def load_default_cover_image():
+    cover_image_path = os.path.join(settings.BASE_DIR, "resources","assets", "cover.jpeg")
+
+    with open(cover_image_path, 'rb') as cover_image_file:
+        image_data = cover_image_file.read()
+        image = ImageModel(image_data=image_data)
+        image.save()
+        return image.id
+
+def load_default_logo_image():
+    logo_image_path = os.path.join(settings.BASE_DIR, "resources","assets", "logo.jpeg")
+
+    with open(logo_image_path, 'rb') as logo_image_file:
+        image_data = logo_image_file.read()
+        image = ImageModel(image_data=image_data)
+        image.save()
+        return image.id
+    
 
 
 class DataSourceView(APIView):
@@ -73,7 +93,12 @@ class DataSourceView(APIView):
                 admin=admin, **serializer.validated_data
             )
 
-            # TODO: Add default cover image and logo image URL
+            # Add default cover image and logo image URL
+            cover_image_id = load_default_cover_image()
+            logo_image_id = load_default_logo_image()
+            datasource.coverImageId = cover_image_id
+            datasource.logoId = logo_image_id
+            
             # Update data source with cover and logo image URL
             datasource.coverImageUrl = construct_cover_image_url(
                 baseurl=request.get_host(),
