@@ -18,9 +18,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from customadminsite.admin import myadminsite
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("admin/", myadminsite.urls),
+    path("superadmin/", admin.site.urls),
     path("onboard/", include("onboard.urls")),
     path("config/", include("config.urls")),
     path('webhook/', include("webhook.urls")),
