@@ -151,6 +151,8 @@ REST_FRAMEWORK = {
     ],
 }
 
+OLD_PASSWORD_FIELD_ENABLED = True
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
 }
