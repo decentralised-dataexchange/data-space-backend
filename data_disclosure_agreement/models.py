@@ -3,7 +3,7 @@ from django.db import models
 from uuid import uuid4
 from jsonfield.fields import JSONField
 from config.models import DataSource
-from time import time_ns
+from time import time
 
 
 # Create your models here.
@@ -25,7 +25,7 @@ class DataDisclosureAgreement(models.Model):
     )
     dataSourceId = models.ForeignKey(DataSource, on_delete=models.CASCADE)
     dataDisclosureAgreementRecord = JSONField()
-    createdAt = models.IntegerField(default=time_ns, editable=False)
+    createdAt = models.DateTimeField(auto_now_add=True)
     isLatestVersion = models.BooleanField(default=True)
 
     @staticmethod
