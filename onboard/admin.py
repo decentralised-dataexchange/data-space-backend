@@ -17,10 +17,11 @@ class CustomUserChangeForm(UserChangeForm):
         fields = ("email",)
 
 
-class DataspaceUserAdmin(BaseUserAdmin):
+class DataspaceUserAdmin(BaseUserAdmin, admin.ModelAdmin):
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
     model = DataspaceUser
+    filter_horizontal = ('groups', 'user_permissions')
     list_display = (
         "email",
         "is_staff",
@@ -42,6 +43,7 @@ class DataspaceUserAdmin(BaseUserAdmin):
                     "is_staff",
                     "is_active",
                     "name",
+                    "user_permissions",  # Include user permissions field
                 )
             },
         ),
@@ -58,6 +60,7 @@ class DataspaceUserAdmin(BaseUserAdmin):
                     "is_staff",
                     "is_active",
                     "name",
+                    "user_permissions",  # Include user permissions field
                 ),
             },
         ),
