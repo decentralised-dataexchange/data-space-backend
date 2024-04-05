@@ -1,3 +1,4 @@
+import os
 from django.http import JsonResponse, HttpResponse
 from .serializers import (
     DataSourceSerializer,
@@ -13,6 +14,18 @@ from dataspace_backend.settings import DATA_MARKETPLACE_DW_URL, DATA_MARKETPLACE
 import requests
 
 # Create your views here.
+
+
+def construct_cover_image_url(baseurl: str, is_public_endpoint: bool = False):
+    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
+    endpoint = "/service/data-source/logoimage/" if is_public_endpoint else "/config/data-source/logoimage/"
+    return f"{protocol}{baseurl}{endpoint}"
+
+
+def construct_logo_image_url(baseurl: str, is_public_endpoint: bool = False):
+    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
+    endpoint = "/service/data-source/logoimage/" if is_public_endpoint else "/config/data-source/logoimage/"
+    return f"{protocol}{baseurl}{endpoint}"
 
 
 class DataSourceView(APIView):
@@ -32,11 +45,13 @@ class DataSourceView(APIView):
 
         request_data = request.data.get("dataSource", {})
 
-        request_data["coverImageUrl"] = (
-            "https://" + request.get_host() + "/config/data-source/coverimage/"
+        request_data["coverImageUrl"] = construct_cover_image_url(
+            baseurl=request.get_host(),
+            is_public_endpoint=False
         )
-        request_data["logoUrl"] = (
-            "https://" + request.get_host() + "/config/data-source/logoimage/"
+        request_data["logoUrl"] = construct_logo_image_url(
+            baseurl=request.get_host(),
+            is_public_endpoint=False
         )
 
         request_data["openApiUrl"] = ""
@@ -172,12 +187,9 @@ class DataSourceCoverImageView(APIView):
 
             image.save()
 
-            datasource.coverImageUrl = (
-                "https://"
-                + request.get_host()
-                + "/service/data-source/"
-                + str(datasource.id)
-                + "/coverimage"
+            datasource.coverImageUrl = construct_cover_image_url(
+                baseurl=request.get_host(),
+                is_public_endpoint=True
             )
 
             datasource.save()
@@ -237,12 +249,9 @@ class DataSourceLogoImageView(APIView):
 
             image.save()
 
-            datasource.logoUrl = (
-                "https://"
-                + request.get_host()
-                + "/service/data-source/"
-                + str(datasource.id)
-                + "/logoimage"
+            datasource.logoUrl = construct_logo_image_url(
+                baseurl=request.get_host(),
+                is_public_endpoint=True
             )
             datasource.save()
 
