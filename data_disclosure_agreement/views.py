@@ -107,37 +107,41 @@ class DataDisclosureAgreementsView(APIView):
         if status_param:
             temp_dda = {}
             for dda_template_id in data_disclosure_agreements_template_ids:
-                ddas_for_template_id = DataDisclosureAgreement.list_by_data_source_id(
-                    templateId=dda_template_id,
-                    data_source_id=datasource.id,
-                    status=status_param,
+                latest_dda_for_template_id = (
+                    DataDisclosureAgreement.objects.filter(
+                        templateId=dda_template_id,
+                        dataSourceId=datasource,
+                        status=status_param,
+                    )
+                    .order_by("-createdAt")
+                    .first()
                 )
-                revisions = []
-                serializer = self.serializer_class(ddas_for_template_id, many=True)
+                
+                serializer = self.serializer_class(latest_dda_for_template_id)
+                temp_dda = serializer.data["dataDisclosureAgreementRecord"]
 
-                for index, dda in enumerate(serializer.data):
-                    if index == 0:
-                        temp_dda = dda["dataDisclosureAgreementRecord"]
-                    else:
-                        revisions.append(dda["dataDisclosureAgreementRecord"])
                 if temp_dda:
-                    temp_dda["revisions"] = revisions
+                    temp_dda['status'] = serializer.data['status']
+                    temp_dda['isLatestVersion'] = serializer.data['isLatestVersion']
                     ddas.append(temp_dda)
         else:
             temp_dda = {}
             for dda_template_id in data_disclosure_agreements_template_ids:
-                ddas_for_template_id = DataDisclosureAgreement.list_by_data_source_id(
-                    templateId=dda_template_id, data_source_id=datasource.id
+                latest_dda_for_template_id = (
+                    DataDisclosureAgreement.objects.filter(
+                        templateId=dda_template_id,
+                        dataSourceId=datasource,
+                        isLatestVersion=True,
+                    )
+                    .order_by("-createdAt")
+                    .first()
                 )
-                revisions = []
-                serializer = self.serializer_class(ddas_for_template_id, many=True)
-                for dda in serializer.data:
-                    if dda["isLatestVersion"]:
-                        temp_dda = dda["dataDisclosureAgreementRecord"]
-                    else:
-                        revisions.append(dda["dataDisclosureAgreementRecord"])
-                temp_dda["revisions"] = revisions
-                ddas.append(temp_dda)
+                serializer = self.serializer_class(latest_dda_for_template_id)
+                temp_dda = serializer.data["dataDisclosureAgreementRecord"]
+                if temp_dda:
+                    temp_dda['status'] = serializer.data['status']
+                    temp_dda['isLatestVersion'] = serializer.data['isLatestVersion']
+                    ddas.append(temp_dda)
 
         ddas, pagination_data = paginate_queryset(ddas, request)
 
