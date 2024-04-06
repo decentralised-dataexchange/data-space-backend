@@ -92,7 +92,6 @@ def receive_data_disclosure_agreement(request):
             "personalData": response["dda"]["personalData"],
             "codeOfConduct": response["dda"]["codeOfConduct"],
             "connection": dda_connection,
-            "status": "unlisted",
         }
         post_save.connect(
             query_ddas_and_update_is_latest_flag_to_false_for_previous_versions,
