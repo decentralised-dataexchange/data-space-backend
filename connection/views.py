@@ -112,14 +112,14 @@ class DISPConnectionsView(APIView):
             )
 
         try:
-            connections = Connection.objects.filter(dataSourceId=datasource)
+            connections = Connection.objects.filter(dataSourceId=datasource,connectionState = "active")
             connections, pagination_data = paginate_queryset(connections, request)
             serializer = DISPConnectionSerializer(connections, many=True)
             connection_data = serializer.data
 
         except Connection.DoesNotExist:
             # If no connection exists, return empty data
-            connection_data = None
+            connection_data = []
             pagination_data = {
                 "currentPage": 0,
                 "totalItems": 0,
