@@ -152,19 +152,25 @@ class DataDisclosureAgreementsView(APIView):
         return JsonResponse(response_data)
 
 
+def validate_update_dda_request_body(to_be_updated_status: str, current_status: str):
+    if current_status == "unlisted" and to_be_updated_status == "awaitingForApproval":
+        return True
+    elif current_status == "approved" and to_be_updated_status == "listed":
+        return True
+    elif current_status == "rejected" and to_be_updated_status == "awaitingForApproval":
+        return True
+    elif current_status == "listed" and to_be_updated_status == "unlisted":
+        return True
+    else:
+        return False
+
+
 class DataDisclosureAgreementUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def put(self, request, dataDisclosureAgreementId):
 
         to_be_updated_status = request.data.get("status")
-
-        allowed_statuses = ["listed", "unlisted", "awaitingForApproval"]
-        if to_be_updated_status not in allowed_statuses:
-            return JsonResponse(
-                {"error": "Updating status to this value is not allowed"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
         try:
             datasource = DataSource.objects.get(admin=request.user)
@@ -184,17 +190,22 @@ class DataDisclosureAgreementUpdateView(APIView):
                 {"error": "Data Disclosure Agreement not found"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        
+        is_valid_dda_status = validate_update_dda_request_body(
+            to_be_updated_status=to_be_updated_status,
+            current_status=data_disclosure_agreement.status,
+        )
 
-        if data_disclosure_agreement.status not in ["approved", "listed", "unlisted"]:
+        if is_valid_dda_status:
+            dda_record = data_disclosure_agreement.dataDisclosureAgreementRecord
+            dda_record["status"] = to_be_updated_status
+            data_disclosure_agreement.status = to_be_updated_status
+            data_disclosure_agreement.dataDisclosureAgreementRecord = dda_record
+            data_disclosure_agreement.save()
+            
+            return JsonResponse({}, status=status.HTTP_204_NO_CONTENT)
+        else:
             return JsonResponse(
                 {"error": "Data Disclosure Agreement status cannot be updated"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        dda_record = data_disclosure_agreement.dataDisclosureAgreementRecord
-        dda_record["status"] = to_be_updated_status
-        data_disclosure_agreement.status = to_be_updated_status
-        data_disclosure_agreement.dataDisclosureAgreementRecord = dda_record
-        data_disclosure_agreement.save()
-
-        return JsonResponse({}, status=status.HTTP_204_NO_CONTENT)
