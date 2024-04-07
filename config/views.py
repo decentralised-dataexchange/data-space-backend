@@ -1,23 +1,24 @@
 import os
-from django.http import JsonResponse, HttpResponse
-from .serializers import (
-    DataSourceSerializer,
-    VerificationSerializer,
-    VerificationTemplateSerializer,
-)
-from .models import DataSource, Verification, ImageModel, VerificationTemplate
-from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView
-from rest_framework import status, permissions
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
+
+import requests
+from django.http import HttpResponse, JsonResponse
 from rest_auth.serializers import PasswordChangeSerializer
 from rest_auth.views import sensitive_post_parameters_m
-from onboard.serializers import DataspaceUserSerializer
+from rest_framework import permissions, status
+from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from connection.models import Connection
-from dataspace_backend.settings import DATA_MARKETPLACE_DW_URL, DATA_MARKETPLACE_APIKEY
-import requests
 from dataspace_backend import settings
+from dataspace_backend.settings import (DATA_MARKETPLACE_APIKEY,
+                                        DATA_MARKETPLACE_DW_URL)
+from onboard.serializers import DataspaceUserSerializer
+
+from .models import DataSource, ImageModel, Verification, VerificationTemplate
+from .serializers import (DataSourceSerializer, VerificationSerializer,
+                          VerificationTemplateSerializer)
 
 # Create your views here.
 
@@ -157,7 +158,7 @@ class DataSourceView(APIView):
         return JsonResponse(response_data)
 
     def put(self, request):
-        data = request.data.get("organisation", {})
+        data = request.data.get("dataSource", {})
 
         # Get the DataSource instance associated with the current user
         try:
