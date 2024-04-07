@@ -177,8 +177,6 @@ class DataSourceView(APIView):
             datasource.name = data["name"]
         if data.get("policyUrl"):
             datasource.policyUrl = data["policyUrl"]
-        if data.get("sector"):
-            datasource.sector = data["sector"]
 
         # Save the updated DataSource instance
         datasource.save()
