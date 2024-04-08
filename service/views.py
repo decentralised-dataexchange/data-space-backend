@@ -63,7 +63,7 @@ class DataSourcesView(View):
         if dataSourceId_param:
             data_sources = DataSource.objects.filter(pk=dataSourceId_param)
         else:
-            data_sources = DataSource.objects.all()
+            data_sources = DataSource.objects.all().order_by("-createdAt")
 
         data_sources, pagination_data = paginate_queryset(data_sources, request)
         serialized_data_sources = []
