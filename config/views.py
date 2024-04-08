@@ -6,9 +6,11 @@ from rest_auth.serializers import PasswordChangeSerializer
 from rest_auth.views import sensitive_post_parameters_m
 from rest_framework import permissions, status
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from django.views.decorators.csrf import csrf_exempt
 
 from connection.models import Connection
 from dataspace_backend import settings
@@ -523,3 +525,23 @@ class PasswordChangeView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "New password has been saved."})
+    
+
+@csrf_exempt
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def AdminReset(request):
+    try:
+        # Delete all connections
+        Connection.objects.all().delete()
+
+        # Delete all verifications
+        Verification.objects.all().delete()
+
+        # Return success response
+        return HttpResponse(status=status.HTTP_200_OK)
+    except Exception as e:
+        # Handle other exceptions
+        return HttpResponse(
+            "An error occurred: " + str(e), status=status.HTTP_400_BAD_REQUEST
+        )
