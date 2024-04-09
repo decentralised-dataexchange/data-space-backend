@@ -62,19 +62,13 @@ class DISPConnectionView(APIView):
             "firebase_dynamic_link"
         )
 
-        try:
-            connection = Connection.objects.get(dataSourceId=datasource)
-            connection.connectionId = connection_id
-            connection.connectionState = "invitation"
-            connection.connectionRecord = {}
-            connection.save()
-        except Connection.DoesNotExist:
-            connection = Connection.objects.create(
-                dataSourceId=datasource,
-                connectionId=connection_id,
-                connectionState="invitation",
-                connectionRecord={},
-            )
+        # Create a connection record without deleting any active connections
+        connection = Connection.objects.create(
+            dataSourceId=datasource,
+            connectionId=connection_id,
+            connectionState="invitation",
+            connectionRecord={},
+        )
 
         connection_response_data = {
             "connectionId": connection_id,

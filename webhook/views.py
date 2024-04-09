@@ -53,7 +53,13 @@ def receive_invitation(request):
         connection = None
 
     if connection:
-        if connection.connectionState != "active":
+        if connection_state == "active" and connection.connectionState != "active":
+            # Delete existing connections with active status for this particular data source
+            Connection.objects.filter(
+                dataSourceId=connection.dataSourceId,
+                connectionState="active"
+            ).delete()
+            # Update status of the incoming connection
             connection.connectionState = connection_state
             connection.connectionRecord = connection_data
             connection.save()
