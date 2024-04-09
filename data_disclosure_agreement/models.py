@@ -54,12 +54,20 @@ class DataDisclosureAgreement(models.Model):
         return list(set(unique))
     
     @staticmethod
-    def list_unique_dda_template_ids_for_a_data_source(data_source_id,**kwargs) -> typing.List[str]:
-        unique = []
-        ddas = DataDisclosureAgreement.list_by_data_source_id(data_source_id=data_source_id,**kwargs)
+    def list_unique_dda_template_ids_for_a_data_source(data_source_id, **kwargs) -> typing.List[str]:
+        unique_set = set()
+        ddas = DataDisclosureAgreement.list_by_data_source_id(data_source_id=data_source_id, **kwargs)
         for dda in ddas:
-            unique.append(dda.templateId)
-        return list(set(unique))
+            unique_set.add(dda.templateId)
+        
+        # Convert set to list while preserving the order of insertion
+        unique_list = []
+        for item in ddas:
+            if item.templateId in unique_set:
+                unique_list.append(item.templateId)
+                unique_set.remove(item.templateId)
+        
+        return unique_list
 
     def __str__(self):
         return str(self.id)
