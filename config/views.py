@@ -373,7 +373,7 @@ class DataSourceVerificationView(APIView):
             )
 
         try:
-            connection = Connection.objects.get(dataSourceId=datasource)
+            connection = Connection.objects.get(dataSourceId=datasource, connectionState="active")
         except Connection.DoesNotExist:
             return JsonResponse(
                 {"error": "DISP Connection not found"},
