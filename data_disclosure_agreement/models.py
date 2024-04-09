@@ -32,6 +32,10 @@ class DataDisclosureAgreement(models.Model):
     createdAt = models.DateTimeField(auto_now_add=True)
     isLatestVersion = models.BooleanField(default=True)
 
+    @property
+    def purpose(self):
+        return f"{self.dataDisclosureAgreementRecord.get('purpose', None)}"
+
     @staticmethod
     def list_by_data_source_id(
         data_source_id: str, **kwargs
