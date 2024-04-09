@@ -9,6 +9,10 @@ from time import time
 # Create your models here.
 class DataDisclosureAgreement(models.Model):
 
+    class Meta:
+        verbose_name = "Data Disclosure Agreement - Manage Listing"
+        verbose_name_plural = "Data Disclosure Agreement - Manage Listing"
+
     STATUS_CHOICES = [
         ("listed", "listed"),
         ("unlisted", "unlisted"),
