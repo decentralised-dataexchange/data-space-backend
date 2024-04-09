@@ -10,7 +10,7 @@ class MyAdminSite(AdminSite):
 
     login_form = AuthenticationForm
 
-    site_header = 'Dataspace Administration'
+    site_header = 'CRANE d-HDSI Dataspace Administration'
 
     def has_permission(self, request):
         """
