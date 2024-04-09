@@ -99,10 +99,15 @@ def receive_data_disclosure_agreement(request):
             "codeOfConduct": response["dda"]["codeOfConduct"],
             "connection": dda_connection,
         }
-        post_save.connect(
-            query_ddas_and_update_is_latest_flag_to_false_for_previous_versions,
-            DataDisclosureAgreement,
+
+        # Iterate through existing DDAs and mark `isLatestVersion=false`
+        existing_ddas = DataDisclosureAgreement.objects.filter(
+            templateId=dda_template_id, isLatestVersion=True
         )
+        for existing_dda in existing_ddas:
+            existing_dda.isLatestVersion = False
+            existing_dda.save()
+
 
         dda = DataDisclosureAgreement.objects.create(
             version=dda_version,
