@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     "connection",
     "data_disclosure_agreement",
     "jsonfield",
-    "service"
+    "service",
 ]
 
 MIDDLEWARE = [
