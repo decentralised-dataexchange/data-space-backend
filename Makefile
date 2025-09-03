@@ -73,7 +73,7 @@ build: ## Builds the docker image
 
 .PHONY: publish
 publish: $(DEPLOY_VERSION_F ILE) ## Publish latest production Docker image to docker hub
-	gcloud docker -- push $(DEPLOY_VERSION)
+	docker push $(DEPLOY_VERSION)
 
 deploy/staging: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,staging})
 	kubectl set image deployment/dataspace-backend dataspace-backend=$(DEPLOY_VERSION) -n dataspace 
