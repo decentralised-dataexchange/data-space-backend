@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "constance.backends.database",
     "onboard",
     "organisation",
+    "oAuth2Clients",
     "rest_framework",
     "rest_framework.authtoken",
     "rest_auth",
