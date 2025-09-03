@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import DataDisclosureAgreement
+from .models import DataDisclosureAgreement, DataDisclosureAgreementTemplate
 from customadminsite.admin import myadminsite
 
 
@@ -11,3 +11,4 @@ class DataDisclosureAgreementAdmin(admin.ModelAdmin):
 
 
 myadminsite.register(DataDisclosureAgreement, DataDisclosureAgreementAdmin)
+myadminsite.register(DataDisclosureAgreementTemplate, DataDisclosureAgreementAdmin)

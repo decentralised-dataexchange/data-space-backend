@@ -5,8 +5,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
-from config.models import DataSource
-from data_disclosure_agreement.models import DataDisclosureAgreement
+from organisation.models import Organisation
+from data_disclosure_agreement.models import DataDisclosureAgreementTemplate
 
 User = get_user_model()
 
@@ -42,8 +42,8 @@ class DataMarketPlaceNotificationView(APIView):
         
         # Find DataSource for this user
         try:
-            data_source = DataSource.objects.get(admin=user)
-        except DataSource.DoesNotExist:
+            data_source = Organisation.objects.get(admin=user)
+        except Organisation.DoesNotExist:
             return Response({
                 'error': 'not_found',
                 'error_description': _('No DataSource associated with this token')
@@ -115,7 +115,7 @@ def _validate_dda_template_required_fields(event_action: str, dda_template: dict
     return missing
 
 
-def create_data_disclosure_agreement(to_be_created_dda: dict, data_source: DataSource):
+def create_data_disclosure_agreement(to_be_created_dda: dict, data_source: Organisation):
 
     dda_version = to_be_created_dda["version"]
     dda_template_id = to_be_created_dda["id"]
@@ -135,29 +135,29 @@ def create_data_disclosure_agreement(to_be_created_dda: dict, data_source: DataS
     }
 
     # Iterate through existing DDAs and mark `isLatestVersion=false`
-    existing_ddas = DataDisclosureAgreement.objects.filter(
-        templateId=dda_template_id, isLatestVersion=True, dataSourceId=data_source,
+    existing_ddas = DataDisclosureAgreementTemplate.objects.filter(
+        templateId=dda_template_id, isLatestVersion=True, organisationId=data_source,
     )
     for existing_dda in existing_ddas:
         existing_dda.isLatestVersion = False
         existing_dda.save()
 
-    dda = DataDisclosureAgreement.objects.create(
+    dda = DataDisclosureAgreementTemplate.objects.create(
         version=dda_version,
         templateId=dda_template_id,
-        dataSourceId=data_source,
+        organisationId=data_source,
         dataDisclosureAgreementRecord=data_disclosure_agreement,
     )
     dda.save()
     return
 
 
-def delete_data_disclosure_agreement(to_be_deleted_dda: dict, data_source: DataSource):
+def delete_data_disclosure_agreement(to_be_deleted_dda: dict, data_source: Organisation):
 
     dda_template_id = to_be_deleted_dda["id"]
 
-    deleted_count, _ = DataDisclosureAgreement.objects.filter(
-        templateId=dda_template_id, dataSourceId=data_source,
+    deleted_count, _ = DataDisclosureAgreementTemplate.objects.filter(
+        templateId=dda_template_id, organisationId=data_source,
     ).delete()
 
     return deleted_count

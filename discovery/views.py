@@ -11,8 +11,8 @@ class DataMarketPlaceConfigurationView(View):
         scheme = request.scheme
         host = request.get_host()
         base_url = f"{scheme}://{host}"
-        authorization_server = f"{base_url}/service/"
-        notification_endpoint = f"{base_url}/service/notification/"
+        authorization_server = f"{base_url}/service"
+        notification_endpoint = f"{base_url}/service/notification"
         configuration = {
             "authorization_servers": [authorization_server],
             "notification_endpoint": notification_endpoint
@@ -27,8 +27,8 @@ class DataMarketPlaceAuthorizationConfigurationView(View):
         scheme = request.scheme
         host = request.get_host()
         base_url = f"{scheme}://{host}"
-        issuer = f"{base_url}/service/"
-        token_endpoint = f"{base_url}/service/token/"
+        issuer = f"{base_url}/service"
+        token_endpoint = f"{base_url}/service/token"
         configuration = {
             "issuer": issuer,
             "token_endpoint": token_endpoint
