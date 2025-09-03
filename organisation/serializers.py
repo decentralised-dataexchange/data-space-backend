@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Organisation
+from .models import Organisation, OrganisationIdentity, OrganisationIdentityTemplate
 
 
 class OrganisationSerializer(serializers.ModelSerializer):
@@ -10,3 +10,14 @@ class OrganisationSerializer(serializers.ModelSerializer):
             'policyUrl', 'description', 'owsBaseUrl', 'openApiUrl'
         ]
         read_only_fields = ['id']
+
+class OrganisationIdentitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrganisationIdentity
+        fields = ['id', 'organisationId', 'presentationExchangeId',
+                  'presentationState','isPresentationVerified', 'presentationRecord']
+        
+class OrganisationIdentityTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrganisationIdentityTemplate
+        fields = "__all__"

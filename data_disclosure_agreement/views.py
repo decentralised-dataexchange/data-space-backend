@@ -2,13 +2,16 @@ from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework import status, permissions
 from config.models import DataSource
-from .models import DataDisclosureAgreement
+from .models import DataDisclosureAgreement, DataDisclosureAgreementTemplate
 from .serializers import (
     DataDisclosureAgreementSerializer,
     DataDisclosureAgreementsSerializer,
+    DataDisclosureAgreementTemplateSerializer,
+    DataDisclosureAgreementTemplatesSerializer
 )
 from dataspace_backend.utils import paginate_queryset
 from django.db.models import Count
+from organisation.models import Organisation
 
 # Create your views here.
 
@@ -186,6 +189,189 @@ class DataDisclosureAgreementUpdateView(APIView):
                 isLatestVersion=True,
             )
         except DataDisclosureAgreement.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data Disclosure Agreement not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        is_valid_dda_status = validate_update_dda_request_body(
+            to_be_updated_status=to_be_updated_status,
+            current_status=data_disclosure_agreement.status,
+        )
+
+        if is_valid_dda_status:
+            dda_record = data_disclosure_agreement.dataDisclosureAgreementRecord
+            dda_record["status"] = to_be_updated_status
+            data_disclosure_agreement.status = to_be_updated_status
+            data_disclosure_agreement.dataDisclosureAgreementRecord = dda_record
+            data_disclosure_agreement.save()
+            
+            return JsonResponse({}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return JsonResponse(
+                {"error": "Data Disclosure Agreement status cannot be updated"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+
+class DataDisclosureAgreementTempleteView(APIView):
+    serializer_class = DataDisclosureAgreementTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, dataDisclosureAgreementId):
+        version_param = request.query_params.get("version")
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            if version_param:
+                data_disclosure_agreement = DataDisclosureAgreementTemplate.objects.get(
+                    templateId=dataDisclosureAgreementId,
+                    organisationId=organisation,
+                    version=version_param,
+                )
+            else:
+                data_disclosure_agreement = DataDisclosureAgreementTemplate.objects.filter(
+                    templateId=dataDisclosureAgreementId, organisationId=organisation
+                ).last()
+        except DataDisclosureAgreementTemplate.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data Disclosure Agreement not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.serializer_class(
+            data_disclosure_agreement, context={"request": request}
+        )
+        dda = serializer.data["dataDisclosureAgreementRecord"]
+        dda['status'] = serializer.data['status']
+        dda['isLatestVersion'] = serializer.data['isLatestVersion']
+        response_data = {
+            "dataDisclosureAgreement": dda,
+        }
+
+        return JsonResponse(response_data)
+
+    def delete(self, request, dataDisclosureAgreementId):
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            data_disclosure_agreement_revisions = (
+                DataDisclosureAgreementTemplate.objects.filter(
+                    templateId=dataDisclosureAgreementId, organisationId=organisation
+                )
+            )
+        except DataDisclosureAgreementTemplate.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data Disclosure Agreement not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Delete the data disclosure agreement
+        data_disclosure_agreement_revisions.delete()
+
+        return JsonResponse({}, status=status.HTTP_204_NO_CONTENT)
+    
+class DataDisclosureAgreementTemplatesView(APIView):
+    serializer_class = DataDisclosureAgreementTemplatesSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Get the 'status' query parameter
+        status_param = request.query_params.get("status")
+
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        data_disclosure_agreements_template_ids = (
+            DataDisclosureAgreementTemplate.list_unique_dda_template_ids_for_a_data_source(
+                data_source_id=organisation.id
+            )
+        )
+
+        ddas = []
+
+        if status_param:
+            temp_dda = {}
+            for dda_template_id in data_disclosure_agreements_template_ids:
+                latest_dda_for_template_id = (
+                    DataDisclosureAgreementTemplate.objects.filter(
+                        templateId=dda_template_id,
+                        organisationId=organisation,
+                        status=status_param,
+                    )
+                    .order_by("-createdAt")
+                    .first()
+                )
+                
+                serializer = self.serializer_class(latest_dda_for_template_id)
+                temp_dda = serializer.data["dataDisclosureAgreementRecord"]
+
+                if temp_dda:
+                    temp_dda['status'] = serializer.data['status']
+                    temp_dda['isLatestVersion'] = serializer.data['isLatestVersion']
+                    ddas.append(temp_dda)
+        else:
+            temp_dda = {}
+            for dda_template_id in data_disclosure_agreements_template_ids:
+                latest_dda_for_template_id = (
+                    DataDisclosureAgreementTemplate.objects.filter(
+                        templateId=dda_template_id,
+                        organisationId=organisation,
+                        isLatestVersion=True,
+                    )
+                    .order_by("-createdAt")
+                    .first()
+                )
+                serializer = self.serializer_class(latest_dda_for_template_id)
+                temp_dda = serializer.data["dataDisclosureAgreementRecord"]
+                if temp_dda:
+                    temp_dda['status'] = serializer.data['status']
+                    temp_dda['isLatestVersion'] = serializer.data['isLatestVersion']
+                    ddas.append(temp_dda)
+
+        ddas, pagination_data = paginate_queryset(ddas, request)
+
+        response_data = {
+            "dataDisclosureAgreements": ddas,
+            "pagination": pagination_data,
+        }
+        return JsonResponse(response_data)
+    
+class DataDisclosureAgreementTemplateUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request, dataDisclosureAgreementId):
+
+        to_be_updated_status = request.data.get("status")
+
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            data_disclosure_agreement = DataDisclosureAgreementTemplate.objects.get(
+                templateId=dataDisclosureAgreementId,
+                organisationId=organisation,
+                isLatestVersion=True,
+            )
+        except DataDisclosureAgreementTemplate.DoesNotExist:
             return JsonResponse(
                 {"error": "Data Disclosure Agreement not found"},
                 status=status.HTTP_400_BAD_REQUEST,

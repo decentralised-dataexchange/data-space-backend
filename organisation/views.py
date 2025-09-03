@@ -1,12 +1,17 @@
 import os
+import requests
 from django.shortcuts import render
-from organisation.models import Organisation
-from organisation.serializers import OrganisationSerializer
+from organisation.models import Organisation, OrganisationIdentity, OrganisationIdentityTemplate
+from organisation.serializers import OrganisationSerializer, OrganisationIdentitySerializer, OrganisationIdentityTemplateSerializer
 from rest_framework import permissions, status
 from django.http import HttpResponse, JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from config.models import ImageModel
+from dataspace_backend.settings import (
+    DATA_MARKETPLACE_OWS_URL,
+    DATA_MARKETPLACE_OWS_APIKEY
+)
 
 # Create your views here.
 class OrganisationView(APIView):
@@ -224,3 +229,102 @@ class OrganisationLogoImageView(APIView):
             return JsonResponse(
                 {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
             )
+
+class OrganisationIdentityView(APIView):
+    serializer_class = OrganisationIdentitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            org_identity = OrganisationIdentity.objects.get(organisationId=organisation)
+            verification_serializer = self.serializer_class(org_identity)
+        except OrganisationIdentity.DoesNotExist:
+            return JsonResponse(
+                {"error": "Organisation identity credentials not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Construct the response data
+        response_data = {
+            "identity": verification_serializer.data,
+        }
+
+        return JsonResponse(response_data)
+
+    def post(self, request):
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+        try:
+            organisationIdentityTemplate = OrganisationIdentityTemplate.objects.first()
+        except OrganisationIdentityTemplate.DoesNotExist:
+            return JsonResponse(
+                {"error": "Organisation identity template not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        presentation_definition_id = organisationIdentityTemplate.presentationDefinitionId
+        payload = {
+            "requestByReference": True,
+            "presentationDefinitionId": presentation_definition_id,
+            "urlPrefix": organisation.owsBaseUrl
+        }
+        url = (
+            f"{DATA_MARKETPLACE_OWS_URL}/v3/config/digital-wallet/openid/sdjwt/verification/send"
+        )
+        authorization_header = DATA_MARKETPLACE_OWS_APIKEY
+        try:
+            response = requests.post(
+                url, headers={"Authorization": authorization_header}, json=payload
+            )
+            response.raise_for_status()
+            response = response.json()
+        except requests.exceptions.RequestException as e:
+            return JsonResponse(
+                {"error": f"Error calling digital wallet: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        presentation_exchange_id = response["verificationHistory"]["presentationExchangeId"]
+        presentation_state = response["verificationHistory"]["status"]
+        presentation_record = response["verificationHistory"]
+        is_presentation_verified = response["verificationHistory"]["verified"]
+
+        # Update or create Verification object
+        try:
+            identity = OrganisationIdentity.objects.get(organisationId=organisation)
+            identity.presentationExchangeId = presentation_exchange_id
+            identity.presentationState = presentation_state
+            identity.presentationRecord = presentation_record
+            identity.isPresentationVerified = is_presentation_verified
+            identity.save()
+        except OrganisationIdentity.DoesNotExist:
+            identity = OrganisationIdentity.objects.create(
+                organisationId=organisation,
+                presentationExchangeId=presentation_exchange_id,
+                presentationState=presentation_state,
+                presentationRecord=presentation_record,
+                isPresentationVerified = is_presentation_verified
+            )
+
+        # Serialize the verification object
+        verification_serializer = OrganisationIdentitySerializer(identity)
+
+        # Construct the response data
+        response_data = {
+            "identity": verification_serializer.data,
+        }
+
+        return JsonResponse(response_data)
