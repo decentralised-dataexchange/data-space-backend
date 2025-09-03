@@ -10,6 +10,7 @@ from django.db.models.signals import post_save
 from data_disclosure_agreement.signals import (
     query_ddas_and_update_is_latest_flag_to_false_for_previous_versions,
 )
+from organisation.models import OrganisationIdentity
 
 
 # Create your views here.
@@ -18,9 +19,13 @@ from data_disclosure_agreement.signals import (
 def verify_certificate(request):
     response = request.body
     response = json.loads(response)
-    presentation_exchange_id = response["presentation_exchange_id"]
-    presentation_state = response["state"]
-    presentation_record = response
+    presentation_exchange_id = response["data"]["presentation"]["presentationExchangeId"]
+    if not presentation_exchange_id:
+        return HttpResponse(status=status.HTTP_200_OK)
+    
+    presentation_state = response["data"]["presentation"]["status"]
+    presentation_record = response["data"]["presentation"]
+    is_presentation_verified = response["data"]["presentation"]["verified"]
     try:
         verification = Verification.objects.get(
             presentationExchangeId=presentation_exchange_id
@@ -33,6 +38,36 @@ def verify_certificate(request):
             verification.presentationState = presentation_state
             verification.presentationRecord = presentation_record
             verification.save()
+
+    return HttpResponse(status=status.HTTP_200_OK)
+
+
+# Create your views here.
+@csrf_exempt
+@require_POST
+def verify_ows_certificate(request):
+    response = request.body
+    response = json.loads(response)
+    presentation_exchange_id = response["data"]["presentation"]["presentationExchangeId"]
+    if not presentation_exchange_id:
+        return HttpResponse(status=status.HTTP_200_OK)
+    
+    presentation_state = response["data"]["presentation"]["status"]
+    presentation_record = response["data"]["presentation"]
+    is_presentation_verified = response["data"]["presentation"]["verified"]
+    try:
+        identity = OrganisationIdentity.objects.get(
+            presentationExchangeId=presentation_exchange_id
+        )
+    except OrganisationIdentity.DoesNotExist:
+        identity = None
+
+    if identity:
+        if identity.isPresentationVerified != "verified":
+            identity.presentationState = presentation_state
+            identity.presentationRecord = presentation_record
+            identity.isPresentationVerified = is_presentation_verified
+            identity.save()
 
     return HttpResponse(status=status.HTTP_200_OK)
 
