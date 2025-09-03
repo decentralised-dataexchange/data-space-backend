@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "constance",
     "constance.backends.database",
     "onboard",
+    "organisation",
     "rest_framework",
     "rest_framework.authtoken",
     "rest_auth",
@@ -131,6 +132,8 @@ USE_L10N = True
 
 USE_TZ = True
 
+# URL Configuration
+APPEND_SLASH = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/

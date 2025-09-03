@@ -29,5 +29,6 @@ urlpatterns = [
          name="open_api_url"),
     path("admin/reset-password/",
          csrf_exempt(PasswordChangeView.as_view()), name="password_reset"),
-    path("admin/reset/", AdminReset, name="reset_connections_and_verifications")
+    path("admin/reset/", AdminReset, name="reset_connections_and_verifications"),
+    path("organisation", include("organisation.urls")),
 ]
