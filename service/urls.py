@@ -15,6 +15,6 @@ urlpatterns = [
           DataSourcesView.as_view(), name="datasources"),
      path(".well-known/data-marketplace-configuration/",DataMarketPlaceConfigurationView.as_view(), name="datamarketplace_configuration"),
      path(".well-known/oauth-authorization-server/",DataMarketPlaceAuthorizationConfigurationView.as_view(), name="datamarketplace_authorization_configuration"),
-     path('token/', DataMarketPlaceTokenView.as_view(), name='token'),
-     path("notification/",DataMarketPlaceNotificationView.as_view(), name="notification")
+     path('token', DataMarketPlaceTokenView.as_view(), name='token'),
+     path("notification",DataMarketPlaceNotificationView.as_view(), name="notification")
 ]
