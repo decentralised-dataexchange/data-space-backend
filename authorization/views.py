@@ -7,8 +7,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import AccessToken
+from oAuth2Clients.models import OAuth2Clients
+from organisation.models import Organisation
 
 User = get_user_model()
 
@@ -16,9 +18,9 @@ User = get_user_model()
 class DataMarketPlaceTokenView(APIView):
     """
     OAuth 2.0 Token endpoint (client_credentials) using Basic auth.
-    - Authorization: Basic base64(email:password)
+    - Authorization: Basic base64(client_id:client_secret)
     - Body: grant_type=client_credentials (form or json)
-    Returns JWT access token and expiry.
+    Finds the Organisation via OAuth2Clients and issues a JWT for the organisation admin.
     """
     permission_classes = [AllowAny]
     
@@ -47,23 +49,42 @@ class DataMarketPlaceTokenView(APIView):
             decoded = base64.b64decode(b64).decode('utf-8')
             if ':' not in decoded:
                 raise ValueError('Invalid basic auth format')
-            client_id, password = decoded.split(':', 1)
+            client_id, client_secret = decoded.split(':', 1)
         except Exception:
             return Response({
                 'error': 'invalid_client',
                 'error_description': 'Invalid Basic Authorization header'
             }, status=status.HTTP_401_UNAUTHORIZED)
         
-        # Authenticate against DataspaceUser (email/password)
-        user = authenticate(request, username=client_id, password=password)
-        if user is None or not user.is_active:
+        # Find OAuth2 client and associated organisation
+        try:
+            oauth_client = OAuth2Clients.objects.select_related('organisation').get(
+                client_id=client_id,
+                client_secret=client_secret,
+                is_active=True
+            )
+        except OAuth2Clients.DoesNotExist:
             return Response({
                 'error': 'invalid_client',
                 'error_description': 'Invalid client credentials'
             }, status=status.HTTP_401_UNAUTHORIZED)
         
-        # Issue JWT access token
-        access = AccessToken.for_user(user)
+        organisation = oauth_client.organisation
+        try:
+            admin_user = organisation.admin
+        except Exception:
+            return Response({
+                'error': 'server_error',
+                'error_description': 'Organisation admin not found for this client'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if not admin_user or not admin_user.is_active:
+            return Response({
+                'error': 'invalid_client',
+                'error_description': 'Organisation admin is inactive or missing'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Issue JWT access token for organisation admin
+        access = AccessToken.for_user(admin_user)
         expires_in = int(access.lifetime.total_seconds())
         
         response_data = {
