@@ -9,6 +9,6 @@ urlpatterns = [
     path("/logoimage/",
         OrganisationLogoImageView.as_view(), name="logo_image"),
     path("/identity/",OrganisationIdentityView.as_view(), name="logo_image"),
-    path("/oauth2-client/", include("oAuth2Clients.urls")),
+    path("/oauth2-client", include("oAuth2Clients.urls")),
     path("/oauth2-clients/", OAuth2ClientsView.as_view(), name="oauth-clients"),
 ]

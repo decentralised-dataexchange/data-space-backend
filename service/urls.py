@@ -13,8 +13,8 @@ urlpatterns = [
           DataSourceLogoImageView.as_view(), name="datasource_logoimage"),
      path("data-sources/",
           DataSourcesView.as_view(), name="datasources"),
-     path(".well-known/data-marketplace-configuration/",DataMarketPlaceConfigurationView.as_view(), name="datamarketplace_configuration"),
-     path(".well-known/oauth-authorization-server/",DataMarketPlaceAuthorizationConfigurationView.as_view(), name="datamarketplace_authorization_configuration"),
+     path(".well-known/data-space-configuration/",DataMarketPlaceConfigurationView.as_view(), name="dataspace_configuration"),
+     path(".well-known/oauth-authorization-server/",DataMarketPlaceAuthorizationConfigurationView.as_view(), name="dataspace_authorization_configuration"),
      path('token', DataMarketPlaceTokenView.as_view(), name='token'),
      path("notification",DataMarketPlaceNotificationView.as_view(), name="notification")
 ]
