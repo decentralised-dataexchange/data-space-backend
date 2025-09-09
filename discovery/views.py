@@ -11,9 +11,11 @@ class DataMarketPlaceConfigurationView(View):
         scheme = request.scheme
         host = request.get_host()
         base_url = f"{scheme}://{host}"
+        data_space_endpoint = f"{base_url}/service"
         authorization_server = f"{base_url}/service"
         notification_endpoint = f"{base_url}/service/notification"
         configuration = {
+            "data_space_endpoint": data_space_endpoint,
             "authorization_servers": [authorization_server],
             "notification_endpoint": notification_endpoint
         }
