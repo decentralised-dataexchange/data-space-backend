@@ -4,9 +4,11 @@ from config.models import DataSource, ImageModel, Verification
 from config.serializers import VerificationSerializer, DataSourceSerializer
 from django.http import JsonResponse, HttpResponse
 from rest_framework import status
-from data_disclosure_agreement.models import DataDisclosureAgreement
-from data_disclosure_agreement.serializers import DataDisclosureAgreementsSerializer
+from data_disclosure_agreement.models import DataDisclosureAgreement, DataDisclosureAgreementTemplate
+from data_disclosure_agreement.serializers import DataDisclosureAgreementsSerializer, DataDisclosureAgreementTemplatesSerializer
 from dataspace_backend.utils import paginate_queryset
+from organisation.models import Organisation, OrganisationIdentity
+from organisation.serializers import OrganisationIdentitySerializer, OrganisationSerializer
 
 
 # Create your views here.
@@ -123,6 +125,123 @@ class DataSourcesView(View):
         # Create the response data dictionary
         response_data = {
             "dataSources": serialized_data_sources,
+            "pagination": pagination_data,
+        }
+
+        # Return the JSON response
+        return JsonResponse(response_data)
+    
+class OrganisationCoverImageView(View):
+
+    def get(self, request, organisationId):
+        try:
+            # Get the organisation instance
+            organisation = Organisation.objects.get(pk=organisationId)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            image = ImageModel.objects.get(pk=organisation.coverImageId)
+        except ImageModel.DoesNotExist:
+            return JsonResponse(
+                {"error": "Cover image not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Return the binary image data as the HTTP response
+        return HttpResponse(image.image_data, content_type="image/jpeg")
+
+
+class OrganisationLogoImageView(View):
+
+    def get(self, request, organisationId):
+        try:
+            # Get the organisation instance
+            organisation = Organisation.objects.get(pk=organisationId)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            image = ImageModel.objects.get(pk=organisation.logoId)
+        except ImageModel.DoesNotExist:
+            return JsonResponse(
+                {"error": "Logo image not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Return the binary image data as the HTTP response
+        return HttpResponse(image.image_data, content_type="image/jpeg")
+    
+class OrganisationsView(View):
+    def get(self, request):
+        organisation_id_param = request.GET.get("organisationId")
+
+        if organisation_id_param:
+            organisations = Organisation.objects.filter(pk=organisation_id_param)
+        else:
+            organisations = Organisation.objects.all().order_by("createdAt")
+
+        organisations, pagination_data = paginate_queryset(organisations, request)
+        serialized_organisations = []
+        for organisation in organisations:
+
+            data_disclosure_agreements_template_ids = (
+                DataDisclosureAgreementTemplate.list_unique_dda_template_ids_for_a_data_source(
+                    data_source_id=organisation.id
+                )
+            )
+            ddas = []
+            for dda_template_id in data_disclosure_agreements_template_ids:
+                dda_for_template_id = DataDisclosureAgreementTemplate.read_latest_dda_by_template_id_and_data_source_id(
+                    template_id=dda_template_id,
+                    data_source_id=organisation.id,
+                )
+
+                data_disclosure_agreement_serializer = (
+                    DataDisclosureAgreementTemplatesSerializer(dda_for_template_id)
+                )
+                dda = data_disclosure_agreement_serializer.data[
+                    "dataDisclosureAgreementRecord"
+                ]
+
+                if dda:
+                    dda["status"] = data_disclosure_agreement_serializer.data["status"]
+                    dda["isLatestVersion"] = data_disclosure_agreement_serializer.data[
+                        "isLatestVersion"
+                    ]
+                    ddas.append(dda)
+
+            try:
+                verification = OrganisationIdentity.objects.get(organisationId=organisation)
+                verification_serializer = OrganisationIdentitySerializer(verification)
+                verification_data = verification_serializer.data
+            except OrganisationIdentity.DoesNotExist:
+                verification_data = {
+                    "id": "",
+                    "organisationId": "",
+                    "presentationExchangeId": "",
+                    "presentationState": "",
+                    "isPresentationVerified": False,
+                    "presentationRecord": {},
+                }
+
+            organisation_serializer = OrganisationSerializer(organisation)
+
+            api = [organisation.openApiUrl]
+            serialized_organisation = {
+                "dataDisclosureAgreements": ddas,
+                "api": api,
+                "organisation": organisation_serializer.data,
+                "organisationIdentity": verification_data,
+            }
+            # Append the serialized organisation to the list
+            serialized_organisations.append(serialized_organisation)
+
+        # Create the response data dictionary
+        response_data = {
+            "organisations": serialized_organisations,
             "pagination": pagination_data,
         }
 
