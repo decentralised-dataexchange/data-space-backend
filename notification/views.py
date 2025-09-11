@@ -105,12 +105,12 @@ class DataMarketPlaceNotificationView(APIView):
 def _validate_dda_template_required_fields(event_action: str, dda_template: dict):
     if event_action in {'create', 'update'}:
         required = [
-            'id', 'version', 'language', 'dataController', 'agreementPeriod',
+            '@id', 'version', 'language', 'dataController', 'agreementPeriod',
             'dataSharingRestrictions', 'purpose', 'purposeDescription',
-            'lawfulBasis', 'personalData', 'codeOfConduct'
+            'lawfulBasis', 'codeOfConduct'
         ]
     else:  # delete
-        required = ['id']
+        required = ['@id']
     missing = [key for key in required if key not in dda_template or dda_template.get(key) in (None, '')]
     return missing
 
@@ -118,21 +118,7 @@ def _validate_dda_template_required_fields(event_action: str, dda_template: dict
 def create_data_disclosure_agreement(to_be_created_dda: dict, data_source: Organisation):
 
     dda_version = to_be_created_dda["version"]
-    dda_template_id = to_be_created_dda["id"]
-
-    data_disclosure_agreement = {
-        "language": to_be_created_dda["language"],
-        "version": to_be_created_dda["version"],
-        "templateId": dda_template_id,
-        "dataController": to_be_created_dda["dataController"],
-        "agreementPeriod": to_be_created_dda["agreementPeriod"],
-        "dataSharingRestrictions": to_be_created_dda["dataSharingRestrictions"],
-        "purpose": to_be_created_dda["purpose"],
-        "purposeDescription": to_be_created_dda["purposeDescription"],
-        "lawfulBasis": to_be_created_dda["lawfulBasis"],
-        "personalData": to_be_created_dda["personalData"],
-        "codeOfConduct": to_be_created_dda["codeOfConduct"],
-    }
+    dda_template_id = to_be_created_dda["@id"]
 
     # Iterate through existing DDAs and mark `isLatestVersion=false`
     existing_ddas = DataDisclosureAgreementTemplate.objects.filter(
@@ -146,7 +132,7 @@ def create_data_disclosure_agreement(to_be_created_dda: dict, data_source: Organ
         version=dda_version,
         templateId=dda_template_id,
         organisationId=data_source,
-        dataDisclosureAgreementRecord=data_disclosure_agreement,
+        dataDisclosureAgreementRecord=to_be_created_dda,
     )
     dda.save()
     return
@@ -154,7 +140,7 @@ def create_data_disclosure_agreement(to_be_created_dda: dict, data_source: Organ
 
 def delete_data_disclosure_agreement(to_be_deleted_dda: dict, data_source: Organisation):
 
-    dda_template_id = to_be_deleted_dda["id"]
+    dda_template_id = to_be_deleted_dda["@id"]
 
     deleted_count, _ = DataDisclosureAgreementTemplate.objects.filter(
         templateId=dda_template_id, organisationId=data_source,
