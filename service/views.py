@@ -1,3 +1,4 @@
+import uuid
 from django.shortcuts import render
 from rest_framework.views import View
 from config.models import DataSource, ImageModel, Verification
@@ -179,6 +180,11 @@ class OrganisationsView(View):
         organisation_id_param = request.GET.get("organisationId")
 
         if organisation_id_param:
+            try:
+                organisation_uuid = uuid.UUID(organisation_id_param)
+                organisations = Organisation.objects.filter(pk=organisation_uuid)
+            except ValueError:
+                return JsonResponse({"error": "Invalid organisationId"}, status=400)
             organisations = Organisation.objects.filter(pk=organisation_id_param)
         else:
             organisations = Organisation.objects.all().order_by("createdAt")
