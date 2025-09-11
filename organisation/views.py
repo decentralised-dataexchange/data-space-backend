@@ -247,8 +247,7 @@ class OrganisationIdentityView(APIView):
             verification_serializer = self.serializer_class(org_identity)
         except OrganisationIdentity.DoesNotExist:
             return JsonResponse(
-                {"error": "Organisation identity credentials not found"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"identity": {}}
             )
 
         # Construct the response data
