@@ -243,6 +243,11 @@ class DataDisclosureAgreementTempleteView(APIView):
                 {"error": "Data Disclosure Agreement not found"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if not data_disclosure_agreement:
+            return JsonResponse(
+                {"error": "Data Disclosure Agreement not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         serializer = self.serializer_class(
             data_disclosure_agreement, context={"request": request}
