@@ -182,3 +182,5 @@ DATA_MARKETPLACE_APIKEY = os.environ.get("DATA_MARKETPLACE_APIKEY", "ApiKey REDA
 
 DATA_MARKETPLACE_OWS_URL = os.environ.get("DATA_MARKETPLACE_OWS_URL", "https://staging-api.igrant.io")
 DATA_MARKETPLACE_OWS_APIKEY = os.environ.get("DATA_MARKETPLACE_OWS_APIKEY", "ApiKey REDACTED_JWT_TOKEN_3")
+
+BASE_URL = os.environ.get("BASE_URL","https://api.nxd.foundation")
