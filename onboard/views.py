@@ -93,28 +93,50 @@ class CreateUserAndOrganisationView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
+
     def post(self, request):
         data = request.data or {}
 
+        # Extract organisation details from the new structure
+        organisation_data = data.get("organisation", {})
+        
+        # Define required fields for both user and organisation
         required_fields = [
+            "name",
             "email",
             "password",
             "confirmPassword",
+            "organisation",
+        ]
+        organisation_required_fields = [
             "name",
             "sector",
             "location",
             "policyUrl",
             "description",
-            "owsBaseUrl",
+            "verificationRequestURLPrefix",
         ]
 
+        # Combine required fields
+        all_required_fields = required_fields + organisation_required_fields
+
+        # Check for missing fields in both user and organisation data
         missing_fields = [f for f in required_fields if not data.get(f)]
         if missing_fields:
             return Response(
                 {"error": f"Missing required fields: {', '.join(missing_fields)}"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        
+        # Check for missing fields in both user and organisation data
+        missing_fields = [f for f in organisation_required_fields if not organisation_data.get(f)]
+        if missing_fields:
+            return Response(
+                {"error": f"Missing required fields: {', '.join(missing_fields)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
+        # Check if passwords match
         if data.get("password") != data.get("confirmPassword"):
             return Response(
                 {"error": "Passwords do not match"},
@@ -128,6 +150,7 @@ class CreateUserAndOrganisationView(APIView):
                 user = User.objects.create_user(
                     email=data.get("email"),
                     password=data.get("password"),
+                    name=data.get("name")
                 )
 
                 if Organisation.objects.filter(admin=user).exists():
@@ -137,12 +160,12 @@ class CreateUserAndOrganisationView(APIView):
                     )
 
                 organisation = Organisation.objects.create(
-                    name=data.get("name"),
-                    sector=data.get("sector"),
-                    location=data.get("location"),
-                    policyUrl=data.get("policyUrl"),
-                    description=data.get("description"),
-                    owsBaseUrl=data.get("owsBaseUrl", ""),
+                    name=organisation_data.get("name"),
+                    sector=organisation_data.get("sector"),
+                    location=organisation_data.get("location"),
+                    policyUrl=organisation_data.get("policyUrl"),
+                    description=organisation_data.get("description"),
+                    owsBaseUrl=organisation_data.get("verificationRequestURLPrefix", ""),
                     openApiUrl=data.get("openApiUrl", ""),
                     admin=user,
                 )

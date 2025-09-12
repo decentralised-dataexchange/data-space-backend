@@ -3,11 +3,12 @@ from .models import Organisation, OrganisationIdentity, OrganisationIdentityTemp
 
 
 class OrganisationSerializer(serializers.ModelSerializer):
+    verificationRequestURLPrefix = serializers.CharField(source='owsBaseUrl', read_only=True)
     class Meta:
         model = Organisation
         fields = [
             'id', 'coverImageUrl', 'logoUrl', 'name', 'sector', 'location',
-            'policyUrl', 'description', 'owsBaseUrl', 'openApiUrl'
+            'policyUrl', 'description', 'verificationRequestURLPrefix', 'openApiUrl'
         ]
         read_only_fields = ['id']
 
