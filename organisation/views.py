@@ -54,7 +54,7 @@ class OrganisationView(APIView):
             "location",
             "policyUrl",
             "description",
-            "owsBaseUrl",
+            "verificationRequestURLPrefix",
         ]
         missing_fields = [f for f in required_fields if not data.get(f)]
         if missing_fields:
@@ -74,8 +74,8 @@ class OrganisationView(APIView):
             organisation.policyUrl = data["policyUrl"]
         if data.get("sector"):
             organisation.sector = data["sector"]
-        if data.get("owsBaseUrl"):
-            organisation.owsBaseUrl = data["owsBaseUrl"]
+        if data.get("verificationRequestURLPrefix"):
+            organisation.owsBaseUrl = data["verificationRequestURLPrefix"]
         if data.get("openApiUrl"):
             organisation.openApiUrl = data["openApiUrl"]
 
@@ -247,12 +247,22 @@ class OrganisationIdentityView(APIView):
             verification_serializer = self.serializer_class(org_identity)
         except OrganisationIdentity.DoesNotExist:
             return JsonResponse(
-                {"identity": {}}
+                {
+                    "organisationalIdentity": {},
+                    "organisationId": "",
+                    "presentationExchangeId": "",
+                    "state": "",
+                    "verified": False
+                }
             )
 
         # Construct the response data
         response_data = {
-            "identity": verification_serializer.data,
+            "organisationalIdentity": verification_serializer.data.get("presentationRecord"),
+            "organisationId": verification_serializer.data.get("organisationId"),
+            "presentationExchangeId": verification_serializer.data.get("presentationExchangeId"),
+            "state": verification_serializer.data.get("presentationState"),
+            "verified": verification_serializer.data.get("isPresentationVerified")
         }
 
         return JsonResponse(response_data)
@@ -323,7 +333,11 @@ class OrganisationIdentityView(APIView):
 
         # Construct the response data
         response_data = {
-            "identity": verification_serializer.data,
+            "organisationalIdentity": verification_serializer.data.get("presentationRecord"),
+            "organisationId": verification_serializer.data.get("organisationId"),
+            "presentationExchangeId": verification_serializer.data.get("presentationExchangeId"),
+            "state": verification_serializer.data.get("presentationState"),
+            "verified": verification_serializer.data.get("isPresentationVerified")
         }
 
         return JsonResponse(response_data)
