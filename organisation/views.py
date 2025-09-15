@@ -157,7 +157,7 @@ class OrganisationCoverImageView(APIView):
 
             organisation.coverImageUrl = construct_cover_image_url(
                 baseurl=request.get_host(),
-                data_source_id=str(organisation.id),
+                organisation_id=str(organisation.id),
                 is_public_endpoint=True
             )
 
@@ -219,7 +219,7 @@ class OrganisationLogoImageView(APIView):
 
             organisation.logoUrl = construct_logo_image_url(
                 baseurl=request.get_host(),
-                data_source_id=str(organisation.id),
+                organisation_id=str(organisation.id),
                 is_public_endpoint=True
             )
             organisation.save()
