@@ -324,47 +324,84 @@ class DataDisclosureAgreementTemplatesView(APIView):
         ddas = []
 
         if status_param:
-            temp_dda = {}
             for dda_template_id in data_disclosure_agreements_template_ids:
-                latest_dda_for_template_id = (
-                    DataDisclosureAgreementTemplate.objects.exclude(
-                        status='archived'
-                    ).filter(
-                        templateId=dda_template_id,
-                        organisationId=organisation,
-                        status=status_param,
-                    )
-                    .order_by("-createdAt")
-                    .first()
-                )
+                # Get all non-archived DDAs for this template ID with the specified status
+                ddas_for_template = list(DataDisclosureAgreementTemplate.objects.exclude(
+                    status='archived'
+                ).filter(
+                    templateId=dda_template_id,
+                    organisationId=organisation,
+                    status=status_param,
+                ))
                 
-                serializer = self.serializer_class(latest_dda_for_template_id)
-                temp_dda = serializer.data["dataDisclosureAgreementRecord"]
-
-                if temp_dda:
-                    temp_dda['status'] = serializer.data['status']
-                    temp_dda['isLatestVersion'] = serializer.data['isLatestVersion']
-                    ddas.append(temp_dda)
+                if not ddas_for_template:
+                    continue
+                    
+                # Find the latest version using isLatestVersion field
+                latest_dda = next((dda for dda in ddas_for_template if dda.isLatestVersion), None)
+                if not latest_dda:
+                    continue  # Skip if no latest version is marked
+                
+                # Serialize the latest DDA
+                latest_serializer = self.serializer_class(latest_dda)
+                latest_dda_data = latest_serializer.data["dataDisclosureAgreementRecord"]
+                latest_dda_data['status'] = latest_serializer.data['status']
+                latest_dda_data['isLatestVersion'] = True
+                
+                # Serialize all other versions as revisions
+                revisions = []
+                for dda in ddas_for_template:
+                    if dda.id != latest_dda.id:  # Skip the latest DDA
+                        serializer = self.serializer_class(dda)
+                        revision_data = serializer.data["dataDisclosureAgreementRecord"]
+                        revision_data['status'] = serializer.data['status']
+                        revision_data['isLatestVersion'] = False
+                        revision_data['version'] = dda.version
+                        revision_data['createdAt'] = dda.createdAt.isoformat()
+                        revisions.append(revision_data)
+                
+                # Add revisions to the latest DDA, sorted by createdAt
+                latest_dda_data['revisions'] = sorted(revisions, key=lambda x: x['createdAt'], reverse=True)
+                ddas.append(latest_dda_data)
         else:
-            temp_dda = {}
             for dda_template_id in data_disclosure_agreements_template_ids:
-                latest_dda_for_template_id = (
-                    DataDisclosureAgreementTemplate.objects.exclude(
-                        status='archived'
-                    ).filter(
-                        templateId=dda_template_id,
-                        organisationId=organisation,
-                        isLatestVersion=True,
-                    )
-                    .order_by("-createdAt")
-                    .first()
-                )
-                serializer = self.serializer_class(latest_dda_for_template_id)
-                temp_dda = serializer.data["dataDisclosureAgreementRecord"]
-                if temp_dda:
-                    temp_dda['status'] = serializer.data['status']
-                    temp_dda['isLatestVersion'] = serializer.data['isLatestVersion']
-                    ddas.append(temp_dda)
+                # Get all non-archived DDAs for this template ID
+                ddas_for_template = list(DataDisclosureAgreementTemplate.objects.exclude(
+                    status='archived'
+                ).filter(
+                    templateId=dda_template_id,
+                    organisationId=organisation,
+                ))
+                
+                if not ddas_for_template:
+                    continue
+                    
+                # Find the latest version using isLatestVersion field
+                latest_dda = next((dda for dda in ddas_for_template if dda.isLatestVersion), None)
+                if not latest_dda:
+                    continue  # Skip if no latest version is marked
+                
+                # Serialize the latest DDA
+                latest_serializer = self.serializer_class(latest_dda)
+                latest_dda_data = latest_serializer.data["dataDisclosureAgreementRecord"]
+                latest_dda_data['status'] = latest_serializer.data['status']
+                latest_dda_data['isLatestVersion'] = True
+                
+                # Serialize all other versions as revisions
+                revisions = []
+                for dda in ddas_for_template:
+                    if dda.id != latest_dda.id:  # Skip the latest DDA
+                        serializer = self.serializer_class(dda)
+                        revision_data = serializer.data["dataDisclosureAgreementRecord"]
+                        revision_data['status'] = serializer.data['status']
+                        revision_data['isLatestVersion'] = False
+                        revision_data['version'] = dda.version
+                        revision_data['createdAt'] = dda.createdAt.isoformat()
+                        revisions.append(revision_data)
+                
+                # Add revisions to the latest DDA, sorted by createdAt
+                latest_dda_data['revisions'] = sorted(revisions, key=lambda x: x['createdAt'], reverse=True)
+                ddas.append(latest_dda_data)
 
         ddas, pagination_data = paginate_queryset(ddas, request)
 
