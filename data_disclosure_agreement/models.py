@@ -94,6 +94,7 @@ class DataDisclosureAgreementTemplate(models.Model):
         ("awaitingForApproval", "awaitingForApproval"),
         ("approved", "approved"),
         ("rejected", "rejected"),
+        ("archived", "archived"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
@@ -117,6 +118,8 @@ class DataDisclosureAgreementTemplate(models.Model):
     ) -> typing.List["DataDisclosureAgreementTemplate"]:
         ddas = DataDisclosureAgreementTemplate.objects.filter(
             organisationId__id=data_source_id, **kwargs
+        ).exclude(
+            status='archived'
         ).order_by("-createdAt")
         return ddas
 
