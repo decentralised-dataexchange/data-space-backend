@@ -341,3 +341,24 @@ class OrganisationIdentityView(APIView):
         }
 
         return JsonResponse(response_data)
+
+    def delete(self, request):
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            org_identity = OrganisationIdentity.objects.get(organisationId=organisation)
+            org_identity.delete()
+            return JsonResponse(
+                {"message": "Organisation identity deleted successfully"}, 
+                status=status.HTTP_204_NO_CONTENT
+            )
+        except OrganisationIdentity.DoesNotExist:
+            return JsonResponse(
+                {"error": "Organisation identity not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
