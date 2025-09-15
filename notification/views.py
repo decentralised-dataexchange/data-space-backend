@@ -139,12 +139,11 @@ def create_data_disclosure_agreement(to_be_created_dda: dict, data_source: Organ
 
 
 def delete_data_disclosure_agreement(to_be_deleted_dda: dict, data_source: Organisation):
-
     dda_template_id = to_be_deleted_dda["@id"]
 
-    deleted_count, _ = DataDisclosureAgreementTemplate.objects.filter(
-        templateId=dda_template_id, organisationId=data_source,
-    ).delete()
+    updated_count = DataDisclosureAgreementTemplate.objects.filter(
+        templateId=dda_template_id, 
+        organisationId=data_source,
+    ).update(status='archived')
 
-    return deleted_count
-    
+    return updated_count

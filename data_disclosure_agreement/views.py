@@ -229,21 +229,28 @@ class DataDisclosureAgreementTempleteView(APIView):
 
         try:
             if version_param:
-                data_disclosure_agreement = DataDisclosureAgreementTemplate.objects.get(
+                data_disclosure_agreement = DataDisclosureAgreementTemplate.objects.exclude(
+                    status='archived'
+                ).get(
                     templateId=dataDisclosureAgreementId,
                     organisationId=organisation,
                     version=version_param,
                 )
             else:
-                data_disclosure_agreement = DataDisclosureAgreementTemplate.objects.filter(
-                    templateId=dataDisclosureAgreementId, organisationId=organisation
+                data_disclosure_agreement = DataDisclosureAgreementTemplate.objects.exclude(
+                    status='archived'
+                ).filter(
+                    templateId=dataDisclosureAgreementId, 
+                    organisationId=organisation,
                 ).last()
+                
+                if not data_disclosure_agreement:
+                    return JsonResponse(
+                        {"error": "Active Data Disclosure Agreement not found"},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+                    
         except DataDisclosureAgreementTemplate.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data Disclosure Agreement not found"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not data_disclosure_agreement:
             return JsonResponse(
                 {"error": "Data Disclosure Agreement not found"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -270,22 +277,29 @@ class DataDisclosureAgreementTempleteView(APIView):
             )
 
         try:
-            data_disclosure_agreement_revisions = (
-                DataDisclosureAgreementTemplate.objects.filter(
-                    templateId=dataDisclosureAgreementId, organisationId=organisation
+            data_disclosure_agreement_revisions = DataDisclosureAgreementTemplate.objects.filter(
+                templateId=dataDisclosureAgreementId, 
+                organisationId=organisation
+            )
+            
+            if not data_disclosure_agreement_revisions.exists():
+                return JsonResponse(
+                    {"error": "Data Disclosure Agreement not found"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-            )
-        except DataDisclosureAgreementTemplate.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data Disclosure Agreement not found"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+                
+            # Update status to archived instead of deleting
+            data_disclosure_agreement_revisions.update(status='archived')
 
-        # Delete the data disclosure agreement
-        data_disclosure_agreement_revisions.delete()
+        except Exception as e:
+            return JsonResponse(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         return JsonResponse({}, status=status.HTTP_204_NO_CONTENT)
-    
+
+
 class DataDisclosureAgreementTemplatesView(APIView):
     serializer_class = DataDisclosureAgreementTemplatesSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -313,7 +327,9 @@ class DataDisclosureAgreementTemplatesView(APIView):
             temp_dda = {}
             for dda_template_id in data_disclosure_agreements_template_ids:
                 latest_dda_for_template_id = (
-                    DataDisclosureAgreementTemplate.objects.filter(
+                    DataDisclosureAgreementTemplate.objects.exclude(
+                        status='archived'
+                    ).filter(
                         templateId=dda_template_id,
                         organisationId=organisation,
                         status=status_param,
@@ -333,7 +349,9 @@ class DataDisclosureAgreementTemplatesView(APIView):
             temp_dda = {}
             for dda_template_id in data_disclosure_agreements_template_ids:
                 latest_dda_for_template_id = (
-                    DataDisclosureAgreementTemplate.objects.filter(
+                    DataDisclosureAgreementTemplate.objects.exclude(
+                        status='archived'
+                    ).filter(
                         templateId=dda_template_id,
                         organisationId=organisation,
                         isLatestVersion=True,
@@ -371,7 +389,9 @@ class DataDisclosureAgreementTemplateUpdateView(APIView):
             )
 
         try:
-            data_disclosure_agreement = DataDisclosureAgreementTemplate.objects.get(
+            data_disclosure_agreement = DataDisclosureAgreementTemplate.objects.exclude(
+                status='archived'
+            ).get(
                 templateId=dataDisclosureAgreementId,
                 organisationId=organisation,
                 isLatestVersion=True,
