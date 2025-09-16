@@ -8,7 +8,7 @@ class OrganisationSerializer(serializers.ModelSerializer):
         model = Organisation
         fields = [
             'id', 'coverImageUrl', 'logoUrl', 'name', 'sector', 'location',
-            'policyUrl', 'description', 'verificationRequestURLPrefix', 'openApiUrl'
+            'policyUrl', 'description', 'verificationRequestURLPrefix', 'openApiUrl', 'credentialOfferEndpoint', 'accessPointEndpoint'
         ]
         read_only_fields = ['id']
 
