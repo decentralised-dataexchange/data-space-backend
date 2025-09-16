@@ -78,6 +78,10 @@ class OrganisationView(APIView):
             organisation.owsBaseUrl = data["verificationRequestURLPrefix"]
         if data.get("openApiUrl"):
             organisation.openApiUrl = data["openApiUrl"]
+        if data.get("credentialOfferEndpoint"):
+            organisation.credentialOfferEndpoint = data["credentialOfferEndpoint"]
+        if data.get("accessPointEndpoint"):
+            organisation.accessPointEndpoint = data["accessPointEndpoint"]
 
         # Save the updated organisation instance
         organisation.save()

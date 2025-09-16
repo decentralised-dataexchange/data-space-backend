@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "data_disclosure_agreement",
     "jsonfield",
     "service",
+    "software_statement"
 ]
 
 MIDDLEWARE = [

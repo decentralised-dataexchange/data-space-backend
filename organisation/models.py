@@ -18,6 +18,8 @@ class Organisation(models.Model):
     admin = models.OneToOneField(DataspaceUser, on_delete=models.CASCADE)
     owsBaseUrl = models.CharField(max_length=255, null=True, blank=True)
     openApiUrl = models.CharField(max_length=255,null=True, blank=True)
+    credentialOfferEndpoint = models.CharField(max_length=255,null=True, blank=True)
+    accessPointEndpoint = models.CharField(max_length=255,null=True, blank=True)
     createdAt = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

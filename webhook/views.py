@@ -11,6 +11,7 @@ from data_disclosure_agreement.signals import (
     query_ddas_and_update_is_latest_flag_to_false_for_previous_versions,
 )
 from organisation.models import OrganisationIdentity
+from software_statement.models import SoftwareStatement
 
 
 # Create your views here.
@@ -68,6 +69,31 @@ def verify_ows_certificate(request):
             identity.presentationRecord = presentation_record
             identity.isPresentationVerified = is_presentation_verified
             identity.save()
+
+    return HttpResponse(status=status.HTTP_200_OK)
+
+@csrf_exempt
+@require_POST
+def receive_ows_issuance_history(request):
+    response = request.body
+    response = json.loads(response)
+    credential_exchange_id = response["data"]["credential"]["CredentialExchangeId"]
+    if not credential_exchange_id:
+        return HttpResponse(status=status.HTTP_200_OK)
+    
+    status = response["data"]["credential"]["status"]
+    issuance_history = response["data"]["credential"]
+    try:
+        software_statement = SoftwareStatement.objects.get(
+            credentialExchangeId=credential_exchange_id
+        )
+    except SoftwareStatement.DoesNotExist:
+        software_statement = None
+
+    if software_statement:
+        software_statement.status = status
+        software_statement.credentialHistory = issuance_history
+        software_statement.save()
 
     return HttpResponse(status=status.HTTP_200_OK)
 
