@@ -105,6 +105,8 @@ class DataDisclosureAgreementTemplate(models.Model):
     )
     organisationId = models.ForeignKey(Organisation, on_delete=models.CASCADE)
     dataDisclosureAgreementRecord = JSONField()
+    dataDisclosureAgreementTemplateRevision = JSONField()
+    dataDisclosureAgreementTemplateRevisionId = models.CharField(max_length=255, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)
     isLatestVersion = models.BooleanField(default=True)
 
