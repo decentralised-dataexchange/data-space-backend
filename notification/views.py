@@ -1,3 +1,4 @@
+import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -53,13 +54,13 @@ class DataMarketPlaceNotificationView(APIView):
         payload = request.data if request.content_type == 'application/json' else request.POST.dict()
         event_type = payload.get('type')
         event_action = payload.get('event')
-        dda_template = payload.get('dataDisclosureAgreementTemplate')
+        dda_template_revision = payload.get('dataDisclosureAgreementTemplate')
         dda_record = payload.get('dataDisclosureAgreementRecord')
         
         if event_type not in {'dda_template', 'dda_record'}:
             return Response({
                 'error': 'invalid_request',
-                'error_description': "'type' must be 'dda_template' or 'dda_record'"
+                'error_description': "'type' must be 'dda_template_revision' or 'dda_record'"
             }, status=status.HTTP_400_BAD_REQUEST)
         if event_action not in {'create', 'update', 'delete'}:
             return Response({
@@ -67,11 +68,13 @@ class DataMarketPlaceNotificationView(APIView):
                 'error_description': "'event' must be one of 'create', 'update', 'delete'"
             }, status=status.HTTP_400_BAD_REQUEST)
         if event_type == 'dda_template':
-            if not isinstance(dda_template, dict) or not dda_template:
+            if not isinstance(dda_template_revision, dict) or not dda_template_revision:
                 return Response({
                     'error': 'invalid_request',
                     'error_description': "'dataDisclosureAgreementTemplate' is required and must be a non-empty object"
                 }, status=status.HTTP_400_BAD_REQUEST)
+            serialized_snapshot = json.loads(dda_template_revision["serializedSnapshot"])
+            dda_template = json.loads(serialized_snapshot["objectData"])
             missing = _validate_dda_template_required_fields(event_action, dda_template)
             if missing:
                 return Response({
@@ -88,11 +91,11 @@ class DataMarketPlaceNotificationView(APIView):
         
         if event_type == 'dda_template':
             if event_action == 'create':
-                create_data_disclosure_agreement(dda_template, data_source)
+                create_data_disclosure_agreement(to_be_created_dda=dda_template, revision=dda_template_revision, data_source=data_source)
             elif event_action == 'update':
-                create_data_disclosure_agreement(dda_template, data_source)
+                create_data_disclosure_agreement(to_be_created_dda=dda_template, revision=dda_template_revision, data_source=data_source)
             elif event_action == 'delete':
-                delete_data_disclosure_agreement(dda_template, data_source)
+                delete_data_disclosure_agreement(to_be_created_dda=dda_template, revision=dda_template_revision, data_source=data_source)
         
         # TODO: support event_type `DDA-record`
         
@@ -115,7 +118,7 @@ def _validate_dda_template_required_fields(event_action: str, dda_template: dict
     return missing
 
 
-def create_data_disclosure_agreement(to_be_created_dda: dict, data_source: Organisation):
+def create_data_disclosure_agreement(to_be_created_dda: dict, revision: dict, data_source: Organisation):
 
     dda_version = to_be_created_dda["version"]
     dda_template_id = to_be_created_dda["@id"]
@@ -133,12 +136,15 @@ def create_data_disclosure_agreement(to_be_created_dda: dict, data_source: Organ
         templateId=dda_template_id,
         organisationId=data_source,
         dataDisclosureAgreementRecord=to_be_created_dda,
+        dataDisclosureAgreementTemplateRevision=revision,
+        dataDisclosureAgreementTemplateRevisionId=revision.get("id")
     )
     dda.save()
     return
 
 
-def delete_data_disclosure_agreement(to_be_deleted_dda: dict, data_source: Organisation):
+def delete_data_disclosure_agreement(to_be_deleted_dda: dict, revision: dict, data_source: Organisation):
+    # FIXME: DISP is senting revision upon delete, need to handle it.
     dda_template_id = to_be_deleted_dda["@id"]
 
     updated_count = DataDisclosureAgreementTemplate.objects.filter(
