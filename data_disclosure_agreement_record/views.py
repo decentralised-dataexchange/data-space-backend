@@ -126,12 +126,13 @@ class DataDisclosureAgreementRecordView(APIView):
         if isinstance(access_token, JsonResponse):
             return access_token
         
+        dda_record_id = None
         try:
             dda_record = DataDisclosureAgreementRecord.objects.filter(organisationId=dus_organisation,dataDisclosureAgreementTemplateRevisionId=data_disclosure_agreement_revision_id).order_by("-updatedAt").first()
-            dda_record_id = dda_record.dataDisclosureAgreementRecordId
+            if dda_record:
+                dda_record_id = dda_record.dataDisclosureAgreementRecordId
         except DataDisclosureAgreementRecord.DoesNotExist:
             dda_record = None
-            dda_record_id = None
 
         opt_in: bool = True
         if dda_record:
