@@ -144,3 +144,23 @@ class SoftwareStatementView(APIView):
         }
 
         return JsonResponse(response_data)
+    
+    def delete(self, request):
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            software_statement = SoftwareStatement.objects.get(organisationId=organisation)
+            software_statement.delete()
+            return JsonResponse(
+                {"message": "software statement deleted successfully"}, 
+                status=status.HTTP_204_NO_CONTENT
+            )
+        except SoftwareStatement.DoesNotExist:
+            return JsonResponse(
+                {"error": "software statement not found"}, 
+                status=status.HTTP_404_NOT_FOUND)
