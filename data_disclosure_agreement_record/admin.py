@@ -1,0 +1,6 @@
+from django.contrib import admin
+from data_disclosure_agreement_record.models import DataDisclosureAgreementRecord, DataDisclosureAgreementRecordHistory
+
+# Register your models here.
+admin.site.register(DataDisclosureAgreementRecord)
+admin.site.register(DataDisclosureAgreementRecordHistory)

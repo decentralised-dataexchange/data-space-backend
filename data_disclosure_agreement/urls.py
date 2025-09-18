@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import DataDisclosureAgreementView, DataDisclosureAgreementUpdateView, DataDisclosureAgreementTempleteView, DataDisclosureAgreementTemplateUpdateView
+from .views import DataDisclosureAgreementView, DataDisclosureAgreementUpdateView, DataDisclosureAgreementTempleteView, DataDisclosureAgreementTemplateUpdateView, DataDisclosureAgreementHistoryView
 
 
 urlpatterns = [
@@ -12,4 +12,6 @@ urlpatterns = [
          DataDisclosureAgreementTempleteView.as_view(), name="dataDisclosureAgreement"),
      path("/<str:dataDisclosureAgreementId>/status/",
          DataDisclosureAgreementTemplateUpdateView.as_view(), name="update_data_disclosure_agreement_status"),
+    path("/<str:dataDisclosureAgreementId>/history/",
+         DataDisclosureAgreementHistoryView.as_view(), name="list_data_disclosure_agreement_history"),
 ]
