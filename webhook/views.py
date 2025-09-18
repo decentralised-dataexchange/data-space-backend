@@ -81,7 +81,7 @@ def receive_ows_issuance_history(request):
     if not credential_exchange_id:
         return HttpResponse(status=status.HTTP_200_OK)
     
-    status = response["data"]["credential"]["status"]
+    issuance_history_status = response["data"]["credential"]["status"]
     issuance_history = response["data"]["credential"]
     try:
         software_statement = SoftwareStatement.objects.get(
@@ -91,7 +91,7 @@ def receive_ows_issuance_history(request):
         software_statement = None
 
     if software_statement:
-        software_statement.status = status
+        software_statement.status = issuance_history_status
         software_statement.credentialHistory = issuance_history
         software_statement.save()
 
