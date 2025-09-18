@@ -1,15 +1,26 @@
 import uuid
+import requests
 from django.shortcuts import render
 from rest_framework.views import View
 from config.models import DataSource, ImageModel, Verification
 from config.serializers import VerificationSerializer, DataSourceSerializer
 from django.http import JsonResponse, HttpResponse
 from rest_framework import status
-from data_disclosure_agreement.models import DataDisclosureAgreement, DataDisclosureAgreementTemplate
-from data_disclosure_agreement.serializers import DataDisclosureAgreementsSerializer, DataDisclosureAgreementTemplatesSerializer
+from data_disclosure_agreement.models import (
+    DataDisclosureAgreement,
+    DataDisclosureAgreementTemplate,
+)
+from data_disclosure_agreement.serializers import (
+    DataDisclosureAgreementsSerializer,
+    DataDisclosureAgreementTemplatesSerializer,
+)
 from dataspace_backend.utils import paginate_queryset
 from organisation.models import Organisation, OrganisationIdentity
-from organisation.serializers import OrganisationIdentitySerializer, OrganisationSerializer
+from organisation.serializers import (
+    OrganisationIdentitySerializer,
+    OrganisationSerializer,
+)
+from oAuth2Clients.models import OrganisationOAuth2Clients
 
 
 # Create your views here.
@@ -131,7 +142,8 @@ class DataSourcesView(View):
 
         # Return the JSON response
         return JsonResponse(response_data)
-    
+
+
 class OrganisationCoverImageView(View):
 
     def get(self, request, organisationId):
@@ -174,7 +186,8 @@ class OrganisationLogoImageView(View):
 
         # Return the binary image data as the HTTP response
         return HttpResponse(image.image_data, content_type="image/jpeg")
-    
+
+
 class OrganisationsView(View):
     def get(self, request):
         organisation_id_param = request.GET.get("organisationId")
@@ -193,10 +206,8 @@ class OrganisationsView(View):
         serialized_organisations = []
         for organisation in organisations:
 
-            data_disclosure_agreements_template_ids = (
-                DataDisclosureAgreementTemplate.list_unique_dda_template_ids_for_a_data_source(
-                    data_source_id=organisation.id
-                )
+            data_disclosure_agreements_template_ids = DataDisclosureAgreementTemplate.list_unique_dda_template_ids_for_a_data_source(
+                data_source_id=organisation.id
             )
             ddas = []
             for dda_template_id in data_disclosure_agreements_template_ids:
@@ -220,7 +231,9 @@ class OrganisationsView(View):
                     ddas.append(dda)
 
             try:
-                verification = OrganisationIdentity.objects.get(organisationId=organisation)
+                verification = OrganisationIdentity.objects.get(
+                    organisationId=organisation
+                )
                 verification_serializer = OrganisationIdentitySerializer(verification)
                 verification_data = verification_serializer.data
             except OrganisationIdentity.DoesNotExist:

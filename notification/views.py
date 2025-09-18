@@ -8,6 +8,8 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from organisation.models import Organisation
 from data_disclosure_agreement.models import DataDisclosureAgreementTemplate
+from data_disclosure_agreement_record.models import DataDisclosureAgreementRecord, DataDisclosureAgreementRecordHistory
+from b2b_connection.models import B2BConnection
 
 User = get_user_model()
 
@@ -56,8 +58,9 @@ class DataMarketPlaceNotificationView(APIView):
         event_action = payload.get('event')
         dda_template_revision = payload.get('dataDisclosureAgreementTemplate')
         dda_record = payload.get('dataDisclosureAgreementRecord')
+        b2b_connection = payload.get('b2bConnection')
         
-        if event_type not in {'dda_template', 'dda_record'}:
+        if event_type not in {'dda_template', 'dda_record','b2b_connection'}:
             return Response({
                 'error': 'invalid_request',
                 'error_description': "'type' must be 'dda_template_revision' or 'dda_record'"
@@ -88,6 +91,12 @@ class DataMarketPlaceNotificationView(APIView):
                     'error': 'invalid_request',
                     'error_description': "'dataDisclosureAgreementRecord' is required and must be a non-empty object"
                 }, status=status.HTTP_400_BAD_REQUEST)
+        if event_type == 'b2b_connection':
+            if not isinstance(b2b_connection, dict) or not b2b_connection:
+                return Response({
+                    'error': 'invalid_request',
+                    'error_description': "'b2bConnection' is required and must be a non-empty object"
+                }, status=status.HTTP_400_BAD_REQUEST)
         
         if event_type == 'dda_template':
             if event_action == 'create':
@@ -95,7 +104,26 @@ class DataMarketPlaceNotificationView(APIView):
             elif event_action == 'update':
                 create_data_disclosure_agreement(to_be_created_dda=dda_template, revision=dda_template_revision, data_source=data_source)
             elif event_action == 'delete':
-                delete_data_disclosure_agreement(to_be_created_dda=dda_template, revision=dda_template_revision, data_source=data_source)
+                delete_data_disclosure_agreement(to_be_deleted_dda=dda_template, revision=dda_template_revision, data_source=data_source)
+        elif event_type == 'dda_record':
+            if event_action == 'create':
+                create_data_disclosure_agreement_record(dda_record=dda_record,organisation=data_source)
+            if event_action == 'update':
+                create_data_disclosure_agreement_record(dda_record=dda_record,organisation=data_source)
+        elif event_type == 'b2b_connection':
+            if event_action == 'create':
+                create_b2b_connection(b2b_connection=b2b_connection,organisation=data_source)
+            elif event_action == 'update':
+                create_b2b_connection(b2b_connection=b2b_connection,organisation=data_source)
+            else:
+                pass
+        else:
+            return Response({
+                'error': 'invalid_request',
+                'error_description': "Event type is not supported"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
         
         # TODO: support event_type `DDA-record`
         
@@ -153,3 +181,69 @@ def delete_data_disclosure_agreement(to_be_deleted_dda: dict, revision: dict, da
     ).update(status='archived')
 
     return updated_count
+
+def create_data_disclosure_agreement_record(dda_record: dict,organisation: Organisation):
+    dda_record_id = dda_record.get("canonicalId")
+    dda_template_revision_id = dda_record.get("dataDisclosureAgreementTemplateRevision",{}).get("id")
+    dda_template_id = dda_record.get("dataDisclosureAgreementTemplateRevision",{}).get("objectId")
+    is_data_source_signed = True if dda_record.get("dataSourceSignature",{}).get("signature",None) else False
+    is_data_using_service_signed = True if dda_record.get("dataUsingServiceSignature",{}).get("signature",None) else False
+    state = "signed" if is_data_source_signed and is_data_using_service_signed else "unsigned"
+    opt_in = dda_record.get("optIn")
+
+
+    try:
+        existing_dda = DataDisclosureAgreementTemplate.objects.filter(
+            templateId=dda_template_id, organisationId=organisation,dataDisclosureAgreementTemplateRevisionId = dda_template_revision_id
+        ).first()
+    except DataDisclosureAgreementTemplate.DoesNotExist:
+        existing_dda = None
+    
+    if not dda_template_revision_id or not dda_template_id:
+        return
+
+    if existing_dda:
+        DataDisclosureAgreementRecordHistory.objects.create(
+            organisationId = organisation,
+            dataDisclosureAgreementRecord = dda_record,
+            dataDisclosureAgreementTemplate = existing_dda,
+            dataDisclosureAgreementTemplateId = existing_dda.templateId,
+            dataDisclosureAgreementTemplateRevisionId = dda_template_revision_id,
+            dataDisclosureAgreementRecordId = dda_record_id,
+            optIn = opt_in,
+            state = state,
+        ).save()
+    else:
+        DataDisclosureAgreementRecord.objects.create(
+            organisationId = organisation,
+            dataDisclosureAgreementRecord = dda_record,
+            dataDisclosureAgreementTemplateId = dda_template_id,
+            dataDisclosureAgreementTemplateRevisionId = dda_template_revision_id,
+            dataDisclosureAgreementRecordId = dda_record_id,
+            optIn = opt_in,
+            state = state,
+        ).save()
+        return
+
+def create_b2b_connection(b2b_connection: dict, organisation: Organisation):
+    b2b_connection_id = b2b_connection.get("id")
+
+
+    try:
+        existing_b2b_connection = B2BConnection.objects.filter(
+            b2bConnectionId = b2b_connection_id,
+            organisationId = organisation,
+        ).first()
+    except B2BConnection.DoesNotExist:
+        existing_b2b_connection = None
+
+    if existing_b2b_connection:
+        existing_b2b_connection.b2bConnectionRecord 
+        existing_b2b_connection.save()
+    else:
+        B2BConnection.objects.create(
+            organisationId=organisation,
+            b2bConnectionRecord=b2b_connection,
+            b2bConnectionId=b2b_connection_id,
+        ).save()
+    return

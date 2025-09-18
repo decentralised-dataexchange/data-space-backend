@@ -12,6 +12,8 @@ from .serializers import (
 from dataspace_backend.utils import paginate_queryset
 from django.db.models import Count
 from organisation.models import Organisation
+from data_disclosure_agreement_record.serializers import DataDisclosureAgreementRecordHistorySerializer
+from data_disclosure_agreement_record.models import DataDisclosureAgreementRecordHistory
 
 # Create your views here.
 
@@ -457,3 +459,40 @@ class DataDisclosureAgreementTemplateUpdateView(APIView):
                 {"error": "Data Disclosure Agreement status cannot be updated"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        
+class DataDisclosureAgreementHistoryView(APIView):
+    serializer_class = DataDisclosureAgreementRecordHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, dataDisclosureAgreementId):
+        dda_template_id = dataDisclosureAgreementId
+
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        ddas_for_template = list(DataDisclosureAgreementTemplate.objects.exclude(
+            status='archived'
+        ).filter(
+            templateId=dda_template_id,
+            organisationId=organisation,
+        ))
+
+        
+        try:
+            dda_records = DataDisclosureAgreementRecordHistory.objects.filter(organisationId=organisation,dataDisclosureAgreementTemplateId=dda_template_id).order_by("-createdAt")
+        except DataDisclosureAgreementRecordHistory.DoesNotExist:
+            dda_records = None
+
+        serializer = self.serializer_class(dda_records, many=True)
+
+        dda_records, pagination_data = paginate_queryset(serializer.data, request)
+
+        response_data = {
+            "dataDisclosureAgreementRecordHistory": dda_records,
+            "pagination": pagination_data,
+        }
+        return JsonResponse(response_data)
