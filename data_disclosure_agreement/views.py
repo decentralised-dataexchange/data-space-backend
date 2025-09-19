@@ -270,37 +270,6 @@ class DataDisclosureAgreementTempleteView(APIView):
 
         return JsonResponse(response_data)
 
-    def delete(self, request, dataDisclosureAgreementId):
-        try:
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            data_disclosure_agreement_revisions = DataDisclosureAgreementTemplate.objects.filter(
-                templateId=dataDisclosureAgreementId, 
-                organisationId=organisation
-            )
-            
-            if not data_disclosure_agreement_revisions.exists():
-                return JsonResponse(
-                    {"error": "Data Disclosure Agreement not found"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-                
-            # Update status to archived instead of deleting
-            data_disclosure_agreement_revisions.update(status='archived')
-
-        except Exception as e:
-            return JsonResponse(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        return JsonResponse({}, status=status.HTTP_204_NO_CONTENT)
-
 
 class DataDisclosureAgreementTemplatesView(APIView):
     serializer_class = DataDisclosureAgreementTemplatesSerializer
