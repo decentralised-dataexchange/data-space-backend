@@ -21,6 +21,7 @@ from organisation.serializers import (
     OrganisationSerializer,
 )
 from oAuth2Clients.models import OrganisationOAuth2Clients
+from software_statement.models import SoftwareStatement
 
 
 # Create your views here.
@@ -246,13 +247,21 @@ class OrganisationsView(View):
                     "presentationRecord": {},
                 }
 
+            try:
+                software_statement = SoftwareStatement.objects.get(organisationId=organisation)
+                software_statement = software_statement.credentialHistory
+            except SoftwareStatement.DoesNotExist:
+                software_statement = {}
+
             organisation_serializer = OrganisationSerializer(organisation)
+            organisation_data = organisation_serializer.data
+            organisation_data["softwareStatement"] = software_statement
 
             api = [organisation.openApiUrl]
             serialized_organisation = {
                 "dataDisclosureAgreements": ddas,
                 "api": api,
-                "organisation": organisation_serializer.data,
+                "organisation": organisation_data,
                 "organisationIdentity": verification_data,
             }
             # Append the serialized organisation to the list
