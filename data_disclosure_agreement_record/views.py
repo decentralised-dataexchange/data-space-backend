@@ -145,12 +145,14 @@ class DataDisclosureAgreementRecordView(APIView):
         else:
             opt_in = True
 
+        url_prefix = dus_organisation.owsBaseUrl
         verification_request = perform_get_verification_request(
             dda_template_revision_id=data_disclosure_agreement_revision_id,
             opt_in=opt_in,
             access_token=access_token,
             get_verification_request_endpoint=get_verification_request_endpoint,
             dda_record_id=dda_record_id,
+            url_prefix=url_prefix,
         )
         
         if isinstance(verification_request, JsonResponse):
@@ -217,7 +219,7 @@ def fetch_access_token(token_endpoint, client_id, client_secret):
 
 
 def perform_get_verification_request(
-    dda_template_revision_id, opt_in, access_token, get_verification_request_endpoint, dda_record_id
+    dda_template_revision_id, opt_in, access_token, get_verification_request_endpoint, dda_record_id, url_prefix
 ):
     try:
         headers = {
@@ -232,6 +234,8 @@ def perform_get_verification_request(
         }
         if dda_record_id:
             payload["dataDisclosureAgreementRecordId"] = dda_record_id
+        if url_prefix:
+            payload["urlPrefix"] = url_prefix
 
         response = requests.post(
             url=get_verification_request_endpoint, headers=headers, json=payload
