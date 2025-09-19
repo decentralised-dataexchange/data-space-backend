@@ -153,10 +153,12 @@ def create_data_disclosure_agreement(to_be_created_dda: dict, revision: dict, da
 
     # Iterate through existing DDAs and mark `isLatestVersion=false`
     existing_ddas = DataDisclosureAgreementTemplate.objects.filter(
-        templateId=dda_template_id, isLatestVersion=True, organisationId=data_source,
+        templateId=dda_template_id, organisationId=data_source,
     )
     for existing_dda in existing_ddas:
         existing_dda.isLatestVersion = False
+        if existing_dda.status != "archived":
+            existing_dda.status = "unlisted"
         existing_dda.save()
 
     dda = DataDisclosureAgreementTemplate.objects.create(
