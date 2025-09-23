@@ -115,8 +115,11 @@ class DataMarketPlaceNotificationView(APIView):
                 create_b2b_connection(b2b_connection=b2b_connection,organisation=data_source)
             elif event_action == 'update':
                 create_b2b_connection(b2b_connection=b2b_connection,organisation=data_source)
+            elif event_action == 'delete':
+                delete_b2b_connection(b2b_connection=b2b_connection,organisation=data_source)
             else:
                 pass
+                
         else:
             return Response({
                 'error': 'invalid_request',
@@ -246,4 +249,19 @@ def create_b2b_connection(b2b_connection: dict, organisation: Organisation):
             b2bConnectionRecord=b2b_connection,
             b2bConnectionId=b2b_connection_id,
         ).save()
+    return
+
+def delete_b2b_connection(b2b_connection: dict, organisation: Organisation):
+    b2b_connection_id = b2b_connection.get("id")
+
+
+    try:
+        existing_b2b_connection = B2BConnection.objects.get(
+            b2bConnectionId = b2b_connection_id,
+            organisationId = organisation,
+        )
+        existing_b2b_connection.delete()
+    except B2BConnection.DoesNotExist:
+        existing_b2b_connection = None
+
     return
