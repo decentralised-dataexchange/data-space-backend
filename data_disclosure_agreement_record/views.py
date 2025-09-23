@@ -280,7 +280,7 @@ class SignedAgreementsView(APIView):
         user = self.request.user
         try:
             organisation = Organisation.objects.get(admin=user)
-            return DataDisclosureAgreementRecord.objects.filter(organisationId=organisation)
+            return DataDisclosureAgreementRecord.objects.filter(organisationId=organisation).order_by("-updatedAt")
         except Organisation.DoesNotExist:
             return DataDisclosureAgreementRecord.objects.none()
     
