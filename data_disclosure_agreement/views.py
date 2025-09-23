@@ -264,6 +264,8 @@ class DataDisclosureAgreementTempleteView(APIView):
         dda = serializer.data["dataDisclosureAgreementRecord"]
         dda['status'] = serializer.data['status']
         dda['isLatestVersion'] = serializer.data['isLatestVersion']
+        dda['createdAt'] = serializer.data['createdAt']
+        dda['updatedAt'] = serializer.data['updatedAt']
         response_data = {
             "dataDisclosureAgreement": dda,
         }
@@ -318,6 +320,8 @@ class DataDisclosureAgreementTemplatesView(APIView):
                 latest_dda_data = latest_serializer.data["dataDisclosureAgreementRecord"]
                 latest_dda_data['status'] = latest_serializer.data['status']
                 latest_dda_data['isLatestVersion'] = True
+                latest_dda_data['createdAt'] = latest_serializer.data['createdAt']
+                latest_dda_data['updatedAt'] = latest_serializer.data['updatedAt']
                 
                 # Serialize all other versions as revisions
                 revisions = []
@@ -328,7 +332,8 @@ class DataDisclosureAgreementTemplatesView(APIView):
                         revision_data['status'] = serializer.data['status']
                         revision_data['isLatestVersion'] = False
                         revision_data['version'] = dda.version
-                        revision_data['createdAt'] = dda.createdAt.isoformat()
+                        revision_data['createdAt'] = dda.createdAt
+                        revision_data['updatedAt'] = dda.updatedAt
                         revisions.append(revision_data)
                 
                 # Add revisions to the latest DDA, sorted by createdAt
@@ -357,6 +362,8 @@ class DataDisclosureAgreementTemplatesView(APIView):
                 latest_dda_data = latest_serializer.data["dataDisclosureAgreementRecord"]
                 latest_dda_data['status'] = latest_serializer.data['status']
                 latest_dda_data['isLatestVersion'] = True
+                latest_dda_data['createdAt'] = latest_serializer.data['createdAt']
+                latest_dda_data['updatedAt'] = latest_serializer.data['updatedAt']
                 
                 # Serialize all other versions as revisions
                 revisions = []
@@ -367,7 +374,8 @@ class DataDisclosureAgreementTemplatesView(APIView):
                         revision_data['status'] = serializer.data['status']
                         revision_data['isLatestVersion'] = False
                         revision_data['version'] = dda.version
-                        revision_data['createdAt'] = dda.createdAt.isoformat()
+                        revision_data['createdAt'] = dda.createdAt
+                        revision_data['updatedAt'] = dda.updatedAt
                         revisions.append(revision_data)
                 
                 # Add revisions to the latest DDA, sorted by createdAt
@@ -386,6 +394,7 @@ class DataDisclosureAgreementTemplateUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def put(self, request, dataDisclosureAgreementId):
+        dda_template_id = dataDisclosureAgreementId
 
         to_be_updated_status = request.data.get("status")
 
@@ -416,6 +425,15 @@ class DataDisclosureAgreementTemplateUpdateView(APIView):
         )
 
         if is_valid_dda_status:
+            if to_be_updated_status == "listed":
+                # Iterate through existing DDAs and mark `isLatestVersion=false`
+                existing_ddas = DataDisclosureAgreementTemplate.objects.filter(
+                    templateId=dda_template_id, organisationId=organisation, isLatestVersion=False
+                )
+                for existing_dda in existing_ddas:
+                    if existing_dda.status != "archived":
+                        existing_dda.status = "unlisted"
+                    existing_dda.save()
             dda_record = data_disclosure_agreement.dataDisclosureAgreementRecord
             dda_record["status"] = to_be_updated_status
             data_disclosure_agreement.status = to_be_updated_status
