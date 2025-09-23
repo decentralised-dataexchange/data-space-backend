@@ -470,7 +470,7 @@ class DataDisclosureAgreementHistoryView(APIView):
 
         
         try:
-            dda_records = DataDisclosureAgreementRecordHistory.objects.filter(organisationId=organisation,dataDisclosureAgreementTemplateId=dda_template_id).order_by("-createdAt")
+            dda_records = DataDisclosureAgreementRecordHistory.objects.filter(organisationId=organisation,dataDisclosureAgreementTemplateId=dda_template_id).order_by("-updatedAt")
         except DataDisclosureAgreementRecordHistory.DoesNotExist:
             dda_records = None
 
