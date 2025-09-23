@@ -17,8 +17,8 @@ class Migration(migrations.Migration):
         ),
         migrations.RunSQL(
             sql=(
-                f"UPDATE data_disclosure_agreement_datadisclosureagreementtemplate "
-                f"SET updatedAt = '{now().isoformat()}' WHERE updatedAt IS NULL;"
+                "UPDATE data_disclosure_agreement_datadisclosureagreementtemplate "
+                "SET updatedAt = NOW() WHERE updatedAt IS NULL;"
             )
         ),
         migrations.AlterField(
