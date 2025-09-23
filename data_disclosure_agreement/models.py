@@ -109,6 +109,7 @@ class DataDisclosureAgreementTemplate(models.Model):
     dataDisclosureAgreementTemplateRevisionId = models.CharField(max_length=255, null=True)
     createdAt = models.DateTimeField(auto_now_add=True)
     isLatestVersion = models.BooleanField(default=True)
+    updatedAt = models.DateTimeField(auto_now=True)
 
     @property
     def purpose(self):

@@ -22,4 +22,4 @@ class DataDisclosureAgreementTemplatesSerializer(serializers.ModelSerializer):
 class DataDisclosureAgreementTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataDisclosureAgreementTemplate
-        fields = ['dataDisclosureAgreementRecord','status','isLatestVersion']
+        fields = ['dataDisclosureAgreementRecord','status','isLatestVersion','createdAt','updatedAt']
