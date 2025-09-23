@@ -230,6 +230,7 @@ class OrganisationsView(View):
                         "isLatestVersion"
                     ]
                     dda["createdAt"] = data_disclosure_agreement_serializer.data["createdAt"]
+                    dda["updatedAt"] = data_disclosure_agreement_serializer.data["updatedAt"]
                     ddas.append(dda)
 
             try:
