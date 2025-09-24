@@ -183,7 +183,19 @@ STATIC_ROOT = "staticfiles"
 DATA_MARKETPLACE_DW_URL = os.environ.get("DATA_MARKETPLACE_DW_URL", "https://cloudagent.igrant.io/v1/6609f0860c7d8c0001aea929/admin")
 DATA_MARKETPLACE_APIKEY = os.environ.get("DATA_MARKETPLACE_APIKEY", "ApiKey eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyaWQiOiI2NjA5ZjA3MzBjN2Q4YzAwMDFhZWE5MjgiLCJvcmdpZCI6IiIsImVudiI6IiIsImV4cCI6MTc0MzAzMTYyMX0.dPGCINiGTjP7c9Fu_IuZEEd8zqmHBQdNjDahOONq2Ho")
 
-DATA_MARKETPLACE_OWS_URL = os.environ.get("DATA_MARKETPLACE_OWS_URL", "https://staging-api.igrant.io")
-DATA_MARKETPLACE_OWS_APIKEY = os.environ.get("DATA_MARKETPLACE_OWS_APIKEY", "ApiKey eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTY29wZXMiOlsiY29uZmlnIiwiYXVkaXQiLCJzZXJ2aWNlIiwib25ib2FyZCJdLCJPcmdhbmlzYXRpb25JZCI6IjY4ZDI5OGZlYWY3NzRiZmQ2MWIzZjFjMiIsIk9yZ2FuaXNhdGlvbkFkbWluSWQiOiI2OGQyOThkMzUxMjRhZTg4NTU0NWY1ZWMiLCJEYXRhVmVyaWZpZXJVc2VySWQiOiIiLCJFbnYiOiIiLCJleHAiOjE3NjEyMjU1MDl9.vN_9163NyiLz6ugMVhpoODunCMKyGJqLuGLpYTlLy5s")
 
-BASE_URL = os.environ.get("BASE_URL","https://api.nxd.foundation")
+CONSTANCE_ADDITIONAL_FIELDS = {"json_field": ["dataspace_backend.fields.JsonField"]}
+CONSTANCE_CONFIG = {
+    "DATA_MARKETPLACE_OWS_URL": (
+        "https://staging-api.igrant.io",
+        "Data market place ows url",
+    ),
+    "DATA_MARKETPLACE_OWS_APIKEY": (
+        "ApiKey eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTY29wZXMiOlsiY29uZmlnIiwiYXVkaXQiLCJzZXJ2aWNlIiwib25ib2FyZCJdLCJPcmdhbmlzYXRpb25JZCI6IjY4ZDI5OGZlYWY3NzRiZmQ2MWIzZjFjMiIsIk9yZ2FuaXNhdGlvbkFkbWluSWQiOiI2OGQyOThkMzUxMjRhZTg4NTU0NWY1ZWMiLCJEYXRhVmVyaWZpZXJVc2VySWQiOiIiLCJFbnYiOiIiLCJleHAiOjE3NjEyMjU1MDl9.vN_9163NyiLz6ugMVhpoODunCMKyGJqLuGLpYTlLy5s",
+        "Api key for authentication towards data market palce ows",
+    ),
+    "BASE_URL": (
+        "https://api.nxd.foundation",
+        "Base api url for data market place",
+    ),
+}
