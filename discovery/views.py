@@ -1,19 +1,17 @@
 from django.shortcuts import render
 from rest_framework.views import View
 from django.http import JsonResponse, HttpResponse
-from dataspace_backend.settings import (
-    BASE_URL,
-)
+from constance import config
 
 # Create your views here.
 
 class DataMarketPlaceConfigurationView(View):
 
     def get(self, request):
-
-        data_space_endpoint = f"{BASE_URL}/service"
-        authorization_server = f"{BASE_URL}/service"
-        notification_endpoint = f"{BASE_URL}/service/notification"
+        base_url = config.BASE_URL
+        data_space_endpoint = f"{base_url}/service"
+        authorization_server = f"{base_url}/service"
+        notification_endpoint = f"{base_url}/service/notification"
         configuration = {
             "data_space_endpoint": data_space_endpoint,
             "authorization_servers": [authorization_server],
@@ -26,8 +24,9 @@ class DataMarketPlaceAuthorizationConfigurationView(View):
 
     def get(self, request):
 
-        issuer = f"{BASE_URL}/service"
-        token_endpoint = f"{BASE_URL}/service/token"
+        base_url = config.BASE_URL
+        issuer = f"{base_url}/service"
+        token_endpoint = f"{base_url}/service/token"
         configuration = {
             "issuer": issuer,
             "token_endpoint": token_endpoint
