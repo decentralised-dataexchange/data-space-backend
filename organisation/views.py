@@ -8,10 +8,7 @@ from django.http import HttpResponse, JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from config.models import ImageModel
-from dataspace_backend.settings import (
-    DATA_MARKETPLACE_OWS_URL,
-    DATA_MARKETPLACE_OWS_APIKEY
-)
+from constance import config
 
 # Create your views here.
 class OrganisationView(APIView):
@@ -294,10 +291,12 @@ class OrganisationIdentityView(APIView):
             "presentationDefinitionId": presentation_definition_id,
             "urlPrefix": organisation.owsBaseUrl
         }
+        data_market_place_ows_url = config.DATA_MARKETPLACE_OWS_URL
+        data_market_place_api_key = config.DATA_MARKETPLACE_OWS_APIKEY
         url = (
-            f"{DATA_MARKETPLACE_OWS_URL}/v3/config/digital-wallet/openid/sdjwt/verification/send"
+            f"{data_market_place_ows_url}/v3/config/digital-wallet/openid/sdjwt/verification/send"
         )
-        authorization_header = DATA_MARKETPLACE_OWS_APIKEY
+        authorization_header = data_market_place_api_key
         try:
             response = requests.post(
                 url, headers={"Authorization": authorization_header}, json=payload
