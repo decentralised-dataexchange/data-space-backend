@@ -20,6 +20,7 @@ class Organisation(models.Model):
     openApiUrl = models.CharField(max_length=255,null=True, blank=True)
     credentialOfferEndpoint = models.CharField(max_length=255,null=True, blank=True)
     accessPointEndpoint = models.CharField(max_length=255,null=True, blank=True)
+    codeOfConduct = models.BooleanField(default=False)
     createdAt = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -68,3 +69,18 @@ class Sector(models.Model):
     class Meta:
         verbose_name = "Organisation Sector"
         verbose_name_plural = "Organisation Sectors"
+
+class CodeOfConduct(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    pdfFile = models.FileField(upload_to='code_of_conduct/')
+    createdAt = models.DateTimeField(auto_now_add=True)
+    updatedAt = models.DateTimeField(auto_now=True)
+    isActive = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"Code of Conduct - {self.updatedAt.strftime('%Y-%m-%d %H:%M')}"
+
+    class Meta:
+        verbose_name = "Code of Conduct"
+        verbose_name_plural = "Code of Conduct"
+        ordering = ['-updatedAt']

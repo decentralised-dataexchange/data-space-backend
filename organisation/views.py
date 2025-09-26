@@ -365,3 +365,27 @@ class OrganisationIdentityView(APIView):
                 {"error": "Organisation identity not found"}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+        
+class CodeOfConductUpdateView(APIView):
+    serializer_class = OrganisationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        data = request.data.get("codeOfConduct", False)
+
+        # Get the Organisation instance associated with the current user
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        organisation.codeOfConduct = data
+        
+        # Save the updated organisation instance
+        organisation.save()
+
+        # Serialize the updated DataSource instance
+        serializer = self.serializer_class(organisation)
+        return JsonResponse({"organisation": serializer.data}, status=status.HTTP_202_ACCEPTED)

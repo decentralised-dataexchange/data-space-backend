@@ -11,11 +11,14 @@ from .serializers import (DataspaceUserSerializer,
                           RegisterDataspaceUserSerializer)
 from rest_framework_simplejwt.views import (TokenObtainPairView,
                                             TokenRefreshView)
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, FileResponse
 from dataspace_backend import settings
-from organisation.models import Organisation, Sector
-from organisation.serializers import OrganisationSerializer, SectorSerializer
+from organisation.models import Organisation, Sector, CodeOfConduct
+from organisation.serializers import OrganisationSerializer, SectorSerializer, CodeOfConductSerializer
 from config.models import ImageModel
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 def construct_cover_image_url(
@@ -217,4 +220,48 @@ class SectorView(APIView):
         
         serializer = SectorSerializer(sectors, many=True)
         return Response({"sectors": serializer.data}, status=status.HTTP_200_OK)
+    
+class CodeOfConductView(APIView):
+    """
+    API endpoint to get the latest active code of conduct PDF.
+    This is a public endpoint.
+    """
+    permission_classes = []  # Public endpoint
+
+    def get(self, request):
+        try:
+            logger.info("Attempting to fetch latest active code of conduct")
+            
+            # Get the latest active code of conduct
+            code_of_conduct = CodeOfConduct.objects.filter(isActive=True).latest('updatedAt')
+            
+            if not code_of_conduct.pdfFile:
+                logger.error("Code of conduct found but PDF file is missing")
+                return Response(
+                    {"error": "Code of conduct PDF file is missing"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+                
+            logger.info(f"Serving code of conduct: {code_of_conduct.pdfFile.name}")
+            
+            # Return the file directly for download
+            response = FileResponse(
+                code_of_conduct.pdfFile,
+                as_attachment=True,
+                filename=f"code_of_conduct_{code_of_conduct.updatedAt.date()}.pdf"
+            )
+            return response
+            
+        except CodeOfConduct.DoesNotExist:
+            logger.warning("No active code of conduct found in the database")
+            return Response(
+                {"error": "No active code of conduct available"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.exception("Error serving code of conduct")
+            return Response(
+                {"error": "An error occurred while processing your request"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
