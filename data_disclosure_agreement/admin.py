@@ -10,5 +10,5 @@ class DataDisclosureAgreementAdmin(admin.ModelAdmin):
         return self.list_display
 
 
-myadminsite.register(DataDisclosureAgreement, DataDisclosureAgreementAdmin)
+# myadminsite.register(DataDisclosureAgreement, DataDisclosureAgreementAdmin)
 myadminsite.register(DataDisclosureAgreementTemplate, DataDisclosureAgreementAdmin)
