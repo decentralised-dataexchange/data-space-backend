@@ -4,7 +4,7 @@ from django.db import transaction
 from rest_framework import permissions, status
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.views import APIView, View
 
 from onboard.permissions import IsOwnerOrReadOnly
 from .serializers import (DataspaceUserSerializer,
@@ -13,8 +13,8 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,
                                             TokenRefreshView)
 from django.http import HttpResponse, JsonResponse
 from dataspace_backend import settings
-from organisation.models import Organisation
-from organisation.serializers import OrganisationSerializer
+from organisation.models import Organisation, Sector
+from organisation.serializers import OrganisationSerializer, SectorSerializer
 from config.models import ImageModel
 
 # Create your views here.
@@ -114,7 +114,6 @@ class CreateUserAndOrganisationView(APIView):
             "location",
             "policyUrl",
             "description",
-            "verificationRequestURLPrefix",
         ]
 
         # Combine required fields
@@ -202,4 +201,20 @@ class CreateUserAndOrganisationView(APIView):
             {"user": user_payload, "organisation": org_payload},
             status=status.HTTP_201_CREATED,
         )
+    
+class SectorView(APIView):
+    
+    permission_classes = []  # Make it a public route
+    
+    def get(self, request):
+        # Check if any sectors exist
+        sectors = Sector.objects.all()
+        
+        # If no sectors exist, create the default 'Healthcare' sector
+        if not sectors.exists():
+            Sector.objects.create(sectorName="Healthcare")
+            sectors = Sector.objects.all()
+        
+        serializer = SectorSerializer(sectors, many=True)
+        return Response({"sectors": serializer.data}, status=status.HTTP_200_OK)
     
