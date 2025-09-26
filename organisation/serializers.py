@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Organisation, OrganisationIdentity, OrganisationIdentityTemplate
-
+from .models import Organisation, OrganisationIdentity, OrganisationIdentityTemplate, Sector
 
 class OrganisationSerializer(serializers.ModelSerializer):
     verificationRequestURLPrefix = serializers.CharField(source='owsBaseUrl', read_only=True)
@@ -22,3 +21,9 @@ class OrganisationIdentityTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrganisationIdentityTemplate
         fields = "__all__"
+
+class SectorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sector
+        fields = ['id', 'sectorName']
+        read_only_fields = ['id']
