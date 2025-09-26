@@ -56,3 +56,15 @@ class OrganisationIdentityTemplate(models.Model):
     class Meta:
         verbose_name = "Organisation Identity Template"
         verbose_name_plural = "Organisation Identity Template"
+
+
+class Sector(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    sectorName = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.sectorName
+    
+    class Meta:
+        verbose_name = "Organisation Sector"
+        verbose_name_plural = "Organisation Sectors"
