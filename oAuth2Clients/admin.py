@@ -1,7 +1,8 @@
 from django.contrib import admin
-from .models import OAuth2Clients
+from .models import OAuth2Clients, OrganisationOAuth2Clients
 
 @admin.register(OAuth2Clients)
+@admin.register(OrganisationOAuth2Clients)
 class OAuth2ClientsAdmin(admin.ModelAdmin):
     list_display = ['name', 'client_id', 'organisation', 'is_active', 'created_at']
     list_filter = ['is_active', 'created_at', 'organisation__name']

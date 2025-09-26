@@ -3,4 +3,4 @@ from .models import Connection
 from customadminsite.admin import myadminsite
 
 # Register your models here.
-myadminsite.register(Connection)
+# myadminsite.register(Connection)

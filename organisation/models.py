@@ -37,6 +37,10 @@ class OrganisationIdentity(models.Model):
     def __str__(self):
         return str(self.id)
     
+    class Meta:
+        verbose_name = "Organisation Identity"
+        verbose_name_plural = "Organisation Identities"
+    
 class OrganisationIdentityTemplate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     organisationIdentityTemplateName = models.CharField(
@@ -48,3 +52,7 @@ class OrganisationIdentityTemplate(models.Model):
 
     def __str__(self):
         return self.organisationIdentityTemplateName
+    
+    class Meta:
+        verbose_name = "Organisation Identity Template"
+        verbose_name_plural = "Organisation Identity Template"
