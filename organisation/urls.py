@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import OrganisationView, OrganisationCoverImageView, OrganisationLogoImageView, OrganisationIdentityView
+from .views import OrganisationView, OrganisationCoverImageView, OrganisationLogoImageView, OrganisationIdentityView, CodeOfConductUpdateView
 from oAuth2Clients.views import OAuth2ClientsView, OAuth2ClientView, OrganisationOAuth2ClientsView, OrganisationOAuth2ClientView
 from software_statement.views import SoftwareStatementView
 from data_disclosure_agreement_record.views import DataDisclosureAgreementRecordView, SignedAgreementsView, SignedAgreementView
@@ -7,6 +7,7 @@ from b2b_connection.views import B2BConnectionsView, B2BConnectionView
 
 urlpatterns = [
     path("/", OrganisationView.as_view(), name="organisation"),
+    path("/code-of-conduct", CodeOfConductUpdateView.as_view(), name="update_code_of_conduct"),
     path("/coverimage/",
         OrganisationCoverImageView.as_view(), name="organisation_cover_image"),
     path("/logoimage/",

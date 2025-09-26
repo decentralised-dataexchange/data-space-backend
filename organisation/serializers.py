@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Organisation, OrganisationIdentity, OrganisationIdentityTemplate, Sector
+from .models import Organisation, OrganisationIdentity, OrganisationIdentityTemplate, Sector, CodeOfConduct
 
 class OrganisationSerializer(serializers.ModelSerializer):
     verificationRequestURLPrefix = serializers.CharField(source='owsBaseUrl', read_only=True)
@@ -7,7 +7,7 @@ class OrganisationSerializer(serializers.ModelSerializer):
         model = Organisation
         fields = [
             'id', 'coverImageUrl', 'logoUrl', 'name', 'sector', 'location',
-            'policyUrl', 'description', 'verificationRequestURLPrefix', 'openApiUrl', 'credentialOfferEndpoint', 'accessPointEndpoint'
+            'policyUrl', 'description', 'verificationRequestURLPrefix', 'openApiUrl', 'credentialOfferEndpoint', 'accessPointEndpoint', 'codeOfConduct'
         ]
         read_only_fields = ['id']
 
@@ -27,3 +27,9 @@ class SectorSerializer(serializers.ModelSerializer):
         model = Sector
         fields = ['id', 'sectorName']
         read_only_fields = ['id']
+
+class CodeOfConductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CodeOfConduct
+        fields = ['id', 'pdfFile', 'createdAt', 'updatedAt']
+        read_only_fields = ['id', 'createdAt', 'updatedAt']
