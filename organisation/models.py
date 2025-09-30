@@ -21,6 +21,7 @@ class Organisation(models.Model):
     credentialOfferEndpoint = models.CharField(max_length=255,null=True, blank=True)
     accessPointEndpoint = models.CharField(max_length=255,null=True, blank=True)
     codeOfConduct = models.BooleanField(default=False)
+    privacyDashboardUrl = models.CharField(max_length=255,null=True, blank=True)
     createdAt = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

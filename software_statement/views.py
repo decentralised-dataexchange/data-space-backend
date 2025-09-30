@@ -83,13 +83,20 @@ class SoftwareStatementView(APIView):
             )
 
         credential_definition_id = softwareStatementTemplate.credentialDefinitionId
+        claims = {
+            "client_uri": organisation.accessPointEndpoint,
+            "name": organisation.name,
+            "location": organisation.location,
+            "industry_sector": organisation.sector
+        }
+        privacy_dashboard_url = organisation.privacyDashboardUrl
+        if privacy_dashboard_url:
+            claims["privacy_dashboard_url"] = privacy_dashboard_url
         payload = {
             "issuanceMode": "InTime",
             "credentialDefinitionId": credential_definition_id,
             "credential": {
-                "claims": {
-                    "client_uri": organisation.accessPointEndpoint
-                }
+                "claims": claims
             },
             "credentialOfferEndpoint": organisation.credentialOfferEndpoint
         }
