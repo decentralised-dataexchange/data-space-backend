@@ -79,6 +79,8 @@ class OrganisationView(APIView):
             organisation.credentialOfferEndpoint = data["credentialOfferEndpoint"]
         if data.get("accessPointEndpoint"):
             organisation.accessPointEndpoint = data["accessPointEndpoint"]
+        if data.get("privacyDashboardUrl"):
+            organisation.accessPointEndpoint = data["privacyDashboardUrl"]
 
         # Save the updated organisation instance
         organisation.save()
