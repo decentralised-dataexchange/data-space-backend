@@ -52,7 +52,7 @@ def load_default_cover_image():
         return image.id
 
 def load_default_logo_image():
-    logo_image_path = os.path.join(settings.BASE_DIR, "resources","assets", "logo.jpeg")
+    logo_image_path = os.path.join(settings.BASE_DIR, "resources","assets", "unknownOrgLogo.png")
 
     with open(logo_image_path, 'rb') as logo_image_file:
         image_data = logo_image_file.read()
