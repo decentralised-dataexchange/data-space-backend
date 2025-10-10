@@ -1,4 +1,4 @@
-
+import os
 import requests
 from rest_framework import permissions, status
 from rest_framework import status as http_status
@@ -83,11 +83,17 @@ class SoftwareStatementView(APIView):
             )
 
         credential_definition_id = softwareStatementTemplate.credentialDefinitionId
+        protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
+        cover_url = f"{protocol}{request.get_host()}/service/organisation/{organisation.id}/coverimage/"
+        logo_url = f"{protocol}{request.get_host()}/service/organisation/{organisation.id}/logoimage/"
+
         claims = {
             "client_uri": organisation.accessPointEndpoint,
             "name": organisation.name,
             "location": organisation.location,
-            "industry_sector": organisation.sector
+            "industry_sector": organisation.sector,
+            "cover_url": cover_url,
+            "logo_url": logo_url,
         }
         privacy_dashboard_url = organisation.privacyDashboardUrl
         if privacy_dashboard_url:
@@ -95,6 +101,7 @@ class SoftwareStatementView(APIView):
         payload = {
             "issuanceMode": "InTime",
             "credentialDefinitionId": credential_definition_id,
+            "userPin": "",
             "credential": {
                 "claims": claims
             },
