@@ -447,7 +447,7 @@ class DataDisclosureAgreementTemplateUpdateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         
-class DataDisclosureAgreementHistoryView(APIView):
+class DataDisclosureAgreementHistoriesView(APIView):
     serializer_class = DataDisclosureAgreementRecordHistorySerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -483,3 +483,32 @@ class DataDisclosureAgreementHistoryView(APIView):
             "pagination": pagination_data,
         }
         return JsonResponse(response_data)
+    
+class DataDisclosureAgreementHistoryView(APIView):
+    serializer_class = DataDisclosureAgreementRecordHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+        
+    def delete(self, request, dataDisclosureAgreementId, pk):
+        """Delete a specific history record by its primary key"""
+        try:
+            organisation = Organisation.objects.get(admin=request.user)
+            record = DataDisclosureAgreementRecordHistory.objects.get(
+                pk=pk,
+                organisationId=organisation,
+                dataDisclosureAgreementTemplateId=dataDisclosureAgreementId
+            )
+            record.delete()
+            return JsonResponse(
+                {"message": "Data disclosure agreement history record deleted successfully"},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        except Organisation.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data source not found"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except DataDisclosureAgreementRecordHistory.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data disclosure agreement history record not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND
+            )
