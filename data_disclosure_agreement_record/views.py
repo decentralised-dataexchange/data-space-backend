@@ -364,6 +364,15 @@ class SignedAgreementView(APIView):
         response_data = {"dataDisclosureAgreementRecord": serializer.data}
         return JsonResponse(response_data)
 
+    def delete(self, request, pk):
+        """Delete a specific record"""
+        record = get_object_or_404(self.get_queryset(), pk=pk)
+        record.delete()
+        return JsonResponse(
+            {"message": "Data disclosure agreement record deleted successfully"}, 
+            status=status.HTTP_204_NO_CONTENT
+        )
+
 
 class SignedAgreementsView(APIView):
 
