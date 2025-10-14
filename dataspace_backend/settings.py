@@ -33,6 +33,8 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "https://api.nxd.foundation",
     "https://demo-api.nxd.foundation",
+    "https://dataspace.nxd.foundation",
+    "https://staging-dataspace.nxd.foundation",
     "http://localhost:3000",
     "http://localhost:8000",
     "http://localhost:8080",
