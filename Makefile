@@ -72,11 +72,14 @@ build: ## Builds the docker image
 	docker build -t $(DOCKER_IMAGE):dev -f resources/docker/Dockerfile .
 
 .PHONY: publish
-publish: $(DEPLOY_VERSION_F ILE) ## Publish latest production Docker image to docker hub
+publish: $(DEPLOY_VERSION_FILE) ## Publish latest production Docker image to docker hub
 	docker push $(DEPLOY_VERSION)
 
 deploy/staging: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,staging})
 	kubectl set image deployment/dataspace-backend dataspace-backend=$(DEPLOY_VERSION) -n dataspace 
+
+deploy/demo: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,staging})
+	kubectl set image deployment/prod-dataspace-backend prod-dataspace-backend=$(DEPLOY_VERSION) -n dataspace
 
 $(DEPLOY_VERSION_FILE):
 	@echo "Missing '$(DEPLOY_VERSION_FILE)' file. Run 'make build/docker/deployable'" >&2
