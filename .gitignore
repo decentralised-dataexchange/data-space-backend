@@ -7,3 +7,4 @@ deploy_version
 .bootstrap/
 staticfiles/
 .envrc
+code_of_conduct
