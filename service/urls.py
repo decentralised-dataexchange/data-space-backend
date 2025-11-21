@@ -1,5 +1,13 @@
 from django.urls import path
-from .views import DataSourceCoverImageView, DataSourceLogoImageView, DataSourcesView, OrganisationsView, OrganisationCoverImageView, OrganisationLogoImageView
+from .views import (
+    DataSourceCoverImageView,
+    DataSourceLogoImageView,
+    DataSourcesView,
+    OrganisationsView,
+    OrganisationCoverImageView,
+    OrganisationLogoImageView,
+    SearchView,
+)
 from discovery.views import DataMarketPlaceConfigurationView, DataMarketPlaceAuthorizationConfigurationView
 from authorization.views import DataMarketPlaceTokenView
 from notification.views import DataMarketPlaceNotificationView
@@ -23,4 +31,6 @@ urlpatterns = [
           OrganisationCoverImageView.as_view(), name="organisation_coverimage"),
      path("organisation/<uuid:organisationId>/logoimage/",
           OrganisationLogoImageView.as_view(), name="organisation_logoimage"),
+     path("search",
+          SearchView.as_view(), name="search"),
 ]
