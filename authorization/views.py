@@ -28,9 +28,18 @@ class DataMarketPlaceTokenView(APIView):
         # Extract grant_type from form or JSON
         grant_type = None
         if request.content_type == 'application/json':
-            grant_type = (request.data or {}).get('grant_type')
-        else:
-            grant_type = request.POST.get('grant_type')
+            return Response({
+                "error": "invalid_request",
+                "error_description": "Content-Type must be application/x-www-form-urlencoded"
+            })
+        if request.content_type != 'application/x-www-form-urlencoded':
+            return Response({
+                "error": "invalid_request",
+                "error_description": "Missing required parameter: grant_type"
+            })
+        
+        grant_type = request.POST.get('grant_type')
+            
         if grant_type != 'client_credentials':
             return Response({
                 'error': 'unsupported_grant_type',
