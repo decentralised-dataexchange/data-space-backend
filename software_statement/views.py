@@ -53,7 +53,7 @@ class SoftwareStatementView(APIView):
                 {"error": "Organisation not found"}, status=http_status.HTTP_400_BAD_REQUEST
             )
         
-        ows_base_url = organisation.owsBaseUrl
+        ows_base_url = config.VERIFICATION_REQUEST_URL_PREFIX
         credential_offer_endpoint = organisation.credentialOfferEndpoint
         access_point_endpoint = organisation.accessPointEndpoint
 

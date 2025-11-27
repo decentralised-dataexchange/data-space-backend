@@ -200,4 +200,8 @@ CONSTANCE_CONFIG = {
         "https://api.nxd.foundation",
         "Base api url for data market place",
     ),
+    "VERIFICATION_REQUEST_URL_PREFIX": (
+        "https://staging-business.igrant.io/oid4vc-holder",
+        "Verification request URL prefix (OWS base URL)",
+    ),
 }

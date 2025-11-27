@@ -16,6 +16,7 @@ from dataspace_backend import settings
 from organisation.models import Organisation, Sector, CodeOfConduct
 from organisation.serializers import OrganisationSerializer, SectorSerializer, CodeOfConductSerializer
 from config.models import ImageModel
+from constance import config
 import logging
 
 logger = logging.getLogger(__name__)
@@ -167,7 +168,6 @@ class CreateUserAndOrganisationView(APIView):
                     location=organisation_data.get("location"),
                     policyUrl=organisation_data.get("policyUrl"),
                     description=organisation_data.get("description"),
-                    owsBaseUrl=organisation_data.get("verificationRequestURLPrefix", ""),
                     openApiUrl=data.get("openApiUrl", ""),
                     admin=user,
                 )

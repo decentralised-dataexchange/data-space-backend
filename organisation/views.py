@@ -26,7 +26,6 @@ class OrganisationView(APIView):
 
         # Serialize the Organisation instance
         organisation_serializer = self.serializer_class(organisation)
-
         # Construct the response data
         response_data = {
             "organisation": organisation_serializer.data
@@ -51,7 +50,6 @@ class OrganisationView(APIView):
             "location",
             "policyUrl",
             "description",
-            "verificationRequestURLPrefix",
         ]
         missing_fields = [f for f in required_fields if not data.get(f)]
         if missing_fields:
@@ -71,8 +69,6 @@ class OrganisationView(APIView):
             organisation.policyUrl = data["policyUrl"]
         if data.get("sector"):
             organisation.sector = data["sector"]
-        if data.get("verificationRequestURLPrefix"):
-            organisation.owsBaseUrl = data["verificationRequestURLPrefix"]
         if data.get("openApiUrl"):
             organisation.openApiUrl = data["openApiUrl"]
         if data.get("credentialOfferEndpoint"):
@@ -291,7 +287,7 @@ class OrganisationIdentityView(APIView):
         payload = {
             "requestByReference": True,
             "presentationDefinitionId": presentation_definition_id,
-            "urlPrefix": organisation.owsBaseUrl
+            "urlPrefix": config.VERIFICATION_REQUEST_URL_PREFIX
         }
         data_market_place_ows_url = config.DATA_MARKETPLACE_OWS_URL
         data_market_place_api_key = config.DATA_MARKETPLACE_OWS_APIKEY

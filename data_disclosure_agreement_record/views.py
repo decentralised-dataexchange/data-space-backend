@@ -159,14 +159,13 @@ class DataDisclosureAgreementRecordView(APIView):
         else:
             opt_in = True
 
-        url_prefix = dus_organisation.owsBaseUrl
         verification_request = perform_get_verification_request(
             dda_template_revision_id=data_disclosure_agreement_revision_id,
             opt_in=opt_in,
             access_token=access_token,
             get_verification_request_endpoint=get_verification_request_endpoint,
             dda_record_id=dda_record_id,
-            url_prefix=url_prefix,
+            url_prefix=config.VERIFICATION_REQUEST_URL_PREFIX,
         )
 
         if isinstance(verification_request, JsonResponse):

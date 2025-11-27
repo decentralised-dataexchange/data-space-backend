@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from constance import config
 from .models import (
     Organisation,
     OrganisationIdentity,
@@ -9,9 +10,10 @@ from .models import (
 
 
 class OrganisationSerializer(serializers.ModelSerializer):
-    verificationRequestURLPrefix = serializers.CharField(
-        source="owsBaseUrl", read_only=True
-    )
+    verificationRequestURLPrefix = serializers.SerializerMethodField()
+
+    def get_verificationRequestURLPrefix(self, obj):
+        return obj.owsBaseUrl or config.VERIFICATION_REQUEST_URL_PREFIX
 
     class Meta:
         model = Organisation
