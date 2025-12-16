@@ -2,7 +2,8 @@ import uuid
 import requests
 import json
 from django.shortcuts import render
-from django.db.models import Q
+from django.db.models import Q, TextField
+from django.db.models.functions import Cast
 from rest_framework.views import View
 from config.models import DataSource, ImageModel, Verification
 from config.serializers import VerificationSerializer, DataSourceSerializer
@@ -370,138 +371,49 @@ class SearchView(View):
             search_dda_purpose or search_dda_description or search_dataset
         )
 
-        ddas_qs = DataDisclosureAgreementTemplate.objects.none()
-        organisation_ids_from_ddas = []
-        if dda_scopes_enabled:
-            # Start from all listed, latest DDAs
-            base_ddas_qs = DataDisclosureAgreementTemplate.objects.filter(
-                status="listed",
-                isLatestVersion=True,
-            ).select_related("organisationId")
-
-            # Scan JSON records in Python to find matches
-            search_lower = search.lower()
-            matching_ids = []
-            org_ids_set = set()
-            for dda in base_ddas_qs:
-                record = dda.dataDisclosureAgreementRecord or {}
-                record_str = json.dumps(record).lower()
-                if search_lower in record_str:
-                    matching_ids.append(dda.id)
-                    org_ids_set.add(dda.organisationId_id)
-
-            if matching_ids:
-                ddas_qs = base_ddas_qs.filter(id__in=matching_ids)
-                organisation_ids_from_ddas = list(org_ids_set)
-
-        org_filter = Q()
-        has_filter = False
-
-        if search_org_name:
-            org_filter |= Q(name__icontains=search) | Q(description__icontains=search)
-            has_filter = True
-
-        if dda_scopes_enabled and organisation_ids_from_ddas:
-            org_filter |= Q(id__in=organisation_ids_from_ddas)
-            has_filter = True
-
-        if has_filter:
-            organisations_qs = Organisation.objects.filter(org_filter).distinct()
-        else:
-            organisations_qs = Organisation.objects.none()
-
-        if sort_by == "orgName":
-            order_field = "name" if sort_order == "asc" else "-name"
-            organisations_qs = organisations_qs.order_by(order_field)
-        else:
-            order_field = "createdAt" if sort_order == "asc" else "-createdAt"
-            organisations_qs = organisations_qs.order_by(order_field)
-
-        if dda_scopes_enabled:
-            if sort_by == "ddaCreatedAt":
-                dda_order_field = "createdAt" if sort_order == "asc" else "-createdAt"
-            elif sort_by == "orgName":
-                dda_order_field = (
-                    "organisationId__name"
-                    if sort_order == "asc"
-                    else "-organisationId__name"
-                )
-            else:
-                dda_order_field = "-createdAt" if sort_order == "desc" else "createdAt"
-            ddas_qs = ddas_qs.order_by(dda_order_field)
-
-        organisations_page, organisations_pagination = paginate_queryset(
-            organisations_qs, request
+        base_ddas_qs = DataDisclosureAgreementTemplate.objects.filter(
+            status="listed",
+            isLatestVersion=True,
+        ).select_related("organisationId").annotate(
+            dda_record_text=Cast(
+                "dataDisclosureAgreementRecord",
+                output_field=TextField(),
+            )
         )
 
-        serialized_organisations = []
-        for organisation in organisations_page:
-            data_disclosure_agreements_template_ids = DataDisclosureAgreementTemplate.list_unique_dda_template_ids_for_a_data_source(
-                data_source_id=organisation.id
+        dda_filter = Q()
+        has_dda_filter = False
+
+        if dda_scopes_enabled:
+            dda_filter |= Q(dda_record_text__icontains=search)
+            has_dda_filter = True
+
+        if search_org_name:
+            dda_filter |= Q(organisationId__name__icontains=search) | Q(
+                organisationId__description__icontains=search
             )
-            ddas = []
-            for dda_template_id in data_disclosure_agreements_template_ids:
-                dda_for_template_id = DataDisclosureAgreementTemplate.read_latest_dda_by_template_id_and_data_source_id(
-                    template_id=dda_template_id,
-                    data_source_id=organisation.id,
-                )
+            has_dda_filter = True
 
-                data_disclosure_agreement_serializer = (
-                    DataDisclosureAgreementTemplatesSerializer(dda_for_template_id)
-                )
-                dda = data_disclosure_agreement_serializer.data[
-                    "dataDisclosureAgreementRecord"
-                ]
+        if has_dda_filter:
+            ddas_qs = base_ddas_qs.filter(dda_filter).distinct()
+        else:
+            ddas_qs = DataDisclosureAgreementTemplate.objects.none()
 
-                if dda:
-                    dda["status"] = data_disclosure_agreement_serializer.data["status"]
-                    dda["isLatestVersion"] = data_disclosure_agreement_serializer.data[
-                        "isLatestVersion"
-                    ]
-                    dda["createdAt"] = data_disclosure_agreement_serializer.data[
-                        "createdAt"
-                    ]
-                    dda["updatedAt"] = data_disclosure_agreement_serializer.data[
-                        "updatedAt"
-                    ]
-                    ddas.append(dda)
+        if sort_by == "ddaCreatedAt":
+            dda_order_field = "createdAt"
+        elif sort_by == "orgName":
+            dda_order_field = "organisationId__name"
+        elif sort_by == "orgCreatedAt":
+            dda_order_field = "organisationId__createdAt"
+        else:
+            dda_order_field = "createdAt"
 
-            try:
-                verification = OrganisationIdentity.objects.get(organisationId=organisation)
-                verification_serializer = OrganisationIdentitySerializer(verification)
-                verification_data = verification_serializer.data
-            except OrganisationIdentity.DoesNotExist:
-                verification_data = {
-                    "id": "",
-                    "organisationId": "",
-                    "presentationExchangeId": "",
-                    "presentationState": "",
-                    "isPresentationVerified": False,
-                    "presentationRecord": {},
-                }
+        dda_order_field = (
+            dda_order_field if sort_order == "asc" else f"-{dda_order_field}"
+        )
+        ddas_qs = ddas_qs.order_by(dda_order_field)
 
-            try:
-                software_statement = SoftwareStatement.objects.get(
-                    organisationId=organisation
-                )
-                software_statement = software_statement.credentialHistory
-            except SoftwareStatement.DoesNotExist:
-                software_statement = {}
-
-            organisation_serializer = OrganisationSerializer(organisation)
-            organisation_data = organisation_serializer.data
-            organisation_data["softwareStatement"] = software_statement
-
-            api = [organisation.openApiUrl]
-            serialized_organisation = {
-                "dataDisclosureAgreements": ddas,
-                "api": api,
-                "organisation": organisation_data,
-                "organisationIdentity": verification_data,
-            }
-            serialized_organisations.append(serialized_organisation)
-
-        ddas_page, ddas_pagination = paginate_queryset(ddas_qs, request)
+        ddas_page, pagination_data = paginate_queryset(ddas_qs, request)
 
         serialized_ddas = []
         for dda in ddas_page:
@@ -523,10 +435,8 @@ class SearchView(View):
             )
 
         response_data = {
-            "organisations": serialized_organisations,
-            "organisationsPagination": organisations_pagination,
-            "ddas": serialized_ddas,
-            "ddasPagination": ddas_pagination,
+            "dataDisclosureAgreements": serialized_ddas,
+            "pagination": pagination_data,
             "searchMeta": {
                 "query": search,
                 "searchOrgName": search_org_name,
