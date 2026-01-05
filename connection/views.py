@@ -1,13 +1,14 @@
+import requests
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.views import APIView
-import requests
 
-from dataspace_backend.settings import DATA_MARKETPLACE_DW_URL, DATA_MARKETPLACE_APIKEY
+from dataspace_backend.settings import DATA_MARKETPLACE_APIKEY, DATA_MARKETPLACE_DW_URL
 from dataspace_backend.utils import get_datasource_or_400, paginate_queryset
 
 from .models import Connection
 from .serializers import DISPConnectionSerializer
+
 # Create your views here.
 
 
@@ -58,7 +59,7 @@ class DISPConnectionView(APIView):
         )
 
         # Create a connection record without deleting any active connections
-        connection = Connection.objects.create(
+        Connection.objects.create(
             dataSourceId=datasource,
             connectionId=connection_id,
             connectionState="invitation",
@@ -98,7 +99,9 @@ class DISPConnectionsView(APIView):
             return error_response
 
         try:
-            connections = Connection.objects.filter(dataSourceId=datasource,connectionState = "active")
+            connections = Connection.objects.filter(
+                dataSourceId=datasource, connectionState="active"
+            )
             connections, pagination_data = paginate_queryset(connections, request)
             serializer = DISPConnectionSerializer(connections, many=True)
             connection_data = serializer.data

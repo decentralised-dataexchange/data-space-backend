@@ -4,14 +4,16 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('data_disclosure_agreement', '0001_initial'),
+        ("data_disclosure_agreement", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='datadisclosureagreement',
-            options={'verbose_name': 'Data Disclosure Agreement - Manage Listing', 'verbose_name_plural': 'Data Disclosure Agreement - Manage Listing'},
+            name="datadisclosureagreement",
+            options={
+                "verbose_name": "Data Disclosure Agreement - Manage Listing",
+                "verbose_name_plural": "Data Disclosure Agreement - Manage Listing",
+            },
         ),
     ]

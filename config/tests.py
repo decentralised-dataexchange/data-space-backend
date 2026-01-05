@@ -33,8 +33,7 @@ class NonGetAppendSlashMiddlewareTests(TestCase):
         self.assertEqual(
             response_base.status_code,
             response_alt.status_code,
-            msg_prefix
-            + "status mismatch: "
+            msg_prefix + "status mismatch: "
             f"base={response_base.status_code}, "
             f"alt={response_alt.status_code}, "
             f"base_body={response_base.content!r}, "
@@ -43,8 +42,7 @@ class NonGetAppendSlashMiddlewareTests(TestCase):
         self.assertEqual(
             response_base.content,
             response_alt.content,
-            msg_prefix
-            + "body mismatch: "
+            msg_prefix + "body mismatch: "
             f"base_body={response_base.content!r}, "
             f"alt_body={response_alt.content!r}",
         )

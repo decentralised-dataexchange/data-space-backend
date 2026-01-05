@@ -1,18 +1,22 @@
 import requests
-from organisation.models import Organisation, OrganisationIdentity, OrganisationIdentityTemplate
-from organisation.serializers import OrganisationSerializer, OrganisationIdentitySerializer, OrganisationIdentityTemplateSerializer
-from rest_framework import permissions, status
-from django.http import JsonResponse
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from constance import config
+from django.http import JsonResponse
+from rest_framework import permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from dataspace_backend.utils import get_organisation_or_400
 from dataspace_backend.image_utils import (
-    construct_cover_image_url,
-    construct_logo_image_url,
     get_image_response,
     update_entity_image,
+)
+from dataspace_backend.utils import get_organisation_or_400
+from organisation.models import (
+    OrganisationIdentity,
+    OrganisationIdentityTemplate,
+)
+from organisation.serializers import (
+    OrganisationIdentitySerializer,
+    OrganisationSerializer,
 )
 
 
@@ -21,7 +25,6 @@ class OrganisationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
@@ -30,9 +33,7 @@ class OrganisationView(APIView):
         organisation_serializer = self.serializer_class(organisation)
 
         # Construct the response data
-        response_data = {
-            "organisation": organisation_serializer.data
-        }
+        response_data = {"organisation": organisation_serializer.data}
 
         return JsonResponse(response_data)
 
@@ -43,7 +44,7 @@ class OrganisationView(APIView):
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
-        
+
         required_fields = [
             "name",
             "sector",
@@ -86,7 +87,9 @@ class OrganisationView(APIView):
 
         # Serialize the updated DataSource instance
         serializer = self.serializer_class(organisation)
-        return JsonResponse({"organisation": serializer.data}, status=status.HTTP_202_ACCEPTED)
+        return JsonResponse(
+            {"organisation": serializer.data}, status=status.HTTP_202_ACCEPTED
+        )
 
 
 class OrganisationCoverImageView(APIView):
@@ -148,6 +151,7 @@ class OrganisationLogoImageView(APIView):
             entity_type="organisation",
         )
 
+
 class OrganisationIdentityView(APIView):
     serializer_class = OrganisationIdentitySerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -167,17 +171,21 @@ class OrganisationIdentityView(APIView):
                     "organisationId": "",
                     "presentationExchangeId": "",
                     "state": "",
-                    "verified": False
+                    "verified": False,
                 }
             )
 
         # Construct the response data
         response_data = {
-            "organisationalIdentity": verification_serializer.data.get("presentationRecord"),
+            "organisationalIdentity": verification_serializer.data.get(
+                "presentationRecord"
+            ),
             "organisationId": verification_serializer.data.get("organisationId"),
-            "presentationExchangeId": verification_serializer.data.get("presentationExchangeId"),
+            "presentationExchangeId": verification_serializer.data.get(
+                "presentationExchangeId"
+            ),
             "state": verification_serializer.data.get("presentationState"),
-            "verified": verification_serializer.data.get("isPresentationVerified")
+            "verified": verification_serializer.data.get("isPresentationVerified"),
         }
 
         return JsonResponse(response_data)
@@ -187,7 +195,6 @@ class OrganisationIdentityView(APIView):
         if error_response:
             return error_response
 
-
         try:
             organisationIdentityTemplate = OrganisationIdentityTemplate.objects.first()
         except OrganisationIdentityTemplate.DoesNotExist:
@@ -196,17 +203,17 @@ class OrganisationIdentityView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        presentation_definition_id = organisationIdentityTemplate.presentationDefinitionId
+        presentation_definition_id = (
+            organisationIdentityTemplate.presentationDefinitionId
+        )
         payload = {
             "requestByReference": True,
             "presentationDefinitionId": presentation_definition_id,
-            "urlPrefix": organisation.owsBaseUrl
+            "urlPrefix": organisation.owsBaseUrl,
         }
         data_market_place_ows_url = config.DATA_MARKETPLACE_OWS_URL
         data_market_place_api_key = config.DATA_MARKETPLACE_OWS_APIKEY
-        url = (
-            f"{data_market_place_ows_url}/v3/config/digital-wallet/openid/sdjwt/verification/send"
-        )
+        url = f"{data_market_place_ows_url}/v3/config/digital-wallet/openid/sdjwt/verification/send"
         authorization_header = data_market_place_api_key
         try:
             response = requests.post(
@@ -220,7 +227,9 @@ class OrganisationIdentityView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        presentation_exchange_id = response["verificationHistory"]["presentationExchangeId"]
+        presentation_exchange_id = response["verificationHistory"][
+            "presentationExchangeId"
+        ]
         presentation_state = response["verificationHistory"]["status"]
         presentation_record = response["verificationHistory"]
         is_presentation_verified = response["verificationHistory"]["verified"]
@@ -239,7 +248,7 @@ class OrganisationIdentityView(APIView):
                 presentationExchangeId=presentation_exchange_id,
                 presentationState=presentation_state,
                 presentationRecord=presentation_record,
-                isPresentationVerified = is_presentation_verified
+                isPresentationVerified=is_presentation_verified,
             )
 
         # Serialize the verification object
@@ -247,11 +256,15 @@ class OrganisationIdentityView(APIView):
 
         # Construct the response data
         response_data = {
-            "organisationalIdentity": verification_serializer.data.get("presentationRecord"),
+            "organisationalIdentity": verification_serializer.data.get(
+                "presentationRecord"
+            ),
             "organisationId": verification_serializer.data.get("organisationId"),
-            "presentationExchangeId": verification_serializer.data.get("presentationExchangeId"),
+            "presentationExchangeId": verification_serializer.data.get(
+                "presentationExchangeId"
+            ),
             "state": verification_serializer.data.get("presentationState"),
-            "verified": verification_serializer.data.get("isPresentationVerified")
+            "verified": verification_serializer.data.get("isPresentationVerified"),
         }
 
         return JsonResponse(response_data)
@@ -265,15 +278,16 @@ class OrganisationIdentityView(APIView):
             org_identity = OrganisationIdentity.objects.get(organisationId=organisation)
             org_identity.delete()
             return JsonResponse(
-                {"message": "Organisation identity deleted successfully"}, 
-                status=status.HTTP_204_NO_CONTENT
+                {"message": "Organisation identity deleted successfully"},
+                status=status.HTTP_204_NO_CONTENT,
             )
         except OrganisationIdentity.DoesNotExist:
             return JsonResponse(
-                {"error": "Organisation identity not found"}, 
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Organisation identity not found"},
+                status=status.HTTP_404_NOT_FOUND,
             )
-        
+
+
 class CodeOfConductUpdateView(APIView):
     serializer_class = OrganisationSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -285,12 +299,14 @@ class CodeOfConductUpdateView(APIView):
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
-        
+
         organisation.codeOfConduct = data
-        
+
         # Save the updated organisation instance
         organisation.save()
 
         # Serialize the updated DataSource instance
         serializer = self.serializer_class(organisation)
-        return JsonResponse({"organisation": serializer.data}, status=status.HTTP_202_ACCEPTED)
+        return JsonResponse(
+            {"organisation": serializer.data}, status=status.HTTP_202_ACCEPTED
+        )

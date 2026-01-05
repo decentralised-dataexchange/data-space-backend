@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organisation', '0006_organisation_codeofconduct'),
+        ("organisation", "0006_organisation_codeofconduct"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organisation',
-            name='privacyDashboardUrl',
+            model_name="organisation",
+            name="privacyDashboardUrl",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

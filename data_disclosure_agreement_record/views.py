@@ -1,19 +1,20 @@
 import requests
-from rest_framework.views import APIView
 from django.http import JsonResponse
-from rest_framework import status, permissions
+from django.shortcuts import get_object_or_404
+from rest_framework import permissions, status
+from rest_framework.views import APIView
+
 from data_disclosure_agreement.models import (
     DataDisclosureAgreementTemplate,
 )
-from organisation.models import Organisation
-from oAuth2Clients.models import OrganisationOAuth2Clients
 from data_disclosure_agreement_record.models import DataDisclosureAgreementRecord
-from django.shortcuts import get_object_or_404
-from dataspace_backend.utils import paginate_queryset
 from data_disclosure_agreement_record.serializers import (
     DataDisclosureAgreementRecordSerializer,
     DataDisclosureAgreementRecordsSerializer,
 )
+from dataspace_backend.utils import paginate_queryset
+from oAuth2Clients.models import OrganisationOAuth2Clients
+from organisation.models import Organisation
 
 
 # Create your views here.
@@ -31,8 +32,6 @@ class DataDisclosureAgreementRecordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, dataDisclosureAgreementId):
-        data_disclosure_agreement_id = dataDisclosureAgreementId
-
         dus_organisation, error_response = _get_dus_organisation_or_400(request.user)
         if error_response:
             return error_response
@@ -191,8 +190,6 @@ class DataDisclosureAgreementRecordSignInStatusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, dataDisclosureAgreementId):
-        data_disclosure_agreement_id = dataDisclosureAgreementId
-
         dus_organisation, error_response = _get_dus_organisation_or_400(request.user)
         if error_response:
             return error_response
@@ -371,13 +368,12 @@ class SignedAgreementView(APIView):
         record = get_object_or_404(self.get_queryset(), pk=pk)
         record.delete()
         return JsonResponse(
-            {"message": "Data disclosure agreement record deleted successfully"}, 
-            status=status.HTTP_204_NO_CONTENT
+            {"message": "Data disclosure agreement record deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT,
         )
 
 
 class SignedAgreementsView(APIView):
-
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):

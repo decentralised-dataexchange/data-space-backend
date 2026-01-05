@@ -1,15 +1,13 @@
-from django.views.decorators.http import require_POST
+import json
+
 from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from rest_framework import status
+
 from config.models import Verification
 from connection.models import Connection
-from rest_framework import status
-from django.views.decorators.csrf import csrf_exempt
-import json
 from data_disclosure_agreement.models import DataDisclosureAgreement
-from django.db.models.signals import post_save
-from data_disclosure_agreement.signals import (
-    query_ddas_and_update_is_latest_flag_to_false_for_previous_versions,
-)
 from organisation.models import OrganisationIdentity
 from software_statement.models import SoftwareStatement
 
@@ -20,13 +18,14 @@ from software_statement.models import SoftwareStatement
 def verify_certificate(request):
     response = request.body
     response = json.loads(response)
-    presentation_exchange_id = response["data"]["presentation"]["presentationExchangeId"]
+    presentation_exchange_id = response["data"]["presentation"][
+        "presentationExchangeId"
+    ]
     if not presentation_exchange_id:
         return HttpResponse(status=status.HTTP_200_OK)
-    
+
     presentation_state = response["data"]["presentation"]["status"]
     presentation_record = response["data"]["presentation"]
-    is_presentation_verified = response["data"]["presentation"]["verified"]
     try:
         verification = Verification.objects.get(
             presentationExchangeId=presentation_exchange_id
@@ -49,10 +48,12 @@ def verify_certificate(request):
 def verify_ows_certificate(request):
     response = request.body
     response = json.loads(response)
-    presentation_exchange_id = response["data"]["presentation"]["presentationExchangeId"]
+    presentation_exchange_id = response["data"]["presentation"][
+        "presentationExchangeId"
+    ]
     if not presentation_exchange_id:
         return HttpResponse(status=status.HTTP_200_OK)
-    
+
     presentation_state = response["data"]["presentation"]["status"]
     presentation_record = response["data"]["presentation"]
     is_presentation_verified = response["data"]["presentation"]["verified"]
@@ -72,6 +73,7 @@ def verify_ows_certificate(request):
 
     return HttpResponse(status=status.HTTP_200_OK)
 
+
 @csrf_exempt
 @require_POST
 def receive_ows_issuance_history(request):
@@ -80,7 +82,7 @@ def receive_ows_issuance_history(request):
     credential_exchange_id = response["data"]["credential"]["CredentialExchangeId"]
     if not credential_exchange_id:
         return HttpResponse(status=status.HTTP_200_OK)
-    
+
     issuance_history_status = response["data"]["credential"]["status"]
     issuance_history = response["data"]["credential"]
     try:
@@ -101,7 +103,6 @@ def receive_ows_issuance_history(request):
 @csrf_exempt
 @require_POST
 def receive_invitation(request):
-
     response = request.body
     response = json.loads(response)
     connection_id = response["connection_id"]
@@ -117,8 +118,7 @@ def receive_invitation(request):
         if connection_state == "active" and connection.connectionState != "active":
             # Delete existing connections with active status for this particular data source
             Connection.objects.filter(
-                dataSourceId=connection.dataSourceId,
-                connectionState="active"
+                dataSourceId=connection.dataSourceId, connectionState="active"
             ).delete()
             # Update status of the incoming connection
             connection.connectionState = connection_state
@@ -131,7 +131,6 @@ def receive_invitation(request):
 @csrf_exempt
 @require_POST
 def receive_data_disclosure_agreement(request):
-
     response = request.body
     response = json.loads(response)
     connection_id = response["connection_id"]
@@ -168,7 +167,6 @@ def receive_data_disclosure_agreement(request):
         for existing_dda in existing_ddas:
             existing_dda.isLatestVersion = False
             existing_dda.save()
-
 
         dda = DataDisclosureAgreement.objects.create(
             version=dda_version,

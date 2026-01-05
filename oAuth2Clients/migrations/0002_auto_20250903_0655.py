@@ -4,14 +4,15 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oAuth2Clients', '0001_initial'),
+        ("oAuth2Clients", "0001_initial"),
     ]
 
     operations = [
         migrations.AddConstraint(
-            model_name='oauth2clients',
-            constraint=models.UniqueConstraint(fields=('organisation', 'name'), name='uniq_organisation_client_name'),
+            model_name="oauth2clients",
+            constraint=models.UniqueConstraint(
+                fields=("organisation", "name"), name="uniq_organisation_client_name"
+            ),
         ),
     ]

@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from software_statement.models import SoftwareStatement, SoftwareStatementTemplate
 
 # Register your models here.

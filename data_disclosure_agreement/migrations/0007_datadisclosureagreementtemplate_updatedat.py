@@ -4,15 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('data_disclosure_agreement', '0006_datadisclosureagreementtemplate_datadisclosureagreementtemplaterevisionid'),
+        (
+            "data_disclosure_agreement",
+            "0006_datadisclosureagreementtemplate_datadisclosureagreementtemplaterevisionid",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='datadisclosureagreementtemplate',
-            name='updatedAt',
+            model_name="datadisclosureagreementtemplate",
+            name="updatedAt",
             field=models.DateTimeField(auto_now=True),
         ),
     ]

@@ -22,7 +22,44 @@ django-picklefield = "3.0"
 django-jsonfield = "^1.4.1"
 
 [tool.poetry.dev-dependencies]
+ruff = "^0.11.0"
+ty = "^0.0.8"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "onboard", "organisation", "service", "data_disclosure_agreement", "data_disclosure_agreement_record", "connection", "webhook", "software_statement", "notification", "b2b_connection", "oAuth2Clients", "discovery", "authorization", "customadminsite", "dataspace_backend"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ty]
+# ty doesn't fully support Django's metaclass magic yet
+# Disable rules that produce false positives for Django models
+[tool.ty.rules]
+unresolved-attribute = "ignore"       # Django models have dynamic .objects, .DoesNotExist
+unresolved-import = "ignore"          # Some Django imports are dynamic
+possibly-missing-attribute = "ignore" # Django field types (JSONField, DateTimeField) are dynamic

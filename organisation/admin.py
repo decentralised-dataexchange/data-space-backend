@@ -1,5 +1,12 @@
 from django.contrib import admin
-from organisation.models import Organisation, OrganisationIdentity, OrganisationIdentityTemplate, Sector, CodeOfConduct
+
+from organisation.models import (
+    CodeOfConduct,
+    Organisation,
+    OrganisationIdentity,
+    OrganisationIdentityTemplate,
+    Sector,
+)
 
 # Register your models here.
 admin.site.register(Organisation)

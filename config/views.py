@@ -1,31 +1,34 @@
 import requests
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from rest_auth.serializers import PasswordChangeSerializer
 from rest_auth.views import sensitive_post_parameters_m
 from rest_framework import permissions, status
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view, permission_classes
-from django.views.decorators.csrf import csrf_exempt
 
 from connection.models import Connection
-from dataspace_backend.settings import (DATA_MARKETPLACE_APIKEY,
-                                        DATA_MARKETPLACE_DW_URL)
-from dataspace_backend.utils import get_datasource_or_400
 from dataspace_backend.image_utils import (
     construct_cover_image_url,
     construct_logo_image_url,
-    load_default_image,
     get_image_response,
+    load_default_image,
     update_entity_image,
 )
+from dataspace_backend.settings import DATA_MARKETPLACE_APIKEY, DATA_MARKETPLACE_DW_URL
+from dataspace_backend.utils import get_datasource_or_400
 from onboard.serializers import DataspaceUserSerializer
 
-from .models import DataSource, ImageModel, Verification, VerificationTemplate
-from .serializers import (DataSourceSerializer, VerificationSerializer,
-                          VerificationTemplateSerializer)
+from .models import DataSource, Verification, VerificationTemplate
+from .serializers import (
+    DataSourceSerializer,
+    VerificationSerializer,
+    VerificationTemplateSerializer,
+)
+
 
 class DataSourceView(APIView):
     serializer_class = DataSourceSerializer
@@ -52,7 +55,6 @@ class DataSourceView(APIView):
         # Create and validate the DataSource serializer
         serializer = self.serializer_class(data=request_data)
         if serializer.is_valid():
-
             datasource = DataSource.objects.create(
                 admin=admin, **serializer.validated_data
             )
@@ -68,13 +70,13 @@ class DataSourceView(APIView):
                 baseurl=request.get_host(),
                 entity_id=str(datasource.id),
                 entity_type="data-source",
-                is_public_endpoint=True
+                is_public_endpoint=True,
             )
             datasource.logoUrl = construct_logo_image_url(
                 baseurl=request.get_host(),
                 entity_id=str(datasource.id),
                 entity_type="data-source",
-                is_public_endpoint=True
+                is_public_endpoint=True,
             )
             datasource.save()
 
@@ -258,7 +260,9 @@ class DataSourceVerificationView(APIView):
             return error_response
 
         try:
-            connection = Connection.objects.get(dataSourceId=datasource, connectionState="active")
+            connection = Connection.objects.get(
+                dataSourceId=datasource, connectionState="active"
+            )
         except Connection.DoesNotExist:
             return JsonResponse(
                 {"error": "DISP Connection not found"},
@@ -336,9 +340,7 @@ class VerificationTemplateView(APIView):
 
         try:
             vt_objects = VerificationTemplate.objects.all()
-            vt_serialiser = self.serializer_class(
-                vt_objects, many=True
-            )
+            vt_serialiser = self.serializer_class(vt_objects, many=True)
             verification_templates = vt_serialiser.data
             for verification_template in verification_templates:
                 verification_template["walletName"] = datasource.name
@@ -392,19 +394,20 @@ class PasswordChangeView(GenericAPIView):
     Accepts the following POST parameters: new_password1, new_password2
     Returns the success/fail message.
     """
+
     serializer_class = PasswordChangeSerializer
     permission_classes = (IsAuthenticated,)
 
     @sensitive_post_parameters_m
     def dispatch(self, *args, **kwargs):
-        return super(PasswordChangeView, self).dispatch(*args, **kwargs)
+        return super().dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"detail": "New password has been saved."})
-    
+
 
 @csrf_exempt
 @api_view(["POST"])

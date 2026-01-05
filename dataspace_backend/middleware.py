@@ -1,4 +1,4 @@
-from django.urls import resolve, Resolver404
+from django.urls import Resolver404, resolve
 
 
 class NonGetAppendSlashMiddleware:
