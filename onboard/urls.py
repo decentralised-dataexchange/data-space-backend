@@ -1,9 +1,13 @@
 from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework_simplejwt.views import (TokenObtainPairView,
-                                            TokenRefreshView)
+from rest_framework_simplejwt.views import TokenRefreshView
 
-from .views import CreateUserView, UserDetail,UserLogin, CreateUserAndOrganisationView, SectorView, CodeOfConductView
+from .views import (
+    CodeOfConductView,
+    CreateUserAndOrganisationView,
+    SectorView,
+    UserLogin,
+)
 
 urlpatterns = [
     path("extras/", include("rest_auth.urls")),

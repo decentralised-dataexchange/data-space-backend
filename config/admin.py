@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import DataSource,Verification, VerificationTemplate, ImageModel
-from customadminsite.admin import myadminsite
+
+from .models import ImageModel
 
 # Register your models here.
 admin.site.register(ImageModel)

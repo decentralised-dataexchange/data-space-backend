@@ -1,13 +1,11 @@
 from django.urls import path
+
 from .views import (
-    DataDisclosureAgreementView,
-    DataDisclosureAgreementUpdateView,
-    DataDisclosureAgreementTempleteView,
-    DataDisclosureAgreementTemplateUpdateView,
     DataDisclosureAgreementHistoriesView,
     DataDisclosureAgreementHistoryView,
+    DataDisclosureAgreementTemplateUpdateView,
+    DataDisclosureAgreementTempleteView,
 )
-
 
 urlpatterns = [
     # path("/<uuid:dataDisclosureAgreementId>/",

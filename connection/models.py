@@ -1,10 +1,12 @@
-from django.db import models
 from uuid import uuid4
-from config.models import DataSource
+
+from django.db import models
 from jsonfield.fields import JSONField
 
+from config.models import DataSource
+
 # Create your models here.
-from django.db import models
+
 
 class Connection(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)

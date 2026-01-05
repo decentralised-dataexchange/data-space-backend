@@ -1,7 +1,9 @@
-from django.db import models
-from onboard.models import DataspaceUser
 from uuid import uuid4
+
+from django.db import models
 from jsonfield.fields import JSONField
+
+from onboard.models import DataspaceUser
 
 # Create your models here.
 
@@ -26,7 +28,7 @@ class DataSource(models.Model):
     coverImageId = models.UUIDField(default=None, null=True, blank=True)
     logoId = models.UUIDField(default=None, null=True, blank=True)
     admin = models.OneToOneField(DataspaceUser, on_delete=models.CASCADE)
-    openApiUrl = models.CharField(max_length=255,null=True, blank=True)
+    openApiUrl = models.CharField(max_length=255, null=True, blank=True)
     createdAt = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -44,11 +46,9 @@ class Verification(models.Model):
         return str(self.id)
 
 
-
 class VerificationTemplate(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    verificationTemplateName = models.CharField(
-        max_length=255, null=True, blank=True)
+    verificationTemplateName = models.CharField(max_length=255, null=True, blank=True)
     issuerName = models.CharField(max_length=255, null=True, blank=True)
     issuerLocation = models.CharField(max_length=255, null=True, blank=True)
     issuerLogoUrl = models.CharField(max_length=255, null=True, blank=True)

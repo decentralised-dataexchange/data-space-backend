@@ -22,16 +22,15 @@ class RegisterDataspaceUserSerializer(serializers.ModelSerializer):
 
 
 class DataspaceUserSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = DataspaceUser
         fields = ["id", "email", "name"]
-    
-    def update(self, admin, validated_data):
+
+    def update(self, instance, validated_data):
         # Update only the "name" field if provided in the request
-        admin.name = validated_data.get('name', admin.name)
-        admin.save()
-        return admin
+        instance.name = validated_data.get("name", instance.name)
+        instance.save()
+        return instance
 
 
 class CustomTokenSerializer(serializers.ModelSerializer):
@@ -43,7 +42,6 @@ class CustomTokenSerializer(serializers.ModelSerializer):
 
 
 class DataspaceUsersSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = DataspaceUser
         fields = ["id", "email", "name"]

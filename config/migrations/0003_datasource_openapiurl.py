@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('config', '0002_verificationtemplate'),
+        ("config", "0002_verificationtemplate"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='datasource',
-            name='openApiUrl',
+            model_name="datasource",
+            name="openApiUrl",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

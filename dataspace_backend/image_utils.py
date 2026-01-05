@@ -6,7 +6,6 @@ from rest_framework import status
 
 from config.models import ImageModel
 
-
 DEFAULT_ASSETS_DIR = os.path.join(settings.BASE_DIR, "resources", "assets")
 
 
@@ -38,14 +37,20 @@ def construct_image_url(
     return f"{protocol}{baseurl}{endpoint}"
 
 
-def construct_cover_image_url(baseurl, entity_id, entity_type, is_public_endpoint=False):
+def construct_cover_image_url(
+    baseurl, entity_id, entity_type, is_public_endpoint=False
+):
     """Construct cover image URL for an entity."""
-    return construct_image_url(baseurl, entity_id, entity_type, "coverimage", is_public_endpoint)
+    return construct_image_url(
+        baseurl, entity_id, entity_type, "coverimage", is_public_endpoint
+    )
 
 
 def construct_logo_image_url(baseurl, entity_id, entity_type, is_public_endpoint=False):
     """Construct logo image URL for an entity."""
-    return construct_image_url(baseurl, entity_id, entity_type, "logoimage", is_public_endpoint)
+    return construct_image_url(
+        baseurl, entity_id, entity_type, "logoimage", is_public_endpoint
+    )
 
 
 def load_default_image(filename: str):

@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.views import View
 
 from config.models import DataSource, Verification
-from config.serializers import VerificationSerializer, DataSourceSerializer
+from config.serializers import DataSourceSerializer, VerificationSerializer
 from data_disclosure_agreement.models import (
     DataDisclosureAgreement,
     DataDisclosureAgreementTemplate,
@@ -16,8 +16,8 @@ from data_disclosure_agreement.serializers import (
     DataDisclosureAgreementsSerializer,
     DataDisclosureAgreementTemplatesSerializer,
 )
-from dataspace_backend.utils import paginate_queryset, get_instance_or_400
 from dataspace_backend.image_utils import get_image_response
+from dataspace_backend.utils import get_instance_or_400, paginate_queryset
 from organisation.models import Organisation, OrganisationIdentity
 from organisation.serializers import (
     OrganisationIdentitySerializer,
@@ -41,12 +41,10 @@ def _build_datasource_ddas(data_source):
             )
         )
 
-        data_disclosure_agreement_serializer = (
-            DataDisclosureAgreementsSerializer(dda_for_template_id)
+        data_disclosure_agreement_serializer = DataDisclosureAgreementsSerializer(
+            dda_for_template_id
         )
-        dda = data_disclosure_agreement_serializer.data[
-            "dataDisclosureAgreementRecord"
-        ]
+        dda = data_disclosure_agreement_serializer.data["dataDisclosureAgreementRecord"]
 
         if dda:
             dda["status"] = data_disclosure_agreement_serializer.data["status"]
@@ -65,19 +63,15 @@ def _build_organisation_ddas(organisation):
     )
     ddas = []
     for dda_template_id in data_disclosure_agreements_template_ids:
-        dda_for_template_id = (
-            DataDisclosureAgreementTemplate.read_latest_dda_by_template_id_and_data_source_id(
-                template_id=dda_template_id,
-                data_source_id=organisation.id,
-            )
+        dda_for_template_id = DataDisclosureAgreementTemplate.read_latest_dda_by_template_id_and_data_source_id(
+            template_id=dda_template_id,
+            data_source_id=organisation.id,
         )
 
         data_disclosure_agreement_serializer = (
             DataDisclosureAgreementTemplatesSerializer(dda_for_template_id)
         )
-        dda = data_disclosure_agreement_serializer.data[
-            "dataDisclosureAgreementRecord"
-        ]
+        dda = data_disclosure_agreement_serializer.data["dataDisclosureAgreementRecord"]
 
         if dda:
             dda["status"] = data_disclosure_agreement_serializer.data["status"]
@@ -123,9 +117,7 @@ def _get_organisation_identity_payload(organisation):
 
 def _get_software_statement_payload(organisation):
     try:
-        software_statement = SoftwareStatement.objects.get(
-            organisationId=organisation
-        )
+        software_statement = SoftwareStatement.objects.get(organisationId=organisation)
         return software_statement.credentialHistory
     except SoftwareStatement.DoesNotExist:
         return {}
@@ -146,7 +138,6 @@ def _serialize_organisation_summary(organisation):
 
 
 class DataSourceCoverImageView(View):
-
     def get(self, request, dataSourceId):
         # Get the DataSource instance
         datasource, error_response = get_instance_or_400(
@@ -160,7 +151,6 @@ class DataSourceCoverImageView(View):
 
 
 class DataSourceLogoImageView(View):
-
     def get(self, request, dataSourceId):
         # Get the DataSource instance
         datasource, error_response = get_instance_or_400(
@@ -185,7 +175,6 @@ class DataSourcesView(View):
         data_sources, pagination_data = paginate_queryset(data_sources, request)
         serialized_data_sources = []
         for data_source in data_sources:
-
             ddas = _build_datasource_ddas(data_source)
             verification_data = _get_datasource_verification_payload(data_source)
             datasource_serializer = DataSourceSerializer(data_source)
@@ -211,7 +200,6 @@ class DataSourcesView(View):
 
 
 class OrganisationCoverImageView(View):
-
     def get(self, request, organisationId):
         # Get the organisation instance
         organisation, error_response = get_instance_or_400(
@@ -225,7 +213,6 @@ class OrganisationCoverImageView(View):
 
 
 class OrganisationLogoImageView(View):
-
     def get(self, request, organisationId):
         # Get the organisation instance
         organisation, error_response = get_instance_or_400(
@@ -308,9 +295,7 @@ class SearchView(View):
             search_dda_description = parse_bool_param(
                 raw_search_dda_description, "searchDdaDescription", True
             )
-            search_dataset = parse_bool_param(
-                raw_search_dataset, "searchDataset", True
-            )
+            search_dataset = parse_bool_param(raw_search_dataset, "searchDataset", True)
         except ValueError as exc:
             return JsonResponse(
                 {
@@ -321,7 +306,12 @@ class SearchView(View):
             )
 
         if not any(
-            [search_org_name, search_dda_purpose, search_dda_description, search_dataset]
+            [
+                search_org_name,
+                search_dda_purpose,
+                search_dda_description,
+                search_dataset,
+            ]
         ):
             return JsonResponse(
                 {

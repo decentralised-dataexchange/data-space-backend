@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('organisation', '0005_codeofconduct'),
+        ("organisation", "0005_codeofconduct"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organisation',
-            name='codeOfConduct',
+            model_name="organisation",
+            name="codeOfConduct",
             field=models.BooleanField(default=False),
         ),
     ]

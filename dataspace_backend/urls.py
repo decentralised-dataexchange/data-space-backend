@@ -18,6 +18,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+
 from customadminsite.admin import myadminsite
 
 urlpatterns = [
@@ -25,6 +26,6 @@ urlpatterns = [
     path("superadmin/", admin.site.urls),
     path("onboard/", include("onboard.urls")),
     path("config/", include("config.urls")),
-    path('webhook/', include("webhook.urls")),
-    path('service/', include("service.urls")),
+    path("webhook/", include("webhook.urls")),
+    path("service/", include("service.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

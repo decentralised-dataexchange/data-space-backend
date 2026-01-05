@@ -4,15 +4,25 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('data_disclosure_agreement', '0003_datadisclosureagreementtemplate'),
+        ("data_disclosure_agreement", "0003_datadisclosureagreementtemplate"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='datadisclosureagreementtemplate',
-            name='status',
-            field=models.CharField(choices=[('listed', 'listed'), ('unlisted', 'unlisted'), ('awaitingForApproval', 'awaitingForApproval'), ('approved', 'approved'), ('rejected', 'rejected'), ('archived', 'archived')], default='unlisted', max_length=255),
+            model_name="datadisclosureagreementtemplate",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("listed", "listed"),
+                    ("unlisted", "unlisted"),
+                    ("awaitingForApproval", "awaitingForApproval"),
+                    ("approved", "approved"),
+                    ("rejected", "rejected"),
+                    ("archived", "archived"),
+                ],
+                default="unlisted",
+                max_length=255,
+            ),
         ),
     ]

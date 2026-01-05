@@ -1,13 +1,16 @@
 import os
+
 import requests
+from constance import config
+from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework import status as http_status
-from django.http import JsonResponse
 from rest_framework.views import APIView
-from software_statement.serializers import SoftwareStatementSerializer
-from software_statement.models import SoftwareStatement, SoftwareStatementTemplate
+
 from organisation.models import Organisation
-from constance import config
+from software_statement.models import SoftwareStatement, SoftwareStatementTemplate
+from software_statement.serializers import SoftwareStatementSerializer
+
 
 # Create your views here.
 def _get_organisation_or_400(user):
@@ -29,7 +32,9 @@ class SoftwareStatementView(APIView):
             return error_response
 
         try:
-            software_statement = SoftwareStatement.objects.get(organisationId=organisation)
+            software_statement = SoftwareStatement.objects.get(
+                organisationId=organisation
+            )
             software_statement_serializer = self.serializer_class(software_statement)
         except SoftwareStatement.DoesNotExist:
             return JsonResponse(
@@ -43,10 +48,14 @@ class SoftwareStatementView(APIView):
 
         # Construct the response data
         response_data = {
-            "softwareStatement": software_statement_serializer.data.get("credentialHistory"),
+            "softwareStatement": software_statement_serializer.data.get(
+                "credentialHistory"
+            ),
             "organisationId": software_statement_serializer.data.get("organisationId"),
-            "credentialExchangeId": software_statement_serializer.data.get("credentialExchangeId"),
-            "status": software_statement_serializer.data.get("status")
+            "credentialExchangeId": software_statement_serializer.data.get(
+                "credentialExchangeId"
+            ),
+            "status": software_statement_serializer.data.get("status"),
         }
 
         return JsonResponse(response_data)
@@ -55,7 +64,7 @@ class SoftwareStatementView(APIView):
         organisation, error_response = _get_organisation_or_400(request.user)
         if error_response:
             return error_response
-        
+
         ows_base_url = organisation.owsBaseUrl
         credential_offer_endpoint = organisation.credentialOfferEndpoint
         access_point_endpoint = organisation.accessPointEndpoint
@@ -75,7 +84,6 @@ class SoftwareStatementView(APIView):
                 {"error": "Access point endpoint not configured"},
                 status=http_status.HTTP_400_BAD_REQUEST,
             )
-
 
         try:
             softwareStatementTemplate = SoftwareStatementTemplate.objects.first()
@@ -105,17 +113,13 @@ class SoftwareStatementView(APIView):
             "issuanceMode": "InTime",
             "credentialDefinitionId": credential_definition_id,
             "userPin": "",
-            "credential": {
-                "claims": claims
-            },
-            "credentialOfferEndpoint": organisation.credentialOfferEndpoint
+            "credential": {"claims": claims},
+            "credentialOfferEndpoint": organisation.credentialOfferEndpoint,
         }
         data_market_place_ows_url = config.DATA_MARKETPLACE_OWS_URL
         data_market_place_api_key = config.DATA_MARKETPLACE_OWS_APIKEY
-        
-        url = (
-            f"{data_market_place_ows_url}/v2/config/digital-wallet/openid/sdjwt/credential/issue"
-        )
+
+        url = f"{data_market_place_ows_url}/v2/config/digital-wallet/openid/sdjwt/credential/issue"
         authorization_header = data_market_place_api_key
         try:
             response = requests.post(
@@ -135,7 +139,9 @@ class SoftwareStatementView(APIView):
 
         # Update or create software statement
         try:
-            software_statement = SoftwareStatement.objects.get(organisationId=organisation)
+            software_statement = SoftwareStatement.objects.get(
+                organisationId=organisation
+            )
             software_statement.credentialExchangeId = credential_exchange_id
             software_statement.status = status
             software_statement.credentialHistory = credential_history
@@ -153,27 +159,34 @@ class SoftwareStatementView(APIView):
 
         # Construct the response data
         response_data = {
-            "softwareStatement": software_statement_serializer.data.get("credentialHistory"),
+            "softwareStatement": software_statement_serializer.data.get(
+                "credentialHistory"
+            ),
             "organisationId": software_statement_serializer.data.get("organisationId"),
-            "credentialExchangeId": software_statement_serializer.data.get("credentialExchangeId"),
-            "status": software_statement_serializer.data.get("status")
+            "credentialExchangeId": software_statement_serializer.data.get(
+                "credentialExchangeId"
+            ),
+            "status": software_statement_serializer.data.get("status"),
         }
 
         return JsonResponse(response_data)
-    
+
     def delete(self, request):
         organisation, error_response = _get_organisation_or_400(request.user)
         if error_response:
             return error_response
 
         try:
-            software_statement = SoftwareStatement.objects.get(organisationId=organisation)
+            software_statement = SoftwareStatement.objects.get(
+                organisationId=organisation
+            )
             software_statement.delete()
             return JsonResponse(
-                {"message": "software statement deleted successfully"}, 
-                status=status.HTTP_204_NO_CONTENT
+                {"message": "software statement deleted successfully"},
+                status=status.HTTP_204_NO_CONTENT,
             )
         except SoftwareStatement.DoesNotExist:
             return JsonResponse(
-                {"error": "software statement not found"}, 
-                status=status.HTTP_404_NOT_FOUND)
+                {"error": "software statement not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )

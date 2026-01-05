@@ -1,10 +1,11 @@
 from rest_framework import serializers
+
 from .models import (
+    CodeOfConduct,
     Organisation,
     OrganisationIdentity,
     OrganisationIdentityTemplate,
     Sector,
-    CodeOfConduct,
 )
 
 

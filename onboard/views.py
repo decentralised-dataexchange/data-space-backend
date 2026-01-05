@@ -9,22 +9,21 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from onboard.permissions import IsOwnerOrReadOnly
-from .serializers import (DataspaceUserSerializer,
-                          RegisterDataspaceUserSerializer)
-from organisation.models import Organisation, Sector, CodeOfConduct
-from organisation.serializers import OrganisationSerializer, SectorSerializer
 from dataspace_backend.image_utils import (
     construct_cover_image_url,
     construct_logo_image_url,
     load_default_image,
 )
+from onboard.permissions import IsOwnerOrReadOnly
+from organisation.models import CodeOfConduct, Organisation, Sector
+from organisation.serializers import OrganisationSerializer, SectorSerializer
+
+from .serializers import DataspaceUserSerializer, RegisterDataspaceUserSerializer
 
 logger = logging.getLogger(__name__)
 
 
 class CreateUserView(CreateAPIView):
-
     model = get_user_model()
     permission_classes = [permissions.AllowAny]  # Or anon users can't register
     serializer_class = RegisterDataspaceUserSerializer
@@ -37,30 +36,31 @@ class UserDetail(APIView):
     def get(self, request):
         serializer = self.serializer_class(request.user, many=False)
         return Response(serializer.data)
-    
+
 
 class UserLogin(TokenObtainPairView):
-
     def post(self, request, *args, **kwargs):
-        if request.data.get('email') and request.data.get('password'):
+        if request.data.get("email") and request.data.get("password"):
             User = get_user_model()
-            user_email = request.data.get('email')
+            user_email = request.data.get("email")
             user = User.objects.filter(email=user_email).first()
             if user and user.is_staff:
-                return Response({"Error": "Admin users are not allowed to login"}, status=status.HTTP_403_FORBIDDEN)
+                return Response(
+                    {"Error": "Admin users are not allowed to login"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
         return super().post(request, *args, **kwargs)
-    
+
+
 class CreateUserAndOrganisationView(APIView):
-
     permission_classes = [permissions.AllowAny]
-
 
     def post(self, request):
         data = request.data or {}
 
         # Extract organisation details from the new structure
         organisation_data = data.get("organisation", {})
-        
+
         # Define required fields for both user and organisation
         required_fields = [
             "name",
@@ -77,9 +77,6 @@ class CreateUserAndOrganisationView(APIView):
             "description",
         ]
 
-        # Combine required fields
-        all_required_fields = required_fields + organisation_required_fields
-
         # Check for missing fields in both user and organisation data
         missing_fields = [f for f in required_fields if not data.get(f)]
         if missing_fields:
@@ -87,9 +84,11 @@ class CreateUserAndOrganisationView(APIView):
                 {"error": f"Missing required fields: {', '.join(missing_fields)}"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # Check for missing fields in both user and organisation data
-        missing_fields = [f for f in organisation_required_fields if not organisation_data.get(f)]
+        missing_fields = [
+            f for f in organisation_required_fields if not organisation_data.get(f)
+        ]
         if missing_fields:
             return Response(
                 {"error": f"Missing required fields: {', '.join(missing_fields)}"},
@@ -110,7 +109,7 @@ class CreateUserAndOrganisationView(APIView):
                 user = User.objects.create_user(
                     email=data.get("email"),
                     password=data.get("password"),
-                    name=data.get("name")
+                    name=data.get("name"),
                 )
 
                 if Organisation.objects.filter(admin=user).exists():
@@ -125,7 +124,9 @@ class CreateUserAndOrganisationView(APIView):
                     location=organisation_data.get("location"),
                     policyUrl=organisation_data.get("policyUrl"),
                     description=organisation_data.get("description"),
-                    owsBaseUrl=organisation_data.get("verificationRequestURLPrefix", ""),
+                    owsBaseUrl=organisation_data.get(
+                        "verificationRequestURLPrefix", ""
+                    ),
                     openApiUrl=data.get("openApiUrl", ""),
                     admin=user,
                 )
@@ -141,13 +142,13 @@ class CreateUserAndOrganisationView(APIView):
                     baseurl=request.get_host(),
                     entity_id=str(organisation.id),
                     entity_type="organisation",
-                    is_public_endpoint=True
+                    is_public_endpoint=True,
                 )
                 organisation.logoUrl = construct_logo_image_url(
                     baseurl=request.get_host(),
                     entity_id=str(organisation.id),
                     entity_type="organisation",
-                    is_public_endpoint=True
+                    is_public_endpoint=True,
                 )
                 organisation.save()
 
@@ -164,64 +165,67 @@ class CreateUserAndOrganisationView(APIView):
             {"user": user_payload, "organisation": org_payload},
             status=status.HTTP_201_CREATED,
         )
-    
+
+
 class SectorView(APIView):
-    
     permission_classes = []  # Make it a public route
-    
+
     def get(self, request):
         # Check if any sectors exist
         sectors = Sector.objects.all()
-        
+
         # If no sectors exist, create the default 'Healthcare' sector
         if not sectors.exists():
             Sector.objects.create(sectorName="Healthcare")
             sectors = Sector.objects.all()
-        
+
         serializer = SectorSerializer(sectors, many=True)
         return Response({"sectors": serializer.data}, status=status.HTTP_200_OK)
-    
+
+
 class CodeOfConductView(APIView):
     """
     API endpoint to get the latest active code of conduct PDF.
     This is a public endpoint.
     """
+
     permission_classes = []  # Public endpoint
 
     def get(self, request):
         try:
             logger.info("Attempting to fetch latest active code of conduct")
-            
+
             # Get the latest active code of conduct
-            code_of_conduct = CodeOfConduct.objects.filter(isActive=True).latest('updatedAt')
-            
+            code_of_conduct = CodeOfConduct.objects.filter(isActive=True).latest(
+                "updatedAt"
+            )
+
             if not code_of_conduct.pdfFile:
                 logger.error("Code of conduct found but PDF file is missing")
                 return Response(
                     {"error": "Code of conduct PDF file is missing"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-                
+
             logger.info(f"Serving code of conduct: {code_of_conduct.pdfFile.name}")
-            
+
             # Return the file directly for download
             response = FileResponse(
                 code_of_conduct.pdfFile,
                 as_attachment=True,
-                filename=f"code_of_conduct_{code_of_conduct.updatedAt.date()}.pdf"
+                filename=f"code_of_conduct_{code_of_conduct.updatedAt.date()}.pdf",
             )
             return response
-            
+
         except CodeOfConduct.DoesNotExist:
             logger.warning("No active code of conduct found in the database")
             return Response(
                 {"error": "No active code of conduct available"},
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_404_NOT_FOUND,
             )
-        except Exception as e:
+        except Exception:
             logger.exception("Error serving code of conduct")
             return Response(
                 {"error": "An error occurred while processing your request"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-    

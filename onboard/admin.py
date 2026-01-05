@@ -21,7 +21,7 @@ class DataspaceUserAdmin(BaseUserAdmin, admin.ModelAdmin):
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
     model = DataspaceUser
-    filter_horizontal = ('groups', 'user_permissions')
+    filter_horizontal = ("groups", "user_permissions")
     list_display = (
         "email",
         "is_staff",

@@ -183,8 +183,14 @@ if os.environ.get("ENV") == "prod":
 
 STATIC_ROOT = "staticfiles"
 
-DATA_MARKETPLACE_DW_URL = os.environ.get("DATA_MARKETPLACE_DW_URL", "https://cloudagent.igrant.io/v1/6609f0860c7d8c0001aea929/admin")
-DATA_MARKETPLACE_APIKEY = os.environ.get("DATA_MARKETPLACE_APIKEY", "ApiKey REDACTED_JWT_TOKEN_1")
+DATA_MARKETPLACE_DW_URL = os.environ.get(
+    "DATA_MARKETPLACE_DW_URL",
+    "https://cloudagent.igrant.io/v1/6609f0860c7d8c0001aea929/admin",
+)
+DATA_MARKETPLACE_APIKEY = os.environ.get(
+    "DATA_MARKETPLACE_APIKEY",
+    "ApiKey REDACTED_JWT_TOKEN_1",
+)
 
 
 CONSTANCE_ADDITIONAL_FIELDS = {"json_field": ["dataspace_backend.fields.JsonField"]}

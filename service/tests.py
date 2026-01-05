@@ -1,9 +1,11 @@
+import json
+
 from django.test import TestCase
 from django.urls import reverse
-import json
+
+from data_disclosure_agreement.models import DataDisclosureAgreementTemplate
 from onboard.models import DataspaceUser
 from organisation.models import Organisation
-from data_disclosure_agreement.models import DataDisclosureAgreementTemplate
 
 # Create your tests here.
 

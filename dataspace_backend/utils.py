@@ -25,17 +25,17 @@ def get_instance_or_400(model, pk, error_message: str):
 
 
 def paginate_queryset(queryset, request):
-    offset = request.GET.get('offset')
-    limit = request.GET.get('limit')
+    offset = request.GET.get("offset")
+    limit = request.GET.get("limit")
 
     try:
         offset = int(offset)
-    except (ValueError,TypeError):
+    except (ValueError, TypeError):
         offset = 0
 
     try:
         limit = int(limit)
-    except (ValueError,TypeError):
+    except (ValueError, TypeError):
         limit = 10
 
     # Total items in the queryset
@@ -45,19 +45,19 @@ def paginate_queryset(queryset, request):
         total_items = len(queryset)
 
     offset = max(offset, 0)
-    limit = max(0, min(limit, 100))  
+    limit = max(0, min(limit, 100))
 
-    queryset = queryset[offset:offset + limit]
+    queryset = queryset[offset : offset + limit]
 
     current_page = (offset // limit) + 1
 
     pagination_data = {
-        'currentPage': current_page,
-        'totalItems': total_items,
-        'totalPages': (total_items + limit - 1) // limit,
-        'limit': limit,
-        'hasPrevious': offset > 0,
-        'hasNext': offset + limit < total_items,
+        "currentPage": current_page,
+        "totalItems": total_items,
+        "totalPages": (total_items + limit - 1) // limit,
+        "limit": limit,
+        "hasPrevious": offset > 0,
+        "hasNext": offset + limit < total_items,
     }
 
     return queryset, pagination_data
@@ -71,4 +71,5 @@ def get_datasource_or_400(user):
 def get_organisation_or_400(user):
     """Get Organisation by admin user or return 400 error."""
     from organisation.models import Organisation
+
     return get_model_by_admin_or_400(Organisation, user, "Organisation not found")
