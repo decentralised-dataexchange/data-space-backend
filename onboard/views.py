@@ -1,68 +1,26 @@
-import os
+import logging
+
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.http import FileResponse
 from rest_framework import permissions, status
 from rest_framework.generics import CreateAPIView
 from rest_framework.response import Response
-from rest_framework.views import APIView, View
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from onboard.permissions import IsOwnerOrReadOnly
 from .serializers import (DataspaceUserSerializer,
                           RegisterDataspaceUserSerializer)
-from rest_framework_simplejwt.views import (TokenObtainPairView,
-                                            TokenRefreshView)
-from django.http import HttpResponse, JsonResponse, FileResponse
-from dataspace_backend import settings
 from organisation.models import Organisation, Sector, CodeOfConduct
-from organisation.serializers import OrganisationSerializer, SectorSerializer, CodeOfConductSerializer
-from config.models import ImageModel
-import logging
+from organisation.serializers import OrganisationSerializer, SectorSerializer
+from dataspace_backend.image_utils import (
+    construct_cover_image_url,
+    construct_logo_image_url,
+    load_default_image,
+)
 
 logger = logging.getLogger(__name__)
-
-# Create your views here.
-def construct_cover_image_url(
-    baseurl: str,
-    organisation_id: str,
-    is_public_endpoint: bool = False
-):
-    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
-    url_prefix = "service" if is_public_endpoint else "config"
-    endpoint = f"/{url_prefix}/organisation/{organisation_id}/coverimage/"
-    return f"{protocol}{baseurl}{endpoint}"
-
-
-def construct_logo_image_url(
-    baseurl: str,
-    organisation_id: str,
-    is_public_endpoint: bool = False
-):
-    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
-    url_prefix = "service" if is_public_endpoint else "config"
-    endpoint = f"/{url_prefix}/organisation/{organisation_id}/logoimage/"
-    return f"{protocol}{baseurl}{endpoint}"
-
-def load_default_cover_image():
-    cover_image_path = os.path.join(settings.BASE_DIR, "resources","assets", "cover.jpeg")
-
-    with open(cover_image_path, 'rb') as cover_image_file:
-        image_data = cover_image_file.read()
-        image = ImageModel(image_data=image_data)
-        image.save()
-        return image.id
-
-def load_default_logo_image():
-    logo_image_path = os.path.join(settings.BASE_DIR, "resources","assets", "unknownOrgLogo.png")
-
-    with open(logo_image_path, 'rb') as logo_image_file:
-        image_data = logo_image_file.read()
-        image = ImageModel(image_data=image_data)
-        image.save()
-        return image.id
-
-
-
-# Create your views here.
 
 
 class CreateUserView(CreateAPIView):
@@ -173,20 +131,22 @@ class CreateUserAndOrganisationView(APIView):
                 )
 
                 # Add default cover image and logo image URL
-                cover_image_id = load_default_cover_image()
-                logo_image_id = load_default_logo_image()
+                cover_image_id = load_default_image("cover.jpeg")
+                logo_image_id = load_default_image("unknownOrgLogo.png")
                 organisation.coverImageId = cover_image_id
                 organisation.logoId = logo_image_id
 
                 # Update organisation with cover and logo image URL
                 organisation.coverImageUrl = construct_cover_image_url(
                     baseurl=request.get_host(),
-                    organisation_id=str(organisation.id),
+                    entity_id=str(organisation.id),
+                    entity_type="organisation",
                     is_public_endpoint=True
                 )
                 organisation.logoUrl = construct_logo_image_url(
                     baseurl=request.get_host(),
-                    organisation_id=str(organisation.id),
+                    entity_id=str(organisation.id),
+                    entity_type="organisation",
                     is_public_endpoint=True
                 )
                 organisation.save()

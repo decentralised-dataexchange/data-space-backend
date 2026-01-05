@@ -4,6 +4,26 @@ from rest_framework import status
 from config.models import DataSource
 
 
+def get_model_by_admin_or_400(model, user, error_message: str):
+    """Generic helper to get a model instance by admin user."""
+    try:
+        return model.objects.get(admin=user), None
+    except model.DoesNotExist:
+        return None, JsonResponse(
+            {"error": error_message}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+def get_instance_or_400(model, pk, error_message: str):
+    """Generic helper to get a model instance by primary key."""
+    try:
+        return model.objects.get(pk=pk), None
+    except model.DoesNotExist:
+        return None, JsonResponse(
+            {"error": error_message}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+
 def paginate_queryset(queryset, request):
     offset = request.GET.get('offset')
     limit = request.GET.get('limit')
@@ -44,9 +64,11 @@ def paginate_queryset(queryset, request):
 
 
 def get_datasource_or_400(user):
-    try:
-        return DataSource.objects.get(admin=user), None
-    except DataSource.DoesNotExist:
-        return None, JsonResponse(
-            {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-        )
+    """Get DataSource by admin user or return 400 error."""
+    return get_model_by_admin_or_400(DataSource, user, "Data source not found")
+
+
+def get_organisation_or_400(user):
+    """Get Organisation by admin user or return 400 error."""
+    from organisation.models import Organisation
+    return get_model_by_admin_or_400(Organisation, user, "Organisation not found")
