@@ -6,7 +6,7 @@ from rest_auth.serializers import PasswordChangeSerializer
 from rest_auth.views import sensitive_post_parameters_m
 from rest_framework import permissions, status
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
@@ -16,6 +16,7 @@ from connection.models import Connection
 from dataspace_backend import settings
 from dataspace_backend.settings import (DATA_MARKETPLACE_APIKEY,
                                         DATA_MARKETPLACE_DW_URL)
+from dataspace_backend.utils import get_datasource_or_400
 from onboard.serializers import DataspaceUserSerializer
 
 from .models import DataSource, ImageModel, Verification, VerificationTemplate
@@ -24,16 +25,32 @@ from .serializers import (DataSourceSerializer, VerificationSerializer,
 
 # Create your views here.
 
+DEFAULT_ASSETS_DIR = os.path.join(settings.BASE_DIR, "resources", "assets")
+
+
+def _construct_image_url(
+    baseurl: str,
+    data_source_id: str,
+    image_endpoint: str,
+    is_public_endpoint: bool = False,
+):
+    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
+    url_prefix = "service" if is_public_endpoint else "config"
+    endpoint = f"/{url_prefix}/data-source/{data_source_id}/{image_endpoint}/"
+    return f"{protocol}{baseurl}{endpoint}"
+
 
 def construct_cover_image_url(
     baseurl: str,
     data_source_id: str,
     is_public_endpoint: bool = False
 ):
-    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
-    url_prefix = "service" if is_public_endpoint else "config"
-    endpoint = f"/{url_prefix}/data-source/{data_source_id}/coverimage/"
-    return f"{protocol}{baseurl}{endpoint}"
+    return _construct_image_url(
+        baseurl=baseurl,
+        data_source_id=data_source_id,
+        image_endpoint="coverimage",
+        is_public_endpoint=is_public_endpoint,
+    )
 
 
 def construct_logo_image_url(
@@ -41,30 +58,78 @@ def construct_logo_image_url(
     data_source_id: str,
     is_public_endpoint: bool = False
 ):
-    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
-    url_prefix = "service" if is_public_endpoint else "config"
-    endpoint = f"/{url_prefix}/data-source/{data_source_id}/logoimage/"
-    return f"{protocol}{baseurl}{endpoint}"
+    return _construct_image_url(
+        baseurl=baseurl,
+        data_source_id=data_source_id,
+        image_endpoint="logoimage",
+        is_public_endpoint=is_public_endpoint,
+    )
+
+
+def _load_default_image(filename: str):
+    image_path = os.path.join(DEFAULT_ASSETS_DIR, filename)
+    with open(image_path, "rb") as image_file:
+        image = ImageModel(image_data=image_file.read())
+        image.save()
+        return image.id
+
 
 def load_default_cover_image():
-    cover_image_path = os.path.join(settings.BASE_DIR, "resources","assets", "cover.jpeg")
+    return _load_default_image("cover.jpeg")
 
-    with open(cover_image_path, 'rb') as cover_image_file:
-        image_data = cover_image_file.read()
-        image = ImageModel(image_data=image_data)
-        image.save()
-        return image.id
 
 def load_default_logo_image():
-    logo_image_path = os.path.join(settings.BASE_DIR, "resources","assets", "logo.jpeg")
+    return _load_default_image("logo.jpeg")
 
-    with open(logo_image_path, 'rb') as logo_image_file:
-        image_data = logo_image_file.read()
+
+def _get_image_response(image_id, missing_error_message: str):
+    try:
+        image = ImageModel.objects.get(pk=image_id)
+    except ImageModel.DoesNotExist:
+        return JsonResponse(
+            {"error": missing_error_message}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return HttpResponse(image.image_data, content_type="image/jpeg")
+
+
+def _update_datasource_image(
+    request,
+    datasource,
+    uploaded_image,
+    image_id_attr: str,
+    url_attr: str,
+    url_builder,
+):
+    if not uploaded_image:
+        return JsonResponse(
+            {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    image_data = uploaded_image.read()
+    image_id = getattr(datasource, image_id_attr)
+
+    if image_id is None:
         image = ImageModel(image_data=image_data)
-        image.save()
-        return image.id
-    
+        setattr(datasource, image_id_attr, image.id)
+    else:
+        image = ImageModel.objects.get(pk=image_id)
+        image.image_data = image_data
 
+    image.save()
+
+    setattr(
+        datasource,
+        url_attr,
+        url_builder(
+            baseurl=request.get_host(),
+            data_source_id=str(datasource.id),
+            is_public_endpoint=True,
+        ),
+    )
+    datasource.save()
+
+    return JsonResponse({"message": "Image uploaded successfully"})
 
 class DataSourceView(APIView):
     serializer_class = DataSourceSerializer
@@ -126,13 +191,9 @@ class DataSourceView(APIView):
         )
 
     def get(self, request):
-
-        try:
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         # Serialize the DataSource instance
         datasource_serializer = self.serializer_class(datasource)
@@ -163,12 +224,9 @@ class DataSourceView(APIView):
         data = request.data.get("dataSource", {})
 
         # Get the DataSource instance associated with the current user
-        try:
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         # Update the fields if they are not empty
         if data.get("description"):
@@ -192,125 +250,62 @@ class DataSourceCoverImageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            # Get the DataSource instance
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            image = ImageModel.objects.get(pk=datasource.coverImageId)
-        except ImageModel.DoesNotExist:
-            return JsonResponse(
-                {"error": "Cover image not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the DataSource instance
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         # Return the binary image data as the HTTP response
-        return HttpResponse(image.image_data, content_type="image/jpeg")
+        return _get_image_response(datasource.coverImageId, "Cover image not found")
 
     def put(self, request):
 
         uploaded_image = request.FILES.get("orgimage")
 
-        try:
-            # Get the DataSource instance
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the DataSource instance
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
-        if uploaded_image:
-            # Read the binary data from the uploaded image file
-            image_data = uploaded_image.read()
-
-            if datasource.coverImageId is None:
-                image = ImageModel(image_data=image_data)
-                datasource.coverImageId = image.id
-            else:
-                # Save the binary image data to the database
-                image = ImageModel.objects.get(pk=datasource.coverImageId)
-                image.image_data = image_data
-
-            image.save()
-
-            datasource.coverImageUrl = construct_cover_image_url(
-                baseurl=request.get_host(),
-                data_source_id=str(datasource.id),
-                is_public_endpoint=True
-            )
-
-            datasource.save()
-
-            return JsonResponse({"message": "Image uploaded successfully"})
-        else:
-            return JsonResponse(
-                {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        return _update_datasource_image(
+            request=request,
+            datasource=datasource,
+            uploaded_image=uploaded_image,
+            image_id_attr="coverImageId",
+            url_attr="coverImageUrl",
+            url_builder=construct_cover_image_url,
+        )
 
 
 class DataSourceLogoImageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            # Get the DataSource instance
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            image = ImageModel.objects.get(pk=datasource.logoId)
-        except ImageModel.DoesNotExist:
-            return JsonResponse(
-                {"error": "Logo image not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the DataSource instance
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         # Return the binary image data as the HTTP response
-        return HttpResponse(image.image_data, content_type="image/jpeg")
+        return _get_image_response(datasource.logoId, "Logo image not found")
 
     def put(self, request):
 
         uploaded_image = request.FILES.get("orgimage")
 
-        try:
-            # Get the DataSource instance
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the DataSource instance
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
-        if uploaded_image:
-            # Read the binary data from the uploaded image file
-            image_data = uploaded_image.read()
-
-            if datasource.logoId is None:
-                image = ImageModel(image_data=image_data)
-                datasource.logoId = image.id
-            else:
-                # Save the binary image data to the database
-                image = ImageModel.objects.get(pk=datasource.logoId)
-                image.image_data = image_data
-
-            image.save()
-
-            datasource.logoUrl = construct_logo_image_url(
-                baseurl=request.get_host(),
-                data_source_id=str(datasource.id),
-                is_public_endpoint=True
-            )
-            datasource.save()
-
-            return JsonResponse({"message": "Image uploaded successfully"})
-        else:
-            return JsonResponse(
-                {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        return _update_datasource_image(
+            request=request,
+            datasource=datasource,
+            uploaded_image=uploaded_image,
+            image_id_attr="logoId",
+            url_attr="logoUrl",
+            url_builder=construct_logo_image_url,
+        )
 
 
 class AdminView(APIView):
@@ -341,12 +336,9 @@ class DataSourceVerificationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             verification = Verification.objects.get(dataSourceId=datasource)
@@ -365,12 +357,9 @@ class DataSourceVerificationView(APIView):
         return JsonResponse(response_data)
 
     def post(self, request):
-        try:
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             connection = Connection.objects.get(dataSourceId=datasource, connectionState="active")
@@ -445,12 +434,9 @@ class VerificationTemplateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             vt_objects = VerificationTemplate.objects.all()
@@ -483,12 +469,9 @@ class DataSourceOpenApiUrlView(APIView):
         data = request.data.get("dataSource", {})
 
         # Get the DataSource instance associated with the current user
-        try:
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         # Update the fields if they are not empty
         if data.get("openApiUrl"):

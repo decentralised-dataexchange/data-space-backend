@@ -1,7 +1,6 @@
-from django.shortcuts import render
-from rest_framework.views import View
-from django.http import JsonResponse, HttpResponse
 from constance import config
+from django.http import JsonResponse
+from rest_framework.views import View
 
 # Create your views here.
 

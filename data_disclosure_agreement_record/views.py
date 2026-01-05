@@ -1,6 +1,6 @@
 import requests
-from rest_framework.views import View, APIView
-from django.http import JsonResponse, HttpResponse
+from rest_framework.views import APIView
+from django.http import JsonResponse
 from rest_framework import status, permissions
 from data_disclosure_agreement.models import (
     DataDisclosureAgreementTemplate,
@@ -17,19 +17,25 @@ from data_disclosure_agreement_record.serializers import (
 
 
 # Create your views here.
+def _get_dus_organisation_or_400(user):
+    try:
+        return Organisation.objects.get(admin=user), None
+    except Organisation.DoesNotExist:
+        return None, JsonResponse(
+            {"error": "Data using service organisation not found"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
 class DataDisclosureAgreementRecordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, dataDisclosureAgreementId):
         data_disclosure_agreement_id = dataDisclosureAgreementId
 
-        try:
-            dus_organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data using service organisation not found"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        dus_organisation, error_response = _get_dus_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             data_disclosure_agreement = (
@@ -187,13 +193,9 @@ class DataDisclosureAgreementRecordSignInStatusView(APIView):
     def get(self, request, dataDisclosureAgreementId):
         data_disclosure_agreement_id = dataDisclosureAgreementId
 
-        try:
-            dus_organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data using service organisation not found"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        dus_organisation, error_response = _get_dus_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             data_disclosure_agreement = (

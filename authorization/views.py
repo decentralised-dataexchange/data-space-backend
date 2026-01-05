@@ -1,6 +1,4 @@
 import base64
-from django.shortcuts import render
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.views import APIView
@@ -10,7 +8,6 @@ from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import AccessToken
 from oAuth2Clients.models import OAuth2Clients
-from organisation.models import Organisation
 
 User = get_user_model()
 

@@ -1,6 +1,5 @@
 import os
 import requests
-from django.shortcuts import render
 from organisation.models import Organisation, OrganisationIdentity, OrganisationIdentityTemplate
 from organisation.serializers import OrganisationSerializer, OrganisationIdentitySerializer, OrganisationIdentityTemplateSerializer
 from rest_framework import permissions, status
@@ -11,18 +10,24 @@ from config.models import ImageModel
 from constance import config
 
 # Create your views here.
+def _get_organisation_or_400(user):
+    try:
+        return Organisation.objects.get(admin=user), None
+    except Organisation.DoesNotExist:
+        return None, JsonResponse(
+            {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+
 class OrganisationView(APIView):
     serializer_class = OrganisationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
 
-        try:
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
         # Serialize the Organisation instance
         organisation_serializer = self.serializer_class(organisation)
@@ -38,12 +43,9 @@ class OrganisationView(APIView):
         data = request.data.get("organisation", {})
 
         # Get the Organisation instance associated with the current user
-        try:
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
         
         required_fields = [
             "name",
@@ -89,15 +91,29 @@ class OrganisationView(APIView):
         serializer = self.serializer_class(organisation)
         return JsonResponse({"organisation": serializer.data}, status=status.HTTP_202_ACCEPTED)
     
+def _construct_image_url(
+    baseurl: str,
+    organisation_id: str,
+    image_endpoint: str,
+    is_public_endpoint: bool = False,
+):
+    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
+    url_prefix = "service" if is_public_endpoint else "config"
+    endpoint = f"/{url_prefix}/organisation/{organisation_id}/{image_endpoint}/"
+    return f"{protocol}{baseurl}{endpoint}"
+
+
 def construct_cover_image_url(
     baseurl: str,
     organisation_id: str,
     is_public_endpoint: bool = False
 ):
-    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
-    url_prefix = "service" if is_public_endpoint else "config"
-    endpoint = f"/{url_prefix}/organisation/{organisation_id}/coverimage/"
-    return f"{protocol}{baseurl}{endpoint}"
+    return _construct_image_url(
+        baseurl=baseurl,
+        organisation_id=organisation_id,
+        image_endpoint="coverimage",
+        is_public_endpoint=is_public_endpoint,
+    )
 
 
 def construct_logo_image_url(
@@ -105,145 +121,131 @@ def construct_logo_image_url(
     organisation_id: str,
     is_public_endpoint: bool = False
 ):
-    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
-    url_prefix = "service" if is_public_endpoint else "config"
-    endpoint = f"/{url_prefix}/organisation/{organisation_id}/logoimage/"
-    return f"{protocol}{baseurl}{endpoint}"
+    return _construct_image_url(
+        baseurl=baseurl,
+        organisation_id=organisation_id,
+        image_endpoint="logoimage",
+        is_public_endpoint=is_public_endpoint,
+    )
+
+
+def _get_image_response(image_id, missing_error_message: str):
+    try:
+        image = ImageModel.objects.get(pk=image_id)
+    except ImageModel.DoesNotExist:
+        return JsonResponse(
+            {"error": missing_error_message}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return HttpResponse(image.image_data, content_type="image/jpeg")
+
+
+def _update_organisation_image(
+    request,
+    organisation,
+    uploaded_image,
+    image_id_attr: str,
+    url_attr: str,
+    url_builder,
+):
+    if not uploaded_image:
+        return JsonResponse(
+            {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    image_data = uploaded_image.read()
+    image_id = getattr(organisation, image_id_attr)
+
+    if image_id is None:
+        image = ImageModel(image_data=image_data)
+        setattr(organisation, image_id_attr, image.id)
+    else:
+        image = ImageModel.objects.get(pk=image_id)
+        image.image_data = image_data
+
+    image.save()
+
+    setattr(
+        organisation,
+        url_attr,
+        url_builder(
+            baseurl=request.get_host(),
+            organisation_id=str(organisation.id),
+            is_public_endpoint=True,
+        ),
+    )
+
+    organisation.save()
+    return JsonResponse({"message": "Image uploaded successfully"})
     
 class OrganisationCoverImageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            # Get the organisation instance
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            image = ImageModel.objects.get(pk=organisation.coverImageId)
-        except ImageModel.DoesNotExist:
-            return JsonResponse(
-                {"error": "Cover image not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the organisation instance
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
         # Return the binary image data as the HTTP response
-        return HttpResponse(image.image_data, content_type="image/jpeg")
+        return _get_image_response(organisation.coverImageId, "Cover image not found")
 
     def put(self, request):
 
         uploaded_image = request.FILES.get("orgimage")
 
-        try:
-            # Get the Organisation instance
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the Organisation instance
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
-        if uploaded_image:
-            # Read the binary data from the uploaded image file
-            image_data = uploaded_image.read()
-
-            if organisation.coverImageId is None:
-                image = ImageModel(image_data=image_data)
-                organisation.coverImageId = image.id
-            else:
-                # Save the binary image data to the database
-                image = ImageModel.objects.get(pk=organisation.coverImageId)
-                image.image_data = image_data
-
-            image.save()
-
-            organisation.coverImageUrl = construct_cover_image_url(
-                baseurl=request.get_host(),
-                organisation_id=str(organisation.id),
-                is_public_endpoint=True
-            )
-
-            organisation.save()
-
-            return JsonResponse({"message": "Image uploaded successfully"})
-        else:
-            return JsonResponse(
-                {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        return _update_organisation_image(
+            request=request,
+            organisation=organisation,
+            uploaded_image=uploaded_image,
+            image_id_attr="coverImageId",
+            url_attr="coverImageUrl",
+            url_builder=construct_cover_image_url,
+        )
 
 class OrganisationLogoImageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            # Get the Organisation instance
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            image = ImageModel.objects.get(pk=organisation.logoId)
-        except ImageModel.DoesNotExist:
-            return JsonResponse(
-                {"error": "Logo image not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the Organisation instance
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
         # Return the binary image data as the HTTP response
-        return HttpResponse(image.image_data, content_type="image/jpeg")
+        return _get_image_response(organisation.logoId, "Logo image not found")
 
     def put(self, request):
 
         uploaded_image = request.FILES.get("orgimage")
 
-        try:
-            # Get the Organisation instance
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the Organisation instance
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
-        if uploaded_image:
-            # Read the binary data from the uploaded image file
-            image_data = uploaded_image.read()
-
-            if organisation.logoId is None:
-                image = ImageModel(image_data=image_data)
-                organisation.logoId = image.id
-            else:
-                # Save the binary image data to the database
-                image = ImageModel.objects.get(pk=organisation.logoId)
-                image.image_data = image_data
-
-            image.save()
-
-            organisation.logoUrl = construct_logo_image_url(
-                baseurl=request.get_host(),
-                organisation_id=str(organisation.id),
-                is_public_endpoint=True
-            )
-            organisation.save()
-
-            return JsonResponse({"message": "Image uploaded successfully"})
-        else:
-            return JsonResponse(
-                {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        return _update_organisation_image(
+            request=request,
+            organisation=organisation,
+            uploaded_image=uploaded_image,
+            image_id_attr="logoId",
+            url_attr="logoUrl",
+            url_builder=construct_logo_image_url,
+        )
 
 class OrganisationIdentityView(APIView):
     serializer_class = OrganisationIdentitySerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             org_identity = OrganisationIdentity.objects.get(organisationId=organisation)
@@ -271,12 +273,9 @@ class OrganisationIdentityView(APIView):
         return JsonResponse(response_data)
 
     def post(self, request):
-        try:
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
 
         try:
@@ -348,12 +347,9 @@ class OrganisationIdentityView(APIView):
         return JsonResponse(response_data)
 
     def delete(self, request):
-        try:
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             org_identity = OrganisationIdentity.objects.get(organisationId=organisation)
@@ -376,12 +372,9 @@ class CodeOfConductUpdateView(APIView):
         data = request.data.get("codeOfConduct", False)
 
         # Get the Organisation instance associated with the current user
-        try:
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
         
         organisation.codeOfConduct = data
         

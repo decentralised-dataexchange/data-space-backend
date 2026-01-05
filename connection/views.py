@@ -1,15 +1,13 @@
-from django.shortcuts import render
-from rest_framework.views import APIView
-from rest_framework import status, permissions
 from django.http import JsonResponse
-from .serializers import DISPConnectionSerializer
-from config.models import DataSource
-from .models import Connection
-from uuid import uuid4
-from dataspace_backend.utils import paginate_queryset
-from dataspace_backend.settings import DATA_MARKETPLACE_DW_URL, DATA_MARKETPLACE_APIKEY
+from rest_framework import permissions, status
+from rest_framework.views import APIView
 import requests
 
+from dataspace_backend.settings import DATA_MARKETPLACE_DW_URL, DATA_MARKETPLACE_APIKEY
+from dataspace_backend.utils import get_datasource_or_400, paginate_queryset
+
+from .models import Connection
+from .serializers import DISPConnectionSerializer
 # Create your views here.
 
 
@@ -18,12 +16,9 @@ class DISPConnectionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        try:
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         # Call digital wallet to create connection
         url = f"{DATA_MARKETPLACE_DW_URL}/v2/connections/create-invitation?multi_use=false&auto_accept=true"
@@ -98,12 +93,9 @@ class DISPConnectionsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             connections = Connection.objects.filter(dataSourceId=datasource,connectionState = "active")
@@ -134,12 +126,9 @@ class DISPDeleteConnectionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, connectionId):
-        try:
-            datasource = DataSource.objects.get(admin=request.user)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        datasource, error_response = get_datasource_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             connection = Connection.objects.get(

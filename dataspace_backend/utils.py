@@ -1,3 +1,9 @@
+from django.http import JsonResponse
+from rest_framework import status
+
+from config.models import DataSource
+
+
 def paginate_queryset(queryset, request):
     offset = request.GET.get('offset')
     limit = request.GET.get('limit')
@@ -35,3 +41,12 @@ def paginate_queryset(queryset, request):
     }
 
     return queryset, pagination_data
+
+
+def get_datasource_or_400(user):
+    try:
+        return DataSource.objects.get(admin=user), None
+    except DataSource.DoesNotExist:
+        return None, JsonResponse(
+            {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+        )
