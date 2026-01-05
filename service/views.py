@@ -80,6 +80,7 @@ def _build_organisation_ddas(organisation):
             ]
             dda["createdAt"] = data_disclosure_agreement_serializer.data["createdAt"]
             dda["updatedAt"] = data_disclosure_agreement_serializer.data["updatedAt"]
+            dda["tags"] = data_disclosure_agreement_serializer.data.get("tags", [])
             ddas.append(dda)
     return ddas
 
@@ -272,6 +273,7 @@ class SearchView(View):
         raw_search_dda_purpose = request.GET.get("searchDdaPurpose")
         raw_search_dda_description = request.GET.get("searchDdaDescription")
         raw_search_dataset = request.GET.get("searchDataset")
+        raw_search_tags = request.GET.get("searchTags")
 
         def parse_bool_param(raw_value, param_name, default=True):
             if raw_value is None:
@@ -296,6 +298,7 @@ class SearchView(View):
                 raw_search_dda_description, "searchDdaDescription", True
             )
             search_dataset = parse_bool_param(raw_search_dataset, "searchDataset", True)
+            search_tags = parse_bool_param(raw_search_tags, "searchTags", True)
         except ValueError as exc:
             return JsonResponse(
                 {
@@ -311,6 +314,7 @@ class SearchView(View):
                 search_dda_purpose,
                 search_dda_description,
                 search_dataset,
+                search_tags,
             ]
         ):
             return JsonResponse(
@@ -345,7 +349,10 @@ class SearchView(View):
             )
 
         dda_scopes_enabled = (
-            search_dda_purpose or search_dda_description or search_dataset
+            search_dda_purpose
+            or search_dda_description
+            or search_dataset
+            or search_tags
         )
 
         ddas_qs = DataDisclosureAgreementTemplate.objects.none()
@@ -357,14 +364,20 @@ class SearchView(View):
                 isLatestVersion=True,
             ).select_related("organisationId")
 
-            # Scan JSON records in Python to find matches
+            # Scan JSON records and tags in Python to find matches
             search_lower = search.lower()
             matching_ids = []
             org_ids_set = set()
             for dda in base_ddas_qs:
                 record = dda.dataDisclosureAgreementRecord or {}
                 record_str = json.dumps(record).lower()
-                if search_lower in record_str:
+                tags_str = json.dumps(dda.tags or []).lower()
+
+                # Check if search term matches record content or tags
+                record_matches = search_lower in record_str
+                tags_matches = search_tags and search_lower in tags_str
+
+                if record_matches or tags_matches:
                     matching_ids.append(dda.id)
                     org_ids_set.add(dda.organisationId_id)
 
@@ -436,6 +449,7 @@ class SearchView(View):
                     "isLatestVersion": dda_data["isLatestVersion"],
                     "createdAt": dda_data["createdAt"],
                     "updatedAt": dda_data["updatedAt"],
+                    "tags": dda_data.get("tags", []),
                 }
             )
 
@@ -450,6 +464,7 @@ class SearchView(View):
                 "searchDdaPurpose": search_dda_purpose,
                 "searchDdaDescription": search_dda_description,
                 "searchDataset": search_dataset,
+                "searchTags": search_tags,
                 "sortBy": sort_by,
                 "sortOrder": sort_order,
             },

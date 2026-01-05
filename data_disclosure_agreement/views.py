@@ -239,6 +239,7 @@ class DataDisclosureAgreementTempleteView(APIView):
         dda["isLatestVersion"] = serializer.data["isLatestVersion"]
         dda["createdAt"] = serializer.data["createdAt"]
         dda["updatedAt"] = serializer.data["updatedAt"]
+        dda["tags"] = serializer.data["tags"]
         response_data = {
             "dataDisclosureAgreement": dda,
         }
@@ -266,6 +267,7 @@ class DataDisclosureAgreementTemplatesView(APIView):
         latest_dda_data["isLatestVersion"] = True
         latest_dda_data["createdAt"] = latest_serializer.data["createdAt"]
         latest_dda_data["updatedAt"] = latest_serializer.data["updatedAt"]
+        latest_dda_data["tags"] = latest_serializer.data["tags"]
 
         revisions = []
         for dda in ddas_for_template:
@@ -382,6 +384,55 @@ class DataDisclosureAgreementTemplateUpdateView(APIView):
                 {"error": "Data Disclosure Agreement status cannot be updated"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+class DataDisclosureAgreementTemplateTagsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request, dataDisclosureAgreementId):
+        tags = request.data.get("tags")
+
+        if tags is None:
+            return JsonResponse(
+                {"error": "tags field is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not isinstance(tags, list):
+            return JsonResponse(
+                {"error": "tags must be a list of strings"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate all items are strings
+        if not all(isinstance(tag, str) for tag in tags):
+            return JsonResponse(
+                {"error": "All tags must be strings"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        organisation, error_response = get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
+
+        try:
+            data_disclosure_agreement = DataDisclosureAgreementTemplate.objects.exclude(
+                status="archived"
+            ).get(
+                templateId=dataDisclosureAgreementId,
+                organisationId=organisation,
+                isLatestVersion=True,
+            )
+        except DataDisclosureAgreementTemplate.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data Disclosure Agreement not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data_disclosure_agreement.tags = tags
+        data_disclosure_agreement.save()
+
+        return JsonResponse({"tags": tags}, status=status.HTTP_200_OK)
 
 
 class DataDisclosureAgreementHistoriesView(APIView):

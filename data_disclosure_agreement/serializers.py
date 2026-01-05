@@ -30,4 +30,5 @@ class DataDisclosureAgreementTemplateSerializer(serializers.ModelSerializer):
             "isLatestVersion",
             "createdAt",
             "updatedAt",
+            "tags",
         ]
