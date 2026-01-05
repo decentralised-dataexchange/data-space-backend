@@ -8,20 +8,9 @@ from .serializers import (
     DataDisclosureAgreementTemplateSerializer,
     DataDisclosureAgreementTemplatesSerializer
 )
-from dataspace_backend.utils import get_datasource_or_400, paginate_queryset
-from organisation.models import Organisation
+from dataspace_backend.utils import get_datasource_or_400, get_organisation_or_400, paginate_queryset
 from data_disclosure_agreement_record.serializers import DataDisclosureAgreementRecordHistorySerializer
 from data_disclosure_agreement_record.models import DataDisclosureAgreementRecordHistory
-
-# Create your views here.
-
-def _get_organisation_or_400(user):
-    try:
-        return Organisation.objects.get(admin=user), None
-    except Organisation.DoesNotExist:
-        return None, JsonResponse(
-            {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-        )
 
 
 class DataDisclosureAgreementView(APIView):
@@ -198,7 +187,7 @@ class DataDisclosureAgreementTempleteView(APIView):
 
     def get(self, request, dataDisclosureAgreementId):
         version_param = request.query_params.get("version")
-        organisation, error_response = _get_organisation_or_400(request.user)
+        organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
 
@@ -286,7 +275,7 @@ class DataDisclosureAgreementTemplatesView(APIView):
         # Get the 'status' query parameter
         status_param = request.query_params.get("status")
 
-        organisation, error_response = _get_organisation_or_400(request.user)
+        organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
 
@@ -334,7 +323,7 @@ class DataDisclosureAgreementTemplateUpdateView(APIView):
 
         to_be_updated_status = request.data.get("status")
 
-        organisation, error_response = _get_organisation_or_400(request.user)
+        organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
 
@@ -387,7 +376,7 @@ class DataDisclosureAgreementHistoriesView(APIView):
     def get(self, request, dataDisclosureAgreementId):
         dda_template_id = dataDisclosureAgreementId
 
-        organisation, error_response = _get_organisation_or_400(request.user)
+        organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
         
@@ -420,7 +409,7 @@ class DataDisclosureAgreementHistoryView(APIView):
         
     def delete(self, request, dataDisclosureAgreementId, pk):
         """Delete a specific history record by its primary key"""
-        organisation, error_response = _get_organisation_or_400(request.user)
+        organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
 

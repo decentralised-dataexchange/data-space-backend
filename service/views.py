@@ -2,11 +2,11 @@ import json
 import uuid
 
 from django.db.models import Q
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.views import View
 
-from config.models import DataSource, ImageModel, Verification
+from config.models import DataSource, Verification
 from config.serializers import VerificationSerializer, DataSourceSerializer
 from data_disclosure_agreement.models import (
     DataDisclosureAgreement,
@@ -16,36 +16,14 @@ from data_disclosure_agreement.serializers import (
     DataDisclosureAgreementsSerializer,
     DataDisclosureAgreementTemplatesSerializer,
 )
-from dataspace_backend.utils import paginate_queryset
+from dataspace_backend.utils import paginate_queryset, get_instance_or_400
+from dataspace_backend.image_utils import get_image_response
 from organisation.models import Organisation, OrganisationIdentity
 from organisation.serializers import (
     OrganisationIdentitySerializer,
     OrganisationSerializer,
 )
 from software_statement.models import SoftwareStatement
-
-
-# Create your views here.
-
-
-def _get_instance_or_400(model, pk, missing_error_message: str):
-    try:
-        return model.objects.get(pk=pk), None
-    except model.DoesNotExist:
-        return None, JsonResponse(
-            {"error": missing_error_message}, status=status.HTTP_400_BAD_REQUEST
-        )
-
-
-def _get_image_response(image_id, missing_error_message: str):
-    try:
-        image = ImageModel.objects.get(pk=image_id)
-    except ImageModel.DoesNotExist:
-        return JsonResponse(
-            {"error": missing_error_message}, status=status.HTTP_400_BAD_REQUEST
-        )
-
-    return HttpResponse(image.image_data, content_type="image/jpeg")
 
 
 def _build_datasource_ddas(data_source):
@@ -171,28 +149,28 @@ class DataSourceCoverImageView(View):
 
     def get(self, request, dataSourceId):
         # Get the DataSource instance
-        datasource, error_response = _get_instance_or_400(
+        datasource, error_response = get_instance_or_400(
             DataSource, dataSourceId, "Data source not found"
         )
         if error_response:
             return error_response
 
         # Return the binary image data as the HTTP response
-        return _get_image_response(datasource.coverImageId, "Cover image not found")
+        return get_image_response(datasource.coverImageId, "Cover image not found")
 
 
 class DataSourceLogoImageView(View):
 
     def get(self, request, dataSourceId):
         # Get the DataSource instance
-        datasource, error_response = _get_instance_or_400(
+        datasource, error_response = get_instance_or_400(
             DataSource, dataSourceId, "Data source not found"
         )
         if error_response:
             return error_response
 
         # Return the binary image data as the HTTP response
-        return _get_image_response(datasource.logoId, "Logo image not found")
+        return get_image_response(datasource.logoId, "Logo image not found")
 
 
 class DataSourcesView(View):
@@ -236,28 +214,28 @@ class OrganisationCoverImageView(View):
 
     def get(self, request, organisationId):
         # Get the organisation instance
-        organisation, error_response = _get_instance_or_400(
+        organisation, error_response = get_instance_or_400(
             Organisation, organisationId, "Organisation not found"
         )
         if error_response:
             return error_response
 
         # Return the binary image data as the HTTP response
-        return _get_image_response(organisation.coverImageId, "Cover image not found")
+        return get_image_response(organisation.coverImageId, "Cover image not found")
 
 
 class OrganisationLogoImageView(View):
 
     def get(self, request, organisationId):
         # Get the organisation instance
-        organisation, error_response = _get_instance_or_400(
+        organisation, error_response = get_instance_or_400(
             Organisation, organisationId, "Organisation not found"
         )
         if error_response:
             return error_response
 
         # Return the binary image data as the HTTP response
-        return _get_image_response(organisation.logoId, "Logo image not found")
+        return get_image_response(organisation.logoId, "Logo image not found")
 
 
 class OrganisationsView(View):

@@ -1,5 +1,3 @@
-import os
-
 import requests
 from django.http import HttpResponse, JsonResponse
 from rest_auth.serializers import PasswordChangeSerializer
@@ -13,123 +11,21 @@ from rest_framework.decorators import api_view, permission_classes
 from django.views.decorators.csrf import csrf_exempt
 
 from connection.models import Connection
-from dataspace_backend import settings
 from dataspace_backend.settings import (DATA_MARKETPLACE_APIKEY,
                                         DATA_MARKETPLACE_DW_URL)
 from dataspace_backend.utils import get_datasource_or_400
+from dataspace_backend.image_utils import (
+    construct_cover_image_url,
+    construct_logo_image_url,
+    load_default_image,
+    get_image_response,
+    update_entity_image,
+)
 from onboard.serializers import DataspaceUserSerializer
 
 from .models import DataSource, ImageModel, Verification, VerificationTemplate
 from .serializers import (DataSourceSerializer, VerificationSerializer,
                           VerificationTemplateSerializer)
-
-# Create your views here.
-
-DEFAULT_ASSETS_DIR = os.path.join(settings.BASE_DIR, "resources", "assets")
-
-
-def _construct_image_url(
-    baseurl: str,
-    data_source_id: str,
-    image_endpoint: str,
-    is_public_endpoint: bool = False,
-):
-    protocol = "https://" if os.environ.get("ENV") == "prod" else "http://"
-    url_prefix = "service" if is_public_endpoint else "config"
-    endpoint = f"/{url_prefix}/data-source/{data_source_id}/{image_endpoint}/"
-    return f"{protocol}{baseurl}{endpoint}"
-
-
-def construct_cover_image_url(
-    baseurl: str,
-    data_source_id: str,
-    is_public_endpoint: bool = False
-):
-    return _construct_image_url(
-        baseurl=baseurl,
-        data_source_id=data_source_id,
-        image_endpoint="coverimage",
-        is_public_endpoint=is_public_endpoint,
-    )
-
-
-def construct_logo_image_url(
-    baseurl: str,
-    data_source_id: str,
-    is_public_endpoint: bool = False
-):
-    return _construct_image_url(
-        baseurl=baseurl,
-        data_source_id=data_source_id,
-        image_endpoint="logoimage",
-        is_public_endpoint=is_public_endpoint,
-    )
-
-
-def _load_default_image(filename: str):
-    image_path = os.path.join(DEFAULT_ASSETS_DIR, filename)
-    with open(image_path, "rb") as image_file:
-        image = ImageModel(image_data=image_file.read())
-        image.save()
-        return image.id
-
-
-def load_default_cover_image():
-    return _load_default_image("cover.jpeg")
-
-
-def load_default_logo_image():
-    return _load_default_image("logo.jpeg")
-
-
-def _get_image_response(image_id, missing_error_message: str):
-    try:
-        image = ImageModel.objects.get(pk=image_id)
-    except ImageModel.DoesNotExist:
-        return JsonResponse(
-            {"error": missing_error_message}, status=status.HTTP_400_BAD_REQUEST
-        )
-
-    return HttpResponse(image.image_data, content_type="image/jpeg")
-
-
-def _update_datasource_image(
-    request,
-    datasource,
-    uploaded_image,
-    image_id_attr: str,
-    url_attr: str,
-    url_builder,
-):
-    if not uploaded_image:
-        return JsonResponse(
-            {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
-        )
-
-    image_data = uploaded_image.read()
-    image_id = getattr(datasource, image_id_attr)
-
-    if image_id is None:
-        image = ImageModel(image_data=image_data)
-        setattr(datasource, image_id_attr, image.id)
-    else:
-        image = ImageModel.objects.get(pk=image_id)
-        image.image_data = image_data
-
-    image.save()
-
-    setattr(
-        datasource,
-        url_attr,
-        url_builder(
-            baseurl=request.get_host(),
-            data_source_id=str(datasource.id),
-            is_public_endpoint=True,
-        ),
-    )
-    datasource.save()
-
-    return JsonResponse({"message": "Image uploaded successfully"})
 
 class DataSourceView(APIView):
     serializer_class = DataSourceSerializer
@@ -162,20 +58,22 @@ class DataSourceView(APIView):
             )
 
             # Add default cover image and logo image URL
-            cover_image_id = load_default_cover_image()
-            logo_image_id = load_default_logo_image()
+            cover_image_id = load_default_image("cover.jpeg")
+            logo_image_id = load_default_image("logo.jpeg")
             datasource.coverImageId = cover_image_id
             datasource.logoId = logo_image_id
-            
+
             # Update data source with cover and logo image URL
             datasource.coverImageUrl = construct_cover_image_url(
                 baseurl=request.get_host(),
-                data_source_id=str(datasource.id),
+                entity_id=str(datasource.id),
+                entity_type="data-source",
                 is_public_endpoint=True
             )
             datasource.logoUrl = construct_logo_image_url(
                 baseurl=request.get_host(),
-                data_source_id=str(datasource.id),
+                entity_id=str(datasource.id),
+                entity_type="data-source",
                 is_public_endpoint=True
             )
             datasource.save()
@@ -256,10 +154,9 @@ class DataSourceCoverImageView(APIView):
             return error_response
 
         # Return the binary image data as the HTTP response
-        return _get_image_response(datasource.coverImageId, "Cover image not found")
+        return get_image_response(datasource.coverImageId, "Cover image not found")
 
     def put(self, request):
-
         uploaded_image = request.FILES.get("orgimage")
 
         # Get the DataSource instance
@@ -267,13 +164,13 @@ class DataSourceCoverImageView(APIView):
         if error_response:
             return error_response
 
-        return _update_datasource_image(
+        return update_entity_image(
             request=request,
-            datasource=datasource,
+            entity=datasource,
             uploaded_image=uploaded_image,
             image_id_attr="coverImageId",
             url_attr="coverImageUrl",
-            url_builder=construct_cover_image_url,
+            entity_type="data-source",
         )
 
 
@@ -287,10 +184,9 @@ class DataSourceLogoImageView(APIView):
             return error_response
 
         # Return the binary image data as the HTTP response
-        return _get_image_response(datasource.logoId, "Logo image not found")
+        return get_image_response(datasource.logoId, "Logo image not found")
 
     def put(self, request):
-
         uploaded_image = request.FILES.get("orgimage")
 
         # Get the DataSource instance
@@ -298,13 +194,13 @@ class DataSourceLogoImageView(APIView):
         if error_response:
             return error_response
 
-        return _update_datasource_image(
+        return update_entity_image(
             request=request,
-            datasource=datasource,
+            entity=datasource,
             uploaded_image=uploaded_image,
             image_id_attr="logoId",
             url_attr="logoUrl",
-            url_builder=construct_logo_image_url,
+            entity_type="data-source",
         )
 
 
