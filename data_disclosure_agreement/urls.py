@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     DataDisclosureAgreementHistoriesView,
     DataDisclosureAgreementHistoryView,
+    DataDisclosureAgreementTemplateTagsView,
     DataDisclosureAgreementTemplateUpdateView,
     DataDisclosureAgreementTempleteView,
 )
@@ -21,6 +22,11 @@ urlpatterns = [
         "/<str:dataDisclosureAgreementId>/status/",
         DataDisclosureAgreementTemplateUpdateView.as_view(),
         name="update_data_disclosure_agreement_status",
+    ),
+    path(
+        "/<str:dataDisclosureAgreementId>/tags/",
+        DataDisclosureAgreementTemplateTagsView.as_view(),
+        name="update_data_disclosure_agreement_tags",
     ),
     path(
         "/<str:dataDisclosureAgreementId>/history/",

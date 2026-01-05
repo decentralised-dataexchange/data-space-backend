@@ -119,6 +119,7 @@ class DataDisclosureAgreementTemplate(models.Model):
     createdAt = models.DateTimeField(auto_now_add=True)
     isLatestVersion = models.BooleanField(default=True)
     updatedAt = models.DateTimeField(auto_now=True)
+    tags = JSONField(default=list, blank=True)  # e.g., ["healthcare", "finance"]
 
     @property
     def purpose(self):
