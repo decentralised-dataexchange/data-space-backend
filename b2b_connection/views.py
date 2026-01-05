@@ -1,13 +1,13 @@
-from django.shortcuts import render
-from rest_framework import status, permissions
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from organisation.models import Organisation
-from b2b_connection.models import B2BConnection
-from b2b_connection.serializers import B2BConnectionSerializer,B2BConnectionsSerializer
-from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+
 from dataspace_backend.utils import paginate_queryset
+from organisation.models import Organisation
+
+from b2b_connection.models import B2BConnection
+from b2b_connection.serializers import B2BConnectionSerializer, B2BConnectionsSerializer
 
 # Create your views here.
 class B2BConnectionView(APIView):

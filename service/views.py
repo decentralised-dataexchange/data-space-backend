@@ -1,13 +1,13 @@
-import uuid
-import requests
 import json
-from django.shortcuts import render
+import uuid
+
 from django.db.models import Q
-from rest_framework.views import View
-from config.models import DataSource, ImageModel, Verification
-from config.serializers import VerificationSerializer, DataSourceSerializer
 from django.http import JsonResponse, HttpResponse
 from rest_framework import status
+from rest_framework.views import View
+
+from config.models import DataSource, ImageModel, Verification
+from config.serializers import VerificationSerializer, DataSourceSerializer
 from data_disclosure_agreement.models import (
     DataDisclosureAgreement,
     DataDisclosureAgreementTemplate,
@@ -22,55 +22,177 @@ from organisation.serializers import (
     OrganisationIdentitySerializer,
     OrganisationSerializer,
 )
-from oAuth2Clients.models import OrganisationOAuth2Clients
 from software_statement.models import SoftwareStatement
 
 
 # Create your views here.
 
 
+def _get_instance_or_400(model, pk, missing_error_message: str):
+    try:
+        return model.objects.get(pk=pk), None
+    except model.DoesNotExist:
+        return None, JsonResponse(
+            {"error": missing_error_message}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+def _get_image_response(image_id, missing_error_message: str):
+    try:
+        image = ImageModel.objects.get(pk=image_id)
+    except ImageModel.DoesNotExist:
+        return JsonResponse(
+            {"error": missing_error_message}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return HttpResponse(image.image_data, content_type="image/jpeg")
+
+
+def _build_datasource_ddas(data_source):
+    data_disclosure_agreements_template_ids = (
+        DataDisclosureAgreement.list_unique_dda_template_ids_for_a_data_source(
+            data_source_id=data_source.id
+        )
+    )
+    ddas = []
+    for dda_template_id in data_disclosure_agreements_template_ids:
+        dda_for_template_id = (
+            DataDisclosureAgreement.read_latest_dda_by_template_id_and_data_source_id(
+                template_id=dda_template_id,
+                data_source_id=data_source.id,
+            )
+        )
+
+        data_disclosure_agreement_serializer = (
+            DataDisclosureAgreementsSerializer(dda_for_template_id)
+        )
+        dda = data_disclosure_agreement_serializer.data[
+            "dataDisclosureAgreementRecord"
+        ]
+
+        if dda:
+            dda["status"] = data_disclosure_agreement_serializer.data["status"]
+            dda["isLatestVersion"] = data_disclosure_agreement_serializer.data[
+                "isLatestVersion"
+            ]
+            ddas.append(dda)
+    return ddas
+
+
+def _build_organisation_ddas(organisation):
+    data_disclosure_agreements_template_ids = (
+        DataDisclosureAgreementTemplate.list_unique_dda_template_ids_for_a_data_source(
+            data_source_id=organisation.id
+        )
+    )
+    ddas = []
+    for dda_template_id in data_disclosure_agreements_template_ids:
+        dda_for_template_id = (
+            DataDisclosureAgreementTemplate.read_latest_dda_by_template_id_and_data_source_id(
+                template_id=dda_template_id,
+                data_source_id=organisation.id,
+            )
+        )
+
+        data_disclosure_agreement_serializer = (
+            DataDisclosureAgreementTemplatesSerializer(dda_for_template_id)
+        )
+        dda = data_disclosure_agreement_serializer.data[
+            "dataDisclosureAgreementRecord"
+        ]
+
+        if dda:
+            dda["status"] = data_disclosure_agreement_serializer.data["status"]
+            dda["isLatestVersion"] = data_disclosure_agreement_serializer.data[
+                "isLatestVersion"
+            ]
+            dda["createdAt"] = data_disclosure_agreement_serializer.data["createdAt"]
+            dda["updatedAt"] = data_disclosure_agreement_serializer.data["updatedAt"]
+            ddas.append(dda)
+    return ddas
+
+
+def _get_datasource_verification_payload(data_source):
+    try:
+        verification = Verification.objects.get(dataSourceId=data_source)
+        verification_serializer = VerificationSerializer(verification)
+        return verification_serializer.data
+    except Verification.DoesNotExist:
+        return {
+            "id": "",
+            "dataSourceId": "",
+            "presentationExchangeId": "",
+            "presentationState": "",
+            "presentationRecord": {},
+        }
+
+
+def _get_organisation_identity_payload(organisation):
+    try:
+        verification = OrganisationIdentity.objects.get(organisationId=organisation)
+        verification_serializer = OrganisationIdentitySerializer(verification)
+        return verification_serializer.data
+    except OrganisationIdentity.DoesNotExist:
+        return {
+            "id": "",
+            "organisationId": "",
+            "presentationExchangeId": "",
+            "presentationState": "",
+            "isPresentationVerified": False,
+            "presentationRecord": {},
+        }
+
+
+def _get_software_statement_payload(organisation):
+    try:
+        software_statement = SoftwareStatement.objects.get(
+            organisationId=organisation
+        )
+        return software_statement.credentialHistory
+    except SoftwareStatement.DoesNotExist:
+        return {}
+
+
+def _serialize_organisation_summary(organisation):
+    organisation_serializer = OrganisationSerializer(organisation)
+    organisation_data = organisation_serializer.data
+    organisation_data["softwareStatement"] = _get_software_statement_payload(
+        organisation
+    )
+    return {
+        "dataDisclosureAgreements": _build_organisation_ddas(organisation),
+        "api": [organisation.openApiUrl],
+        "organisation": organisation_data,
+        "organisationIdentity": _get_organisation_identity_payload(organisation),
+    }
+
+
 class DataSourceCoverImageView(View):
 
     def get(self, request, dataSourceId):
-        try:
-            # Get the DataSource instance
-            datasource = DataSource.objects.get(pk=dataSourceId)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            image = ImageModel.objects.get(pk=datasource.coverImageId)
-        except ImageModel.DoesNotExist:
-            return JsonResponse(
-                {"error": "Cover image not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the DataSource instance
+        datasource, error_response = _get_instance_or_400(
+            DataSource, dataSourceId, "Data source not found"
+        )
+        if error_response:
+            return error_response
 
         # Return the binary image data as the HTTP response
-        return HttpResponse(image.image_data, content_type="image/jpeg")
+        return _get_image_response(datasource.coverImageId, "Cover image not found")
 
 
 class DataSourceLogoImageView(View):
 
     def get(self, request, dataSourceId):
-        try:
-            # Get the DataSource instance
-            datasource = DataSource.objects.get(pk=dataSourceId)
-        except DataSource.DoesNotExist:
-            return JsonResponse(
-                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            image = ImageModel.objects.get(pk=datasource.logoId)
-        except ImageModel.DoesNotExist:
-            return JsonResponse(
-                {"error": "Logo image not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the DataSource instance
+        datasource, error_response = _get_instance_or_400(
+            DataSource, dataSourceId, "Data source not found"
+        )
+        if error_response:
+            return error_response
 
         # Return the binary image data as the HTTP response
-        return HttpResponse(image.image_data, content_type="image/jpeg")
+        return _get_image_response(datasource.logoId, "Logo image not found")
 
 
 class DataSourcesView(View):
@@ -86,45 +208,8 @@ class DataSourcesView(View):
         serialized_data_sources = []
         for data_source in data_sources:
 
-            data_disclosure_agreements_template_ids = (
-                DataDisclosureAgreement.list_unique_dda_template_ids_for_a_data_source(
-                    data_source_id=data_source.id
-                )
-            )
-            ddas = []
-            for dda_template_id in data_disclosure_agreements_template_ids:
-                dda_for_template_id = DataDisclosureAgreement.read_latest_dda_by_template_id_and_data_source_id(
-                    template_id=dda_template_id,
-                    data_source_id=data_source.id,
-                )
-
-                data_disclosure_agreement_serializer = (
-                    DataDisclosureAgreementsSerializer(dda_for_template_id)
-                )
-                dda = data_disclosure_agreement_serializer.data[
-                    "dataDisclosureAgreementRecord"
-                ]
-
-                if dda:
-                    dda["status"] = data_disclosure_agreement_serializer.data["status"]
-                    dda["isLatestVersion"] = data_disclosure_agreement_serializer.data[
-                        "isLatestVersion"
-                    ]
-                    ddas.append(dda)
-
-            try:
-                verification = Verification.objects.get(dataSourceId=data_source)
-                verification_serializer = VerificationSerializer(verification)
-                verification_data = verification_serializer.data
-            except Verification.DoesNotExist:
-                verification_data = {
-                    "id": "",
-                    "dataSourceId": "",
-                    "presentationExchangeId": "",
-                    "presentationState": "",
-                    "presentationRecord": {},
-                }
-
+            ddas = _build_datasource_ddas(data_source)
+            verification_data = _get_datasource_verification_payload(data_source)
             datasource_serializer = DataSourceSerializer(data_source)
 
             api = [data_source.openApiUrl]
@@ -150,45 +235,29 @@ class DataSourcesView(View):
 class OrganisationCoverImageView(View):
 
     def get(self, request, organisationId):
-        try:
-            # Get the organisation instance
-            organisation = Organisation.objects.get(pk=organisationId)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            image = ImageModel.objects.get(pk=organisation.coverImageId)
-        except ImageModel.DoesNotExist:
-            return JsonResponse(
-                {"error": "Cover image not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the organisation instance
+        organisation, error_response = _get_instance_or_400(
+            Organisation, organisationId, "Organisation not found"
+        )
+        if error_response:
+            return error_response
 
         # Return the binary image data as the HTTP response
-        return HttpResponse(image.image_data, content_type="image/jpeg")
+        return _get_image_response(organisation.coverImageId, "Cover image not found")
 
 
 class OrganisationLogoImageView(View):
 
     def get(self, request, organisationId):
-        try:
-            # Get the organisation instance
-            organisation = Organisation.objects.get(pk=organisationId)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            image = ImageModel.objects.get(pk=organisation.logoId)
-        except ImageModel.DoesNotExist:
-            return JsonResponse(
-                {"error": "Logo image not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        # Get the organisation instance
+        organisation, error_response = _get_instance_or_400(
+            Organisation, organisationId, "Organisation not found"
+        )
+        if error_response:
+            return error_response
 
         # Return the binary image data as the HTTP response
-        return HttpResponse(image.image_data, content_type="image/jpeg")
+        return _get_image_response(organisation.logoId, "Logo image not found")
 
 
 class OrganisationsView(View):
@@ -208,66 +277,7 @@ class OrganisationsView(View):
         organisations, pagination_data = paginate_queryset(organisations, request)
         serialized_organisations = []
         for organisation in organisations:
-
-            data_disclosure_agreements_template_ids = DataDisclosureAgreementTemplate.list_unique_dda_template_ids_for_a_data_source(
-                data_source_id=organisation.id
-            )
-            ddas = []
-            for dda_template_id in data_disclosure_agreements_template_ids:
-                dda_for_template_id = DataDisclosureAgreementTemplate.read_latest_dda_by_template_id_and_data_source_id(
-                    template_id=dda_template_id,
-                    data_source_id=organisation.id,
-                )
-
-                data_disclosure_agreement_serializer = (
-                    DataDisclosureAgreementTemplatesSerializer(dda_for_template_id)
-                )
-                dda = data_disclosure_agreement_serializer.data[
-                    "dataDisclosureAgreementRecord"
-                ]
-
-                if dda:
-                    dda["status"] = data_disclosure_agreement_serializer.data["status"]
-                    dda["isLatestVersion"] = data_disclosure_agreement_serializer.data[
-                        "isLatestVersion"
-                    ]
-                    dda["createdAt"] = data_disclosure_agreement_serializer.data["createdAt"]
-                    dda["updatedAt"] = data_disclosure_agreement_serializer.data["updatedAt"]
-                    ddas.append(dda)
-
-            try:
-                verification = OrganisationIdentity.objects.get(
-                    organisationId=organisation
-                )
-                verification_serializer = OrganisationIdentitySerializer(verification)
-                verification_data = verification_serializer.data
-            except OrganisationIdentity.DoesNotExist:
-                verification_data = {
-                    "id": "",
-                    "organisationId": "",
-                    "presentationExchangeId": "",
-                    "presentationState": "",
-                    "isPresentationVerified": False,
-                    "presentationRecord": {},
-                }
-
-            try:
-                software_statement = SoftwareStatement.objects.get(organisationId=organisation)
-                software_statement = software_statement.credentialHistory
-            except SoftwareStatement.DoesNotExist:
-                software_statement = {}
-
-            organisation_serializer = OrganisationSerializer(organisation)
-            organisation_data = organisation_serializer.data
-            organisation_data["softwareStatement"] = software_statement
-
-            api = [organisation.openApiUrl]
-            serialized_organisation = {
-                "dataDisclosureAgreements": ddas,
-                "api": api,
-                "organisation": organisation_data,
-                "organisationIdentity": verification_data,
-            }
+            serialized_organisation = _serialize_organisation_summary(organisation)
             # Append the serialized organisation to the list
             serialized_organisations.append(serialized_organisation)
 
@@ -436,70 +446,9 @@ class SearchView(View):
 
         serialized_organisations = []
         for organisation in organisations_page:
-            data_disclosure_agreements_template_ids = DataDisclosureAgreementTemplate.list_unique_dda_template_ids_for_a_data_source(
-                data_source_id=organisation.id
+            serialized_organisations.append(
+                _serialize_organisation_summary(organisation)
             )
-            ddas = []
-            for dda_template_id in data_disclosure_agreements_template_ids:
-                dda_for_template_id = DataDisclosureAgreementTemplate.read_latest_dda_by_template_id_and_data_source_id(
-                    template_id=dda_template_id,
-                    data_source_id=organisation.id,
-                )
-
-                data_disclosure_agreement_serializer = (
-                    DataDisclosureAgreementTemplatesSerializer(dda_for_template_id)
-                )
-                dda = data_disclosure_agreement_serializer.data[
-                    "dataDisclosureAgreementRecord"
-                ]
-
-                if dda:
-                    dda["status"] = data_disclosure_agreement_serializer.data["status"]
-                    dda["isLatestVersion"] = data_disclosure_agreement_serializer.data[
-                        "isLatestVersion"
-                    ]
-                    dda["createdAt"] = data_disclosure_agreement_serializer.data[
-                        "createdAt"
-                    ]
-                    dda["updatedAt"] = data_disclosure_agreement_serializer.data[
-                        "updatedAt"
-                    ]
-                    ddas.append(dda)
-
-            try:
-                verification = OrganisationIdentity.objects.get(organisationId=organisation)
-                verification_serializer = OrganisationIdentitySerializer(verification)
-                verification_data = verification_serializer.data
-            except OrganisationIdentity.DoesNotExist:
-                verification_data = {
-                    "id": "",
-                    "organisationId": "",
-                    "presentationExchangeId": "",
-                    "presentationState": "",
-                    "isPresentationVerified": False,
-                    "presentationRecord": {},
-                }
-
-            try:
-                software_statement = SoftwareStatement.objects.get(
-                    organisationId=organisation
-                )
-                software_statement = software_statement.credentialHistory
-            except SoftwareStatement.DoesNotExist:
-                software_statement = {}
-
-            organisation_serializer = OrganisationSerializer(organisation)
-            organisation_data = organisation_serializer.data
-            organisation_data["softwareStatement"] = software_statement
-
-            api = [organisation.openApiUrl]
-            serialized_organisation = {
-                "dataDisclosureAgreements": ddas,
-                "api": api,
-                "organisation": organisation_data,
-                "organisationIdentity": verification_data,
-            }
-            serialized_organisations.append(serialized_organisation)
 
         ddas_page, ddas_pagination = paginate_queryset(ddas_qs, request)
 

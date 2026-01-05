@@ -2,7 +2,7 @@ import os
 import requests
 from rest_framework import permissions, status
 from rest_framework import status as http_status
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from rest_framework.views import APIView
 from software_statement.serializers import SoftwareStatementSerializer
 from software_statement.models import SoftwareStatement, SoftwareStatementTemplate
@@ -10,17 +10,23 @@ from organisation.models import Organisation
 from constance import config
 
 # Create your views here.
+def _get_organisation_or_400(user):
+    try:
+        return Organisation.objects.get(admin=user), None
+    except Organisation.DoesNotExist:
+        return None, JsonResponse(
+            {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+
 class SoftwareStatementView(APIView):
     serializer_class = SoftwareStatementSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        try:
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             software_statement = SoftwareStatement.objects.get(organisationId=organisation)
@@ -46,12 +52,9 @@ class SoftwareStatementView(APIView):
         return JsonResponse(response_data)
 
     def post(self, request):
-        try:
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=http_status.HTTP_400_BAD_REQUEST
-            )
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
         
         ows_base_url = organisation.owsBaseUrl
         credential_offer_endpoint = organisation.credentialOfferEndpoint
@@ -159,12 +162,9 @@ class SoftwareStatementView(APIView):
         return JsonResponse(response_data)
     
     def delete(self, request):
-        try:
-            organisation = Organisation.objects.get(admin=request.user)
-        except Organisation.DoesNotExist:
-            return JsonResponse(
-                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        organisation, error_response = _get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
 
         try:
             software_statement = SoftwareStatement.objects.get(organisationId=organisation)
