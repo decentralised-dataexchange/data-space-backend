@@ -260,7 +260,8 @@ class OrganisationsView(View):
 class SearchView(View):
     def get(self, request):
         search = request.GET.get("search", "")
-        if not search or not search.strip():
+        search = search.strip()
+        if not search:
             return JsonResponse(
                 {
                     "error": "invalid_request",
@@ -358,42 +359,67 @@ class SearchView(View):
         ddas_qs = DataDisclosureAgreementTemplate.objects.none()
         organisation_ids_from_ddas = []
         if dda_scopes_enabled:
-            # Start from all listed, latest DDAs
-            base_ddas_qs = DataDisclosureAgreementTemplate.objects.filter(
-                status="listed",
-                isLatestVersion=True,
-            ).select_related("organisationId")
+            # Use PostgreSQL full-text search in production, Python filtering in tests
+            from django.conf import settings
 
-            # Scan JSON records and tags in Python to find matches
-            search_lower = search.lower()
-            matching_ids = []
-            org_ids_set = set()
-            for dda in base_ddas_qs:
-                record = dda.dataDisclosureAgreementRecord or {}
-                record_str = json.dumps(record).lower()
-                tags_str = json.dumps(dda.tags or []).lower()
+            if settings.DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
+                # PostgreSQL: Use JSONB lookups for efficient filtering
+                base_ddas_qs = DataDisclosureAgreementTemplate.objects.filter(
+                    status="listed",
+                    isLatestVersion=True,
+                ).select_related("organisationId")
 
-                # Check if search term matches record content or tags
-                record_matches = search_lower in record_str
-                tags_matches = search_tags and search_lower in tags_str
+                # Build search filter using PostgreSQL JSONB lookups
+                dda_filter = Q()
 
-                if record_matches or tags_matches:
-                    matching_ids.append(dda.id)
-                    org_ids_set.add(dda.organisationId_id)
+                if search_dda_purpose:
+                    # Use JSONB contains for partial matching in PostgreSQL
+                    dda_filter |= Q(dataDisclosureAgreementRecord__purpose__icontains=search)
 
-            if matching_ids:
-                ddas_qs = base_ddas_qs.filter(id__in=matching_ids)
-                organisation_ids_from_ddas = list(org_ids_set)
+                if search_dda_description:
+                    dda_filter |= Q(dataDisclosureAgreementRecord__description__icontains=search)
+
+                if search_tags:
+                    # For tags, use contains lookup (works with arrays in PostgreSQL)
+                    dda_filter |= Q(tags__contains=search)
+
+                if dda_filter:
+                    ddas_qs = base_ddas_qs.filter(dda_filter).distinct()
+                    organisation_ids_from_ddas = list(
+                        ddas_qs.values_list("organisationId_id", flat=True).distinct()
+                    )
+            else:
+                # SQLite/Tests: Use Python filtering
+                base_ddas_qs = DataDisclosureAgreementTemplate.objects.filter(
+                    status="listed",
+                    isLatestVersion=True,
+                ).select_related("organisationId")
+
+                search_lower = search.lower()
+                matching_ids = []
+                org_ids_set = set()
+                for dda in base_ddas_qs:
+                    record = dda.dataDisclosureAgreementRecord or {}
+                    purpose = record.get("purpose", "")
+                    description = record.get("description", "")
+
+                    purpose_matches = search_dda_purpose and search_lower in purpose.lower()
+                    description_matches = search_dda_description and search_lower in description.lower()
+                    tags_matches = search_tags and search_lower in json.dumps(dda.tags or []).lower()
+
+                    if purpose_matches or description_matches or tags_matches:
+                        matching_ids.append(dda.id)
+                        org_ids_set.add(dda.organisationId_id)
+
+                if matching_ids:
+                    ddas_qs = base_ddas_qs.filter(id__in=matching_ids)
+                    organisation_ids_from_ddas = list(org_ids_set)
 
         org_filter = Q()
         has_filter = False
 
         if search_org_name:
-            org_filter |= Q(name__icontains=search) | Q(description__icontains=search)
-            has_filter = True
-
-        if dda_scopes_enabled and organisation_ids_from_ddas:
-            org_filter |= Q(id__in=organisation_ids_from_ddas)
+            org_filter |= Q(name__icontains=search) | Q(location__icontains=search) | Q(description__icontains=search)
             has_filter = True
 
         if has_filter:
