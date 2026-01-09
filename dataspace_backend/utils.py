@@ -45,7 +45,7 @@ def paginate_queryset(queryset, request):
         total_items = len(queryset)
 
     offset = max(offset, 0)
-    limit = max(0, min(limit, 100))
+    limit = max(1, min(limit, 100))
 
     queryset = queryset[offset : offset + limit]
 
