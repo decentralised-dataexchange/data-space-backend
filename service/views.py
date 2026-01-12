@@ -359,9 +359,8 @@ class SearchView(View):
         ddas_qs = DataDisclosureAgreementTemplate.objects.none()
         organisation_ids_from_ddas = []
         if dda_scopes_enabled:
-            # Filter DDAs by purpose/description/tags
-            # Note: JSONField partial matching requires Python filtering
-            # PostgreSQL JSONB doesn't support nested key lookups with icontains
+            # Use Python filtering for JSON fields as django-jsonfield doesn't support 
+            # native DB lookups for partial matching on keys
             base_ddas_qs = DataDisclosureAgreementTemplate.objects.filter(
                 status="listed",
                 isLatestVersion=True,
