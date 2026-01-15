@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from data_disclosure_agreement.models import DataDisclosureAgreementTemplate
 from onboard.models import DataspaceUser
-from organisation.models import Organisation
+from organisation.models import Organisation, OrganisationIdentity
 
 # Create your tests here.
 
@@ -1287,3 +1287,91 @@ class SearchViewTests(TestCase):
         data = json.loads(response.content)
         orgs = data.get("organisations", [])
         self.assertEqual(len(orgs), 0)
+
+class OrganisationFilteringTest(TestCase):
+    def setUp(self):
+        self.url = reverse("organisations")
+        
+        # Create unverified org
+        self.user1 = DataspaceUser.objects.create(email="user1_filtering@example.com", name="user1")
+        self.org_unverified = Organisation.objects.create(
+            name="Unverified Org",
+            coverImageUrl="http://example.com/cover.jpg",
+            logoUrl="http://example.com/logo.jpg",
+            sector="Health",
+            location="Test Location",
+            policyUrl="http://example.com/policy",
+            description="Unverified Description",
+            admin=self.user1
+        )
+        # Create Identity but NOT verify it
+        OrganisationIdentity.objects.create(
+            organisationId=self.org_unverified,
+            presentationExchangeId="ex_unverified",
+            presentationState="proposed",
+            isPresentationVerified=False,
+            presentationRecord={}
+        )
+
+        # Create verified org
+        self.user2 = DataspaceUser.objects.create(email="user2_filtering@example.com", name="user2")
+        self.org_verified = Organisation.objects.create(
+            name="Verified Org",
+            coverImageUrl="http://example.com/cover.jpg",
+            logoUrl="http://example.com/logo.jpg",
+            sector="Finance",
+            location="Test Location",
+            policyUrl="http://example.com/policy",
+            description="Verified Description",
+            admin=self.user2
+        )
+        # Create Identity AND verify it
+        OrganisationIdentity.objects.create(
+            organisationId=self.org_verified,
+            presentationExchangeId="ex_verified",
+            presentationState="verified",
+            isPresentationVerified=True,
+            presentationRecord={}
+        )
+
+    def test_list_organisations_default_excludes_unverified(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        orgs = data.get("organisations", [])
+        
+        # Should only contain the verified org
+        # Filter to ensure we only check against our test orgs (in case other tests left data)
+        test_org_ids = [str(self.org_verified.id), str(self.org_unverified.id)]
+        returned_test_orgs = [o for o in orgs if o["organisation"]["id"] in test_org_ids]
+        
+        self.assertEqual(len(returned_test_orgs), 1)
+        self.assertEqual(returned_test_orgs[0]["organisation"]["id"], str(self.org_verified.id))
+
+    def test_list_organisations_include_unverified_true(self):
+        response = self.client.get(self.url, {"includeUnverified": "true"})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        orgs = data.get("organisations", [])
+        
+        # Should contain both
+        test_org_ids = [str(self.org_verified.id), str(self.org_unverified.id)]
+        returned_test_orgs = [o for o in orgs if o["organisation"]["id"] in test_org_ids]
+        
+        self.assertEqual(len(returned_test_orgs), 2)
+        org_ids = [o["organisation"]["id"] for o in returned_test_orgs]
+        self.assertIn(str(self.org_verified.id), org_ids)
+        self.assertIn(str(self.org_unverified.id), org_ids)
+
+    def test_list_organisations_include_unverified_false(self):
+        response = self.client.get(self.url, {"includeUnverified": "false"})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        orgs = data.get("organisations", [])
+        
+        # Should only contain the verified org
+        test_org_ids = [str(self.org_verified.id), str(self.org_unverified.id)]
+        returned_test_orgs = [o for o in orgs if o["organisation"]["id"] in test_org_ids]
+        
+        self.assertEqual(len(returned_test_orgs), 1)
+        self.assertEqual(returned_test_orgs[0]["organisation"]["id"], str(self.org_verified.id))
