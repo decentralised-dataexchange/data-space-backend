@@ -229,6 +229,10 @@ class OrganisationLogoImageView(View):
 class OrganisationsView(View):
     def get(self, request):
         organisation_id_param = request.GET.get("organisationId")
+        include_unverified_param = request.GET.get("includeUnverified", "false")
+        
+        # Parse includeUnverified parameter
+        include_unverified = include_unverified_param.lower() == "true"
 
         if organisation_id_param:
             try:
@@ -239,6 +243,13 @@ class OrganisationsView(View):
             organisations = Organisation.objects.filter(pk=organisation_id_param)
         else:
             organisations = Organisation.objects.all().order_by("createdAt")
+        
+        # Filter to only verified organisations unless includeUnverified is true
+        if not include_unverified:
+            verified_org_ids = OrganisationIdentity.objects.filter(
+                isPresentationVerified=True
+            ).values_list("organisationId_id", flat=True)
+            organisations = organisations.filter(pk__in=verified_org_ids)
 
         organisations, pagination_data = paginate_queryset(organisations, request)
         serialized_organisations = []
