@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import Any, cast
+from typing import Any, Dict, List, cast
 
 from django.db.models import Q, QuerySet
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -212,7 +212,7 @@ def _get_software_statement_payload(organisation: Organisation) -> dict[str, Any
     """
     try:
         software_statement = SoftwareStatement.objects.get(organisationId=organisation)
-        return cast(dict[str, Any], software_statement.credentialHistory)
+        return cast(Dict[str, Any], software_statement.credentialHistory)
     except SoftwareStatement.DoesNotExist:
         return {}
 
