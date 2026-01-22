@@ -35,11 +35,56 @@ from .serializers import (
 
 
 class DataSourceView(APIView):
+    """
+    Manage data source configuration and profile.
+
+    A data source represents an entity that provides data within the dataspace
+    ecosystem. This endpoint allows authenticated admins to create, retrieve,
+    and update their data source configuration including metadata, URLs,
+    and verification status.
+
+    Authentication: JWT token required.
+
+    Permissions:
+        - User must be authenticated.
+        - Each admin can only have one data source.
+    """
+
     serializer_class = DataSourceSerializer
     verification_serializer_class = VerificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
+        """
+        Create a new data source for the authenticated admin.
+
+        Creates a data source profile with the provided configuration.
+        Default cover and logo images are automatically assigned.
+        Each admin can only create one data source.
+
+        Request format:
+            POST with JSON body:
+            {
+                "dataSource": {
+                    "name": "Data Source Name",
+                    "description": "Description",
+                    "location": "City, Country",
+                    "policyUrl": "https://datasource.com/policy"
+                }
+            }
+
+        Response format:
+            201 Created: Returns the created data source configuration.
+            400 Bad Request: Validation errors or admin already has a data source.
+
+        Business rules:
+            - One admin can only have one data source.
+            - Default images are assigned automatically.
+            - Image URLs are constructed based on the entity ID.
+
+        Returns:
+            JsonResponse: Created data source data.
+        """
         admin = request.user
 
         # Check if a DataSource with the same admin already exists
@@ -97,6 +142,38 @@ class DataSourceView(APIView):
     def get(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> JsonResponse | Response:
+        """
+        Retrieve the current user's data source profile and verification status.
+
+        Returns the complete data source configuration along with any
+        associated verification information. This provides a comprehensive
+        view of the data source's current state in the dataspace.
+
+        Response format:
+            {
+                "dataSource": {
+                    "id": "uuid",
+                    "name": "Data Source Name",
+                    "description": "...",
+                    "location": "...",
+                    "policyUrl": "...",
+                    "coverImageUrl": "...",
+                    "logoUrl": "...",
+                    ...
+                },
+                "verification": {
+                    "id": "uuid",
+                    "dataSourceId": "uuid",
+                    "presentationExchangeId": "string",
+                    "presentationState": "verified|pending|...",
+                    "presentationRecord": {...}
+                }
+            }
+
+        Returns:
+            JsonResponse: Data source profile and verification status.
+            Response: Error if user has no associated data source.
+        """
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -130,6 +207,36 @@ class DataSourceView(APIView):
     def put(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> JsonResponse | Response:
+        """
+        Update the current user's data source profile.
+
+        Allows data source admins to update their data source's profile
+        information. Only provided fields are updated; missing fields
+        retain their current values.
+
+        Request format:
+            PUT with JSON body:
+            {
+                "dataSource": {
+                    "name": "Updated Name" (optional),
+                    "description": "Updated description" (optional),
+                    "location": "New Location" (optional),
+                    "policyUrl": "https://new-policy-url.com" (optional)
+                }
+            }
+
+        Response format:
+            200 OK: Returns updated data source data.
+            400 Bad Request: User has no associated data source.
+
+        Business rules:
+            - Only non-empty fields in the request are updated.
+            - Other fields remain unchanged.
+
+        Returns:
+            JsonResponse: Updated data source profile.
+            Response: Error if user has no associated data source.
+        """
         data = request.data.get("dataSource", {})
 
         # Get the DataSource instance associated with the current user
@@ -161,11 +268,41 @@ class DataSourceView(APIView):
 
 
 class DataSourceCoverImageView(APIView):
+    """
+    Manage the data source's cover/banner image.
+
+    This endpoint handles retrieval and upload of the data source's cover
+    image, which is typically displayed as a banner on the data source's
+    profile page in the dataspace portal.
+
+    Authentication: JWT token required.
+
+    Permissions:
+        - User must be authenticated.
+        - User must be an admin of an existing data source.
+    """
+
     permission_classes = [permissions.IsAuthenticated]
 
     def get(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> HttpResponse | Response:
+        """
+        Retrieve the data source's cover image.
+
+        Returns the data source's cover/banner image as binary data.
+        A default image is assigned during data source creation if
+        none is uploaded.
+
+        Response format:
+            200 OK: Binary image data with appropriate content-type header.
+            400 Bad Request: User has no associated data source.
+            404 Not Found: Cover image not found in storage.
+
+        Returns:
+            HttpResponse: Binary image data.
+            Response: Error if data source or image not found.
+        """
         # Get the DataSource instance
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
@@ -182,6 +319,28 @@ class DataSourceCoverImageView(APIView):
     def put(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> JsonResponse | Response:
+        """
+        Upload a new cover image for the data source.
+
+        Replaces the data source's current cover image with the uploaded
+        file. The image is stored and a URL is generated for retrieval.
+
+        Request format:
+            PUT with multipart/form-data:
+            - orgimage: The image file to upload.
+
+        Response format:
+            200 OK: Returns updated data source data with new image URL.
+            400 Bad Request: Missing image file or validation error.
+
+        Business rules:
+            - The previous cover image is replaced.
+            - Image URLs are automatically updated.
+
+        Returns:
+            JsonResponse: Updated data source data with new cover image URL.
+            Response: Error if validation fails.
+        """
         uploaded_image = request.FILES.get("orgimage")
 
         # Get the DataSource instance
@@ -205,11 +364,40 @@ class DataSourceCoverImageView(APIView):
 
 
 class DataSourceLogoImageView(APIView):
+    """
+    Manage the data source's logo image.
+
+    This endpoint handles retrieval and upload of the data source's logo,
+    which is used to represent the data source across the dataspace
+    platform (e.g., in listings, headers, and cards).
+
+    Authentication: JWT token required.
+
+    Permissions:
+        - User must be authenticated.
+        - User must be an admin of an existing data source.
+    """
+
     permission_classes = [permissions.IsAuthenticated]
 
     def get(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> HttpResponse | Response:
+        """
+        Retrieve the data source's logo image.
+
+        Returns the data source's logo as binary data. A default logo
+        is assigned during data source creation if none is uploaded.
+
+        Response format:
+            200 OK: Binary image data with appropriate content-type header.
+            400 Bad Request: User has no associated data source.
+            404 Not Found: Logo image not found in storage.
+
+        Returns:
+            HttpResponse: Binary image data.
+            Response: Error if data source or image not found.
+        """
         # Get the DataSource instance
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
@@ -226,6 +414,29 @@ class DataSourceLogoImageView(APIView):
     def put(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> JsonResponse | Response:
+        """
+        Upload a new logo image for the data source.
+
+        Replaces the data source's current logo with the uploaded file.
+        The logo is stored and a URL is generated for retrieval.
+
+        Request format:
+            PUT with multipart/form-data:
+            - orgimage: The logo image file to upload.
+
+        Response format:
+            200 OK: Returns updated data source data with new logo URL.
+            400 Bad Request: Missing image file or validation error.
+
+        Business rules:
+            - The previous logo is replaced.
+            - Logo URLs are automatically updated.
+            - Logo appears in data source listings and profiles.
+
+        Returns:
+            JsonResponse: Updated data source data with new logo URL.
+            Response: Error if validation fails.
+        """
         uploaded_image = request.FILES.get("orgimage")
 
         # Get the DataSource instance
@@ -249,15 +460,67 @@ class DataSourceLogoImageView(APIView):
 
 
 class AdminView(APIView):
+    """
+    Manage the authenticated admin user's profile.
+
+    This endpoint allows data source administrators to view and update
+    their own user profile information within the dataspace system.
+
+    Authentication: JWT token required.
+
+    Permissions:
+        - User must be authenticated.
+    """
+
     serializer_class = DataspaceUserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
+        """
+        Retrieve the authenticated admin's user profile.
+
+        Returns the complete user profile data for the currently
+        authenticated administrator.
+
+        Response format:
+            {
+                "id": "uuid",
+                "email": "admin@example.com",
+                "name": "Admin Name",
+                ...
+            }
+
+        Returns:
+            JsonResponse: Admin user profile data.
+        """
         user = cast(DataspaceUser, request.user)
         serializer = self.serializer_class(user, many=False)
         return JsonResponse(serializer.data)
 
     def put(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
+        """
+        Update the authenticated admin's user profile.
+
+        Allows administrators to update their profile information.
+        Currently supports updating the name field.
+
+        Request format:
+            PUT with JSON body:
+            {
+                "name": "Updated Admin Name"
+            }
+
+        Response format:
+            200 OK: Returns updated admin profile data.
+            400 Bad Request: Missing name field or validation errors.
+
+        Business rules:
+            - The name field is required for updates.
+            - Email cannot be changed through this endpoint.
+
+        Returns:
+            JsonResponse: Updated admin user profile data.
+        """
         admin = cast(DataspaceUser, request.user)
         request_data = request.data
         if "name" not in request_data:
@@ -273,12 +536,53 @@ class AdminView(APIView):
 
 
 class DataSourceVerificationView(APIView):
+    """
+    Manage data source verification through verifiable credentials.
+
+    This endpoint handles the data source's verification process using
+    verifiable presentations. Data sources can check their verification
+    status or initiate a new verification request through the DISP
+    (Data Intermediary Service Provider) connection.
+
+    Authentication: JWT token required.
+
+    Permissions:
+        - User must be authenticated.
+        - User must be an admin of an existing data source.
+
+    Business context:
+        Data source verification establishes trust by requiring data sources
+        to present verifiable credentials that prove their identity and
+        authorization to participate in the dataspace.
+    """
+
     serializer_class = VerificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> JsonResponse | Response:
+        """
+        Retrieve the data source's verification status.
+
+        Returns the current state of the data source's verification,
+        including the presentation exchange details and verification state.
+
+        Response format:
+            {
+                "verification": {
+                    "id": "uuid",
+                    "dataSourceId": "uuid",
+                    "presentationExchangeId": "string",
+                    "presentationState": "verified|pending|...",
+                    "presentationRecord": {...}
+                }
+            }
+
+        Returns:
+            JsonResponse: Verification status and details.
+            JsonResponse: Error if no verification record exists.
+        """
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -302,6 +606,38 @@ class DataSourceVerificationView(APIView):
     def post(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> JsonResponse | Response:
+        """
+        Initiate data source verification.
+
+        Starts the verification process by sending a presentation request
+        through the established DISP connection. The data source must have
+        an active connection before verification can be initiated.
+
+        This method communicates with the Data Marketplace's digital wallet
+        service to create a presentation offer based on the configured
+        verification template (data agreement).
+
+        Response format:
+            {
+                "verification": {
+                    "id": "uuid",
+                    "dataSourceId": "uuid",
+                    "presentationExchangeId": "string",
+                    "presentationState": "offer_sent|...",
+                    "presentationRecord": {...}
+                }
+            }
+
+        Business rules:
+            - Data source must have an active DISP connection.
+            - A VerificationTemplate must be configured in the system.
+            - Creates or updates the Verification record.
+            - Communicates with external Data Marketplace digital wallet.
+
+        Returns:
+            JsonResponse: Initiated verification details with exchange ID.
+            JsonResponse: Error if connection/template not found or service fails.
+        """
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -376,12 +712,58 @@ class DataSourceVerificationView(APIView):
 
 
 class VerificationTemplateView(APIView):
+    """
+    Retrieve available verification templates for data sources.
+
+    Verification templates define the credential schemas and data agreements
+    that data sources must satisfy during the verification process. These
+    templates are configured by administrators and define what credentials
+    are required to verify a data source's identity.
+
+    Authentication: JWT token required.
+
+    Permissions:
+        - User must be authenticated.
+        - User must be an admin of an existing data source.
+    """
+
     serializer_class = VerificationTemplateSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> JsonResponse | Response:
+        """
+        Retrieve all available verification templates.
+
+        Returns the list of verification templates that can be used for
+        data source verification. Each template includes the data source's
+        wallet name and location for context.
+
+        Response format:
+            {
+                "verificationTemplates": [
+                    {
+                        "id": "uuid",
+                        "name": "Template Name",
+                        "dataAgreementId": "uuid",
+                        "walletName": "Data Source Name",
+                        "walletLocation": "Location",
+                        ...
+                    },
+                    ...
+                ]
+            }
+
+        Business rules:
+            - Templates are managed by administrators.
+            - Each template response is enriched with the requesting
+              data source's wallet name and location.
+
+        Returns:
+            JsonResponse: List of verification templates.
+            JsonResponse: Error if data source or templates not found.
+        """
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -413,12 +795,54 @@ class VerificationTemplateView(APIView):
 
 
 class DataSourceOpenApiUrlView(APIView):
+    """
+    Update the data source's OpenAPI specification URL.
+
+    This endpoint allows data sources to configure or update their OpenAPI
+    specification URL, which provides machine-readable documentation of
+    the data source's API endpoints. This URL is used by the dataspace
+    to understand the data source's capabilities and available data.
+
+    Authentication: JWT token required.
+
+    Permissions:
+        - User must be authenticated.
+        - User must be an admin of an existing data source.
+    """
+
     serializer_class = DataSourceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def put(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> JsonResponse | Response:
+        """
+        Update the data source's OpenAPI URL.
+
+        Sets or updates the URL pointing to the data source's OpenAPI
+        specification document. This is used for API discovery and
+        integration within the dataspace ecosystem.
+
+        Request format:
+            PUT with JSON body:
+            {
+                "dataSource": {
+                    "openApiUrl": "https://datasource.com/openapi.json"
+                }
+            }
+
+        Response format:
+            200 OK: Returns updated data source data.
+            400 Bad Request: Missing openApiUrl field or data source not found.
+
+        Business rules:
+            - The openApiUrl field is mandatory for this endpoint.
+            - The URL should point to a valid OpenAPI specification.
+
+        Returns:
+            JsonResponse: Updated data source profile with OpenAPI URL.
+            Response: Error if validation fails.
+        """
         data = request.data.get("dataSource", {})
 
         # Get the DataSource instance associated with the current user
@@ -449,10 +873,32 @@ class DataSourceOpenApiUrlView(APIView):
 
 class PasswordChangeView(GenericAPIView):  # type: ignore[type-arg]
     """
-    Calls Django Auth SetPasswordForm save method.
+    Change the authenticated user's password.
 
-    Accepts the following POST parameters: new_password1, new_password2
-    Returns the success/fail message.
+    This endpoint allows users to update their account password by providing
+    the new password twice for confirmation. The endpoint uses Django's
+    built-in password validation to ensure security requirements are met.
+
+    Authentication: JWT token required.
+
+    Permissions:
+        - User must be authenticated.
+
+    Request format:
+        POST with JSON body:
+        {
+            "new_password1": "newSecurePassword123",
+            "new_password2": "newSecurePassword123"
+        }
+
+    Response format:
+        200 OK: {"detail": "New password has been saved."}
+        400 Bad Request: Password validation errors.
+
+    Business rules:
+        - Both password fields must match.
+        - Password must meet Django's password validation requirements.
+        - Sensitive parameters are protected from logging.
     """
 
     serializer_class = PasswordChangeSerializer
@@ -460,9 +906,28 @@ class PasswordChangeView(GenericAPIView):  # type: ignore[type-arg]
 
     @sensitive_post_parameters_m  # type: ignore[untyped-decorator]
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """
+        Handle request dispatch with sensitive parameter protection.
+
+        Marks password fields as sensitive to prevent them from being
+        logged or exposed in error reports.
+        """
         return cast(HttpResponse, super().dispatch(request, *args, **kwargs))
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        Process password change request.
+
+        Validates the new passwords match and meet security requirements,
+        then updates the user's password.
+
+        Returns:
+            Response: Success message on password change.
+
+        Raises:
+            400 Bad Request: If validation fails (passwords don't match
+            or don't meet requirements).
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -473,6 +938,38 @@ class PasswordChangeView(GenericAPIView):  # type: ignore[type-arg]
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def AdminReset(request: Request) -> HttpResponse:
+    """
+    Reset all connections and verifications in the system.
+
+    This is an administrative endpoint that deletes all Connection and
+    Verification records from the database. This is typically used for
+    testing or to reset the system to a clean state.
+
+    WARNING: This is a destructive operation that cannot be undone.
+    All connection and verification data will be permanently deleted.
+
+    Authentication: JWT token required.
+
+    Permissions:
+        - User must be authenticated.
+
+    Request format:
+        POST with empty body.
+
+    Response format:
+        200 OK: Reset completed successfully.
+        400 Bad Request: An error occurred during reset.
+
+    Business rules:
+        - Deletes ALL Connection records (not just for the current user).
+        - Deletes ALL Verification records (not just for the current user).
+        - Should be used with caution in production environments.
+        - Consider restricting this to admin users only.
+
+    Returns:
+        HttpResponse: Empty 200 response on success.
+        HttpResponse: Error message on failure.
+    """
     try:
         # Delete all connections
         Connection.objects.all().delete()

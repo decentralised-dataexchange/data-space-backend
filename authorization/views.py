@@ -1,3 +1,11 @@
+"""
+Authorization module for the Data Marketplace.
+
+This module implements the OAuth 2.0 authorization server functionality,
+specifically the client_credentials grant type for machine-to-machine
+authentication between data marketplace participants.
+"""
+
 import base64
 from typing import Any
 
@@ -19,15 +27,73 @@ User = get_user_model()
 @method_decorator(csrf_exempt, name="dispatch")
 class DataMarketPlaceTokenView(APIView):
     """
-    OAuth 2.0 Token endpoint (client_credentials) using Basic auth.
-    - Authorization: Basic base64(client_id:client_secret)
-    - Body: grant_type=client_credentials (form or json)
-    Finds the Organisation via OAuth2Clients and issues a JWT for the organisation admin.
+    OAuth 2.0 Token endpoint implementing the client_credentials grant type.
+
+    This endpoint serves as the authorization server for the Data Marketplace,
+    allowing organisations to obtain JWT access tokens using their OAuth2
+    client credentials. These tokens are used for authenticated API access
+    in machine-to-machine scenarios.
+
+    Business Context:
+        The Data Marketplace uses OAuth 2.0 client_credentials flow for B2B
+        integrations. Organisations register OAuth2 clients and use those
+        credentials to obtain access tokens for automated data exchange
+        operations without human intervention.
+
+    Authentication:
+        - HTTP Basic Authentication with client_id:client_secret
+        - Authorization header: "Basic base64(client_id:client_secret)"
+        - CSRF is disabled for this endpoint as it uses Basic Auth
+
+    Request Format:
+        Content-Type: application/x-www-form-urlencoded
+        Body: grant_type=client_credentials
+
+    Response Format (200 OK):
+        {
+            "access_token": "eyJ...",
+            "token_type": "Bearer",
+            "expires_in": 3600
+        }
+
+    Security:
+        - Only active OAuth2 clients can obtain tokens
+        - Only active organisation admins can have tokens issued
+        - Tokens are scoped to the organisation's permissions
+
+    Errors:
+        - 400: Invalid grant_type or content-type
+        - 401: Invalid client credentials or inactive client/admin
+        - 500: Server configuration error (missing admin)
     """
 
     permission_classes = [AllowAny]
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        Issue a JWT access token for valid OAuth2 client credentials.
+
+        Business Logic:
+            1. Validates the request content-type (must be form-urlencoded)
+            2. Validates grant_type (must be client_credentials)
+            3. Extracts and validates Basic auth credentials
+            4. Looks up the OAuth2 client and verifies it's active
+            5. Retrieves the associated organisation's admin user
+            6. Issues a JWT token for the admin user
+
+        The issued token allows the client to perform API operations on
+        behalf of the organisation, with permissions based on the admin user.
+
+        Business Rules:
+            - OAuth2 client must exist and be marked as active
+            - Organisation must have an active admin user
+            - Only client_credentials grant type is supported
+            - Request must use application/x-www-form-urlencoded
+
+        Returns:
+            Response with access_token, token_type, and expires_in on success.
+            Error response with error and error_description on failure.
+        """
         # Extract grant_type from form or JSON
         grant_type = None
         if request.content_type == "application/json":

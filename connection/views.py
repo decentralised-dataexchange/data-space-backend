@@ -1,3 +1,16 @@
+"""
+Connection Views Module
+
+This module provides API endpoints for managing DISP (Data Intermediary Service Provider)
+connections between data sources and the data marketplace digital wallet. These connections
+enable secure communication channels for data exchange operations.
+
+Business Context:
+- Connections are established between a Data Source (organisation) and mobile wallet users
+- Each connection uses DIDComm protocol for secure, decentralized communication
+- Firebase dynamic links are generated for easy mobile app deep-linking
+"""
+
 from typing import Any
 
 import requests
@@ -12,14 +25,67 @@ from dataspace_backend.utils import get_datasource_or_400, paginate_queryset
 from .models import Connection
 from .serializers import DISPConnectionSerializer
 
-# Create your views here.
-
 
 class DISPConnectionView(APIView):
+    """
+    API View for creating new DISP connections.
+
+    Business Purpose:
+        Enables a Data Source to create a new connection invitation that can be
+        shared with mobile wallet users. This is the first step in establishing
+        a secure communication channel for data exchange.
+
+    Authentication:
+        - Requires authenticated user (IsAuthenticated permission)
+        - User must be associated with a valid Data Source
+
+    Workflow:
+        1. Validates the requesting user has an associated Data Source
+        2. Calls the digital wallet API to create a connection invitation
+        3. Generates a Firebase dynamic link for mobile deep-linking
+        4. Stores the connection record in pending 'invitation' state
+        5. Returns connection details and invitation URLs
+    """
     serializer_class = DISPConnectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
+        """
+        Create a new connection invitation.
+
+        Business Logic:
+            Creates a single-use, auto-accepting connection invitation via the
+            digital wallet API. The invitation can be shared as a URL or QR code.
+
+        Request:
+            POST /connections/
+            No body required
+
+        Response (200 OK):
+            {
+                "connection": {
+                    "connectionId": str,
+                    "invitation": {
+                        "@type": str,
+                        "@id": str,
+                        "serviceEndpoint": str,
+                        "label": str,
+                        "imageUrl": str,
+                        "recipientKeys": list
+                    },
+                    "invitationUrl": str
+                },
+                "firebaseDynamicLink": str
+            }
+
+        Error Responses:
+            - 400: Data source not found or digital wallet API error
+
+        Business Rules:
+            - Connection is created with 'invitation' state initially
+            - Multi-use is disabled (single recipient per invitation)
+            - Auto-accept is enabled for seamless user experience
+        """
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -93,10 +159,65 @@ class DISPConnectionView(APIView):
 
 
 class DISPConnectionsView(APIView):
+    """
+    API View for listing all active DISP connections.
+
+    Business Purpose:
+        Provides a paginated list of all active connections for a Data Source.
+        This allows administrators to monitor and manage their established
+        connections with mobile wallet users.
+
+    Authentication:
+        - Requires authenticated user (IsAuthenticated permission)
+        - User must be associated with a valid Data Source
+
+    Business Rules:
+        - Only returns connections in 'active' state
+        - Connections in other states (invitation, inactive) are filtered out
+        - Results are paginated for performance
+    """
+
     serializer_class = DISPConnectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
+        """
+        List all active connections for the authenticated Data Source.
+
+        Business Logic:
+            Retrieves all connections that have been successfully established
+            (state='active') for the requesting Data Source.
+
+        Request:
+            GET /connections/
+            Query Parameters:
+                - page (int): Page number for pagination
+                - limit (int): Number of items per page
+
+        Response (200 OK):
+            {
+                "connections": [
+                    {
+                        "id": str,
+                        "connectionId": str,
+                        "connectionState": str,
+                        "dataSourceId": str,
+                        ...
+                    }
+                ],
+                "pagination": {
+                    "currentPage": int,
+                    "totalItems": int,
+                    "totalPages": int,
+                    "limit": int,
+                    "hasPrevious": bool,
+                    "hasNext": bool
+                }
+            }
+
+        Error Responses:
+            - 400: Data source not found
+        """
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -132,12 +253,50 @@ class DISPConnectionsView(APIView):
 
 
 class DISPDeleteConnectionView(APIView):
+    """
+    API View for deleting a specific DISP connection.
+
+    Business Purpose:
+        Allows a Data Source to terminate an existing connection. This is used
+        when a connection is no longer needed or when cleaning up stale connections.
+
+    Authentication:
+        - Requires authenticated user (IsAuthenticated permission)
+        - User must be associated with a valid Data Source
+
+    Business Rules:
+        - Only connections belonging to the authenticated user's Data Source can be deleted
+        - Deletion is permanent and cannot be undone
+        - The connection must exist before it can be deleted
+    """
+
     serializer_class = DISPConnectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(
         self, request: Request, connectionId: str, *args: Any, **kwargs: Any
     ) -> JsonResponse:
+        """
+        Delete a specific connection by its ID.
+
+        Business Logic:
+            Permanently removes a connection from the system. The connection
+            must belong to the authenticated user's Data Source.
+
+        Request:
+            DELETE /connections/{connectionId}/
+
+        Path Parameters:
+            - connectionId (str): UUID of the connection to delete
+
+        Response:
+            - 204 No Content: Connection successfully deleted
+            - 400: Connection not found or doesn't belong to the Data Source
+
+        Business Rules:
+            - Connection ownership is verified before deletion
+            - No cascade effects on other entities
+        """
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response

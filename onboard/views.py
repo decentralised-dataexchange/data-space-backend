@@ -28,23 +28,110 @@ logger = logging.getLogger(__name__)
 
 
 class CreateUserView(CreateAPIView):  # type: ignore[type-arg]
+    """
+    Create a new dataspace user account.
+
+    This endpoint handles user registration for the dataspace platform.
+    It creates a new user account with the provided credentials. This is
+    a standalone user creation endpoint without organisation association.
+
+    Authentication: None required (public endpoint).
+
+    Request format:
+        POST with user registration data as defined in RegisterDataspaceUserSerializer.
+
+    Response format:
+        201 Created: Returns the created user data.
+        400 Bad Request: Validation errors in the registration data.
+
+    Business rules:
+        - Email must be unique across the platform.
+        - Password must meet security requirements defined in the serializer.
+    """
+
     model = get_user_model()
     permission_classes = [permissions.AllowAny]  # Or anon users can't register
     serializer_class = RegisterDataspaceUserSerializer
 
 
 class UserDetail(APIView):
+    """
+    Retrieve the authenticated user's profile information.
+
+    This endpoint provides access to the current user's account details
+    including their name, email, and other profile information.
+
+    Authentication: JWT token required.
+
+    Permissions:
+        - User must be authenticated.
+        - User can only access their own profile (IsOwnerOrReadOnly).
+    """
+
     serializer_class = DataspaceUserSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        Retrieve the current authenticated user's profile.
+
+        Returns the complete user profile data for the authenticated user.
+        This endpoint is used to display user account information in the
+        frontend dashboard.
+
+        Returns:
+            Response: User profile data serialized via DataspaceUserSerializer.
+        """
         user = cast(DataspaceUser, request.user)
         serializer = self.serializer_class(user, many=False)
         return Response(serializer.data)
 
 
 class UserLogin(TokenObtainPairView):  # type: ignore[misc]
+    """
+    Authenticate users and issue JWT tokens.
+
+    This endpoint handles user login by validating credentials and returning
+    JWT access and refresh tokens for authenticated API access.
+
+    Authentication: None required (login endpoint).
+
+    Request format:
+        POST with JSON body:
+        {
+            "email": "user@example.com",
+            "password": "userpassword"
+        }
+
+    Response format:
+        200 OK: Returns JWT tokens (access and refresh).
+        401 Unauthorized: Invalid credentials.
+        403 Forbidden: Admin users attempting to use this endpoint.
+
+    Business rules:
+        - Admin (staff) users are not permitted to login through this endpoint.
+        - Admin users must use the Django admin interface for authentication.
+        - Regular users receive JWT tokens upon successful authentication.
+    """
+
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        Process login request and return JWT tokens.
+
+        Validates user credentials and ensures the user is not an admin.
+        Admin users are blocked from using this endpoint as they should
+        use the Django admin interface instead.
+
+        Args:
+            request: Contains email and password in the request body.
+
+        Returns:
+            Response: JWT access and refresh tokens on success.
+
+        Raises:
+            403 Forbidden: If the user is a staff/admin user.
+            401 Unauthorized: If credentials are invalid (handled by parent).
+        """
         if request.data.get("email") and request.data.get("password"):
             user_email = request.data.get("email")
             user = DataspaceUser.objects.filter(email=user_email).first()
@@ -57,9 +144,72 @@ class UserLogin(TokenObtainPairView):  # type: ignore[misc]
 
 
 class CreateUserAndOrganisationView(APIView):
+    """
+    Register a new user along with their organisation in a single transaction.
+
+    This is the primary onboarding endpoint for new organisations joining the
+    dataspace. It creates both the admin user account and the associated
+    organisation profile in an atomic transaction to ensure data consistency.
+
+    Authentication: None required (public registration endpoint).
+
+    Request format:
+        POST with JSON body:
+        {
+            "name": "Admin Name",
+            "email": "admin@org.com",
+            "password": "securepassword",
+            "confirmPassword": "securepassword",
+            "organisation": {
+                "name": "Organisation Name",
+                "sector": "Healthcare",
+                "location": "City, Country",
+                "policyUrl": "https://org.com/policy",
+                "description": "Organisation description",
+                "verificationRequestURLPrefix": "https://ows.org.com" (optional)
+            },
+            "openApiUrl": "https://api.org.com/openapi" (optional)
+        }
+
+    Response format:
+        201 Created: Returns both user and organisation data.
+        400 Bad Request: Validation errors or duplicate admin.
+
+    Business rules:
+        - Password and confirmPassword must match.
+        - One admin can only have one organisation.
+        - Default cover and logo images are assigned automatically.
+        - All operations are atomic - either both user and organisation
+          are created, or neither is (rollback on failure).
+    """
+
     permission_classes = [permissions.AllowAny]
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        Create a new user and organisation together.
+
+        Handles the complete onboarding flow for new organisations by creating
+        the admin user and organisation in a single atomic transaction. This
+        ensures that if any part of the registration fails, no partial data
+        is left in the database.
+
+        The method performs the following:
+        1. Validates all required fields for user and organisation.
+        2. Verifies password confirmation matches.
+        3. Creates the user account.
+        4. Creates the organisation linked to the user.
+        5. Assigns default images for cover and logo.
+
+        Args:
+            request: Registration data including user and organisation details.
+
+        Returns:
+            Response: Created user and organisation data on success.
+
+        Raises:
+            400 Bad Request: Missing fields, password mismatch, or duplicate admin.
+        """
         data = request.data or {}
 
         # Extract organisation details from the new structure
@@ -170,9 +320,47 @@ class CreateUserAndOrganisationView(APIView):
 
 
 class SectorView(APIView):
+    """
+    Retrieve available industry sectors for organisation classification.
+
+    This endpoint provides the list of predefined industry sectors that
+    organisations can select during registration or profile updates.
+    Sectors are used to categorize organisations within the dataspace.
+
+    Authentication: None required (public endpoint).
+
+    Response format:
+        200 OK: Returns a list of available sectors.
+        {
+            "sectors": [
+                {"id": "uuid", "sectorName": "Healthcare"},
+                ...
+            ]
+        }
+
+    Business rules:
+        - If no sectors exist in the database, a default 'Healthcare'
+          sector is automatically created.
+        - Sectors are managed by administrators via Django admin.
+    """
+
     permission_classes: list[Any] = []  # Make it a public route
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        Retrieve all available sectors.
+
+        Returns the complete list of industry sectors available for
+        organisation classification. This data is typically used in
+        dropdown menus during organisation registration and editing.
+
+        If the sectors table is empty, initializes it with a default
+        'Healthcare' sector to ensure the system always has at least
+        one option available.
+
+        Returns:
+            Response: List of sectors with their IDs and names.
+        """
         # Check if any sectors exist
         sectors = Sector.objects.all()
 
@@ -187,8 +375,24 @@ class SectorView(APIView):
 
 class CodeOfConductView(APIView):
     """
-    API endpoint to get the latest active code of conduct PDF.
-    This is a public endpoint.
+    Download the active Code of Conduct PDF document.
+
+    This endpoint serves the latest active Code of Conduct document that
+    all participating organisations must agree to. The Code of Conduct
+    outlines the rules, responsibilities, and ethical guidelines for
+    dataspace participants.
+
+    Authentication: None required (public endpoint).
+
+    Response format:
+        200 OK: Returns the PDF file as a binary download.
+        404 Not Found: No active Code of Conduct available.
+        500 Internal Server Error: PDF content missing or retrieval error.
+
+    Business rules:
+        - Only the most recently updated active Code of Conduct is served.
+        - The Code of Conduct is managed by administrators via Django admin.
+        - Organisations must accept the Code of Conduct during onboarding.
     """
 
     permission_classes: list[Any] = []  # Public endpoint
@@ -196,6 +400,20 @@ class CodeOfConductView(APIView):
     def get(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> Response | FileResponse:
+        """
+        Download the latest active Code of Conduct PDF.
+
+        Retrieves the most recently updated Code of Conduct document that
+        is marked as active. The document is returned as a PDF file download.
+
+        Returns:
+            FileResponse: The Code of Conduct PDF as a downloadable file.
+            Response: Error response if no active document exists.
+
+        Raises:
+            404 Not Found: If no active Code of Conduct exists in the database.
+            500 Internal Server Error: If PDF content is missing or corrupted.
+        """
         try:
             logger.info("Attempting to fetch latest active code of conduct")
 
