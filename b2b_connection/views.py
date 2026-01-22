@@ -14,7 +14,7 @@ Business Context:
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, List, cast
 
 from django.db.models import QuerySet
 from django.http import JsonResponse
@@ -189,7 +189,7 @@ class B2BConnectionsView(APIView):
         serializer = B2BConnectionsSerializer(clients, many=True)
 
         b2b_connections, pagination_data = paginate_queryset(
-            cast(list[Any], serializer.data), request
+            cast(List[Any], serializer.data), request
         )
         response_data = {
             "b2bConnection": b2b_connections,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, List, cast
 
 from django.db import IntegrityError
 from django.db.models import QuerySet
@@ -312,7 +312,7 @@ class OAuth2ClientsView(APIView):
         serializer = OAuth2ClientsSerializer(clients, many=True)
 
         oauth_clients, pagination_data = paginate_queryset(
-            cast(list[Any], serializer.data), request
+            cast(List[Any], serializer.data), request
         )
         response_data = {
             "oAuth2Clients": oauth_clients,
@@ -609,7 +609,7 @@ class OrganisationOAuth2ClientsView(APIView):
         serializer = OrganisationOAuth2ClientsSerializer(clients, many=True)
 
         oauth_clients, pagination_data = paginate_queryset(
-            cast(list[Any], serializer.data), request
+            cast(List[Any], serializer.data), request
         )
         response_data = {
             "organisationOAuth2Client": oauth_clients,

@@ -11,6 +11,8 @@ Business Context:
 - Firebase dynamic links are generated for easy mobile app deep-linking
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 import requests
