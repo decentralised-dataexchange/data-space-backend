@@ -1,3 +1,4 @@
+import io
 import logging
 
 from django.contrib.auth import get_user_model
@@ -200,20 +201,30 @@ class CodeOfConductView(APIView):
                 "updatedAt"
             )
 
-            if not code_of_conduct.pdfFile:
-                logger.error("Code of conduct found but PDF file is missing")
+            if not code_of_conduct.pdfContent:
+                logger.error("Code of conduct found but PDF content is missing")
                 return Response(
-                    {"error": "Code of conduct PDF file is missing"},
+                    {"error": "Code of conduct PDF content is missing"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-            logger.info(f"Serving code of conduct: {code_of_conduct.pdfFile.name}")
+            logger.info(f"Serving code of conduct: {code_of_conduct.pdfFileName}")
+
+            # Create a BytesIO object from the binary content
+            pdf_buffer = io.BytesIO(code_of_conduct.pdfContent)
+
+            # Determine filename
+            filename = (
+                code_of_conduct.pdfFileName
+                or f"code_of_conduct_{code_of_conduct.updatedAt.date()}.pdf"
+            )
 
             # Return the file directly for download
             response = FileResponse(
-                code_of_conduct.pdfFile,
+                pdf_buffer,
                 as_attachment=True,
-                filename=f"code_of_conduct_{code_of_conduct.updatedAt.date()}.pdf",
+                filename=filename,
+                content_type="application/pdf",
             )
             return response
 

@@ -64,5 +64,5 @@ class SectorSerializer(serializers.ModelSerializer):
 class CodeOfConductSerializer(serializers.ModelSerializer):
     class Meta:
         model = CodeOfConduct
-        fields = ["id", "pdfFile", "createdAt", "updatedAt"]
-        read_only_fields = ["id", "createdAt", "updatedAt"]
+        fields = ["id", "pdfFileName", "isActive", "createdAt", "updatedAt"]
+        read_only_fields = ["id", "pdfFileName", "createdAt", "updatedAt"]
