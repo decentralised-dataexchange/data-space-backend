@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.test import TestCase
 from rest_framework.test import APIClient
 
@@ -5,10 +7,10 @@ from rest_framework.test import APIClient
 
 
 class NonGetAppendSlashMiddlewareTests(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.client = APIClient()
 
-    def _assert_same_response(self, method: str, path: str, **kwargs):
+    def _assert_same_response(self, method: str, path: str, **kwargs: Any) -> None:
         client_method = getattr(self.client, method)
 
         base_path = path
@@ -47,19 +49,23 @@ class NonGetAppendSlashMiddlewareTests(TestCase):
             f"alt_body={response_alt.content!r}",
         )
 
-    def test_put_dda_status_with_and_without_trailing_slash_behave_the_same(self):
+    def test_put_dda_status_with_and_without_trailing_slash_behave_the_same(
+        self,
+    ) -> None:
         base_path = "/config/data-disclosure-agreement/test-id/status"
         data = {"status": "listed"}
 
         self._assert_same_response("put", base_path, data=data, format="json")
 
-    def test_post_service_token_with_and_without_trailing_slash_behave_the_same(self):
+    def test_post_service_token_with_and_without_trailing_slash_behave_the_same(
+        self,
+    ) -> None:
         base_path = "/service/token"
         data = {"grant_type": "client_credentials"}
 
         self._assert_same_response("post", base_path, data=data)
 
-    def test_non_existing_path_behaves_consistently_for_non_get(self):
+    def test_non_existing_path_behaves_consistently_for_non_get(self) -> None:
         base_path = "/non-existing-endpoint-for-middleware-test"
 
         self._assert_same_response("put", base_path)

@@ -6,19 +6,25 @@ from data_disclosure_agreement_record.models import (
 )
 
 
-class DataDisclosureAgreementRecordsSerializer(serializers.ModelSerializer):
+class DataDisclosureAgreementRecordsSerializer(
+    serializers.ModelSerializer[DataDisclosureAgreementRecord]
+):
     class Meta:
         model = DataDisclosureAgreementRecord
         fields = "__all__"
 
 
-class DataDisclosureAgreementRecordSerializer(serializers.ModelSerializer):
+class DataDisclosureAgreementRecordSerializer(
+    serializers.ModelSerializer[DataDisclosureAgreementRecord]
+):
     class Meta:
         model = DataDisclosureAgreementRecord
         fields = "__all__"
 
 
-class DataDisclosureAgreementRecordHistorySerializer(serializers.ModelSerializer):
+class DataDisclosureAgreementRecordHistorySerializer(
+    serializers.ModelSerializer[DataDisclosureAgreementRecordHistory]
+):
     class Meta:
         model = DataDisclosureAgreementRecordHistory
         fields = "__all__"

@@ -1,6 +1,9 @@
+from typing import Any
+
 import requests
 from django.http import JsonResponse
 from rest_framework import permissions, status
+from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from dataspace_backend.settings import DATA_MARKETPLACE_APIKEY, DATA_MARKETPLACE_DW_URL
@@ -16,7 +19,7 @@ class DISPConnectionView(APIView):
     serializer_class = DISPConnectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -93,18 +96,22 @@ class DISPConnectionsView(APIView):
     serializer_class = DISPConnectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
 
+        connection_data: list[Any] = []
+        pagination_data: dict[str, Any] = {}
         try:
-            connections = Connection.objects.filter(
+            connections_qs = Connection.objects.filter(
                 dataSourceId=datasource, connectionState="active"
             )
-            connections, pagination_data = paginate_queryset(connections, request)
-            serializer = DISPConnectionSerializer(connections, many=True)
-            connection_data = serializer.data
+            paginated_connections, pagination_data = paginate_queryset(
+                connections_qs, request
+            )
+            serializer = DISPConnectionSerializer(paginated_connections, many=True)
+            connection_data = list(serializer.data)
 
         except Connection.DoesNotExist:
             # If no connection exists, return empty data
@@ -128,7 +135,9 @@ class DISPDeleteConnectionView(APIView):
     serializer_class = DISPConnectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def delete(self, request, connectionId):
+    def delete(
+        self, request: Request, connectionId: str, *args: Any, **kwargs: Any
+    ) -> JsonResponse:
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response

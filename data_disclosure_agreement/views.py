@@ -1,5 +1,8 @@
+from typing import Any
+
 from django.http import JsonResponse
 from rest_framework import permissions, status
+from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from data_disclosure_agreement_record.models import DataDisclosureAgreementRecordHistory
@@ -25,13 +28,20 @@ class DataDisclosureAgreementView(APIView):
     serializer_class = DataDisclosureAgreementSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, dataDisclosureAgreementId):
+    def get(
+        self,
+        request: Request,
+        dataDisclosureAgreementId: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> JsonResponse:
         version_param = request.query_params.get("version")
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
 
         try:
+            data_disclosure_agreement: DataDisclosureAgreement | None
             if version_param:
                 data_disclosure_agreement = DataDisclosureAgreement.objects.get(
                     templateId=dataDisclosureAgreementId,
@@ -60,7 +70,13 @@ class DataDisclosureAgreementView(APIView):
 
         return JsonResponse(response_data)
 
-    def delete(self, request, dataDisclosureAgreementId):
+    def delete(
+        self,
+        request: Request,
+        dataDisclosureAgreementId: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> JsonResponse:
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -87,7 +103,7 @@ class DataDisclosureAgreementsView(APIView):
     serializer_class = DataDisclosureAgreementsSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         # Get the 'status' query parameter
         status_param = request.query_params.get("status")
 
@@ -95,17 +111,26 @@ class DataDisclosureAgreementsView(APIView):
         if error_response:
             return error_response
 
+        if datasource is None:
+            return JsonResponse(
+                {"error": "Data source not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         data_disclosure_agreements_template_ids = (
             DataDisclosureAgreement.list_unique_dda_template_ids_for_a_data_source(
-                data_source_id=datasource.id
+                data_source_id=str(datasource.id)
             )
         )
 
-        ddas = []
+        ddas: list[Any] = []
 
-        temp_dda = {}
+        temp_dda: dict[str, Any] = {}
         for dda_template_id in data_disclosure_agreements_template_ids:
-            filter_kwargs = {"templateId": dda_template_id, "dataSourceId": datasource}
+            filter_kwargs: dict[str, Any] = {
+                "templateId": dda_template_id,
+                "dataSourceId": datasource,
+            }
             if status_param:
                 filter_kwargs["status"] = status_param
             else:
@@ -125,10 +150,10 @@ class DataDisclosureAgreementsView(APIView):
                 temp_dda["isLatestVersion"] = serializer.data["isLatestVersion"]
                 ddas.append(temp_dda)
 
-        ddas, pagination_data = paginate_queryset(ddas, request)
+        paginated_ddas, pagination_data = paginate_queryset(ddas, request)
 
         response_data = {
-            "dataDisclosureAgreements": ddas,
+            "dataDisclosureAgreements": paginated_ddas,
             "pagination": pagination_data,
         }
         return JsonResponse(response_data)
@@ -142,15 +167,23 @@ ALLOWED_DDA_STATUS_TRANSITIONS = {
 }
 
 
-def validate_update_dda_request_body(to_be_updated_status: str, current_status: str):
+def validate_update_dda_request_body(
+    to_be_updated_status: str, current_status: str
+) -> bool:
     return (current_status, to_be_updated_status) in ALLOWED_DDA_STATUS_TRANSITIONS
 
 
 class DataDisclosureAgreementUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def put(self, request, dataDisclosureAgreementId):
-        to_be_updated_status = request.data.get("status")
+    def put(
+        self,
+        request: Request,
+        dataDisclosureAgreementId: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> JsonResponse:
+        to_be_updated_status: str = request.data.get("status", "")
 
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
@@ -192,25 +225,30 @@ class DataDisclosureAgreementTempleteView(APIView):
     serializer_class = DataDisclosureAgreementTemplateSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, dataDisclosureAgreementId):
+    def get(
+        self,
+        request: Request,
+        dataDisclosureAgreementId: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> JsonResponse:
         version_param = request.query_params.get("version")
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
 
         try:
+            dda_template: DataDisclosureAgreementTemplate | None
             if version_param:
-                data_disclosure_agreement = (
-                    DataDisclosureAgreementTemplate.objects.exclude(
-                        status="archived"
-                    ).get(
-                        templateId=dataDisclosureAgreementId,
-                        organisationId=organisation,
-                        version=version_param,
-                    )
+                dda_template = DataDisclosureAgreementTemplate.objects.exclude(
+                    status="archived"
+                ).get(
+                    templateId=dataDisclosureAgreementId,
+                    organisationId=organisation,
+                    version=version_param,
                 )
             else:
-                data_disclosure_agreement = (
+                dda_template = (
                     DataDisclosureAgreementTemplate.objects.exclude(status="archived")
                     .filter(
                         templateId=dataDisclosureAgreementId,
@@ -219,7 +257,7 @@ class DataDisclosureAgreementTempleteView(APIView):
                     .last()
                 )
 
-                if not data_disclosure_agreement:
+                if not dda_template:
                     return JsonResponse(
                         {"error": "Active Data Disclosure Agreement not found"},
                         status=status.HTTP_404_NOT_FOUND,
@@ -231,9 +269,7 @@ class DataDisclosureAgreementTempleteView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = self.serializer_class(
-            data_disclosure_agreement, context={"request": request}
-        )
+        serializer = self.serializer_class(dda_template, context={"request": request})
         dda = serializer.data["dataDisclosureAgreementRecord"]
         dda["status"] = serializer.data["status"]
         dda["isLatestVersion"] = serializer.data["isLatestVersion"]
@@ -251,7 +287,9 @@ class DataDisclosureAgreementTemplatesView(APIView):
     serializer_class = DataDisclosureAgreementTemplatesSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def _build_latest_dda_payload(self, ddas_for_template):
+    def _build_latest_dda_payload(
+        self, ddas_for_template: list[DataDisclosureAgreementTemplate]
+    ) -> dict[str, Any] | None:
         if not ddas_for_template:
             return None
 
@@ -284,9 +322,9 @@ class DataDisclosureAgreementTemplatesView(APIView):
         latest_dda_data["revisions"] = sorted(
             revisions, key=lambda x: x["createdAt"], reverse=True
         )
-        return latest_dda_data
+        return dict(latest_dda_data)
 
-    def get(self, request):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         # Get the 'status' query parameter
         status_param = request.query_params.get("status")
 
@@ -294,14 +332,20 @@ class DataDisclosureAgreementTemplatesView(APIView):
         if error_response:
             return error_response
 
+        if organisation is None:
+            return JsonResponse(
+                {"error": "Organisation not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         data_disclosure_agreements_template_ids = DataDisclosureAgreementTemplate.list_unique_dda_template_ids_for_a_data_source(
-            data_source_id=organisation.id
+            data_source_id=str(organisation.id)
         )
 
-        ddas = []
+        ddas: list[dict[str, Any]] = []
 
         for dda_template_id in data_disclosure_agreements_template_ids:
-            filter_kwargs = {
+            filter_kwargs: dict[str, Any] = {
                 "templateId": dda_template_id,
                 "organisationId": organisation,
             }
@@ -320,10 +364,10 @@ class DataDisclosureAgreementTemplatesView(APIView):
                 continue
             ddas.append(latest_dda_data)
 
-        ddas, pagination_data = paginate_queryset(ddas, request)
+        paginated_ddas, pagination_data = paginate_queryset(ddas, request)
 
         response_data = {
-            "dataDisclosureAgreements": ddas,
+            "dataDisclosureAgreements": paginated_ddas,
             "pagination": pagination_data,
         }
         return JsonResponse(response_data)
@@ -332,10 +376,16 @@ class DataDisclosureAgreementTemplatesView(APIView):
 class DataDisclosureAgreementTemplateUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def put(self, request, dataDisclosureAgreementId):
+    def put(
+        self,
+        request: Request,
+        dataDisclosureAgreementId: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> JsonResponse:
         dda_template_id = dataDisclosureAgreementId
 
-        to_be_updated_status = request.data.get("status")
+        to_be_updated_status: str = request.data.get("status", "")
 
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
@@ -389,7 +439,13 @@ class DataDisclosureAgreementTemplateUpdateView(APIView):
 class DataDisclosureAgreementTemplateTagsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def put(self, request, dataDisclosureAgreementId):
+    def put(
+        self,
+        request: Request,
+        dataDisclosureAgreementId: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> JsonResponse:
         tags = request.data.get("tags")
 
         if tags is None:
@@ -439,7 +495,13 @@ class DataDisclosureAgreementHistoriesView(APIView):
     serializer_class = DataDisclosureAgreementRecordHistorySerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, dataDisclosureAgreementId):
+    def get(
+        self,
+        request: Request,
+        dataDisclosureAgreementId: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> JsonResponse:
         dda_template_id = dataDisclosureAgreementId
 
         organisation, error_response = get_organisation_or_400(request.user)
@@ -447,16 +509,16 @@ class DataDisclosureAgreementHistoriesView(APIView):
             return error_response
 
         try:
-            dda_records = DataDisclosureAgreementRecordHistory.objects.filter(
+            dda_records_qs = DataDisclosureAgreementRecordHistory.objects.filter(
                 organisationId=organisation,
                 dataDisclosureAgreementTemplateId=dda_template_id,
             ).order_by("-updatedAt")
         except DataDisclosureAgreementRecordHistory.DoesNotExist:
-            dda_records = None
+            dda_records_qs = DataDisclosureAgreementRecordHistory.objects.none()
 
-        serializer = self.serializer_class(dda_records, many=True)
+        serializer = self.serializer_class(dda_records_qs, many=True)
 
-        dda_records, pagination_data = paginate_queryset(serializer.data, request)
+        dda_records, pagination_data = paginate_queryset(list(serializer.data), request)
 
         response_data = {
             "dataDisclosureAgreementRecordHistory": dda_records,
@@ -469,7 +531,14 @@ class DataDisclosureAgreementHistoryView(APIView):
     serializer_class = DataDisclosureAgreementRecordHistorySerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def delete(self, request, dataDisclosureAgreementId, pk):
+    def delete(
+        self,
+        request: Request,
+        dataDisclosureAgreementId: str,
+        pk: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> JsonResponse:
         """Delete a specific history record by its primary key"""
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:

@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from django.test import TestCase
 from django.urls import reverse
@@ -11,10 +12,15 @@ from organisation.models import Organisation, OrganisationIdentity
 
 
 class SearchViewTests(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         pass
 
-    def _create_organisation(self, name="Org", description="Description", location="location"):
+    def _create_organisation(
+        self,
+        name: str = "Org",
+        description: str = "Description",
+        location: str = "location",
+    ) -> Organisation:
         admin = DataspaceUser.objects.create(
             email=f"{name.lower().replace(' ', '_')}@example.com"
         )
@@ -29,7 +35,12 @@ class SearchViewTests(TestCase):
             admin=admin,
         )
 
-    def _create_realistic_dda_record(self, purpose="Data Sharing Agreement", description=None, **kwargs):
+    def _create_realistic_dda_record(
+        self,
+        purpose: str = "Data Sharing Agreement",
+        description: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
         """Create a realistic production-like DDA record structure"""
         return {
             "@id": kwargs.get("@id", "dda-record-id"),
@@ -40,29 +51,37 @@ class SearchViewTests(TestCase):
             "version": kwargs.get("version", "1.0.0"),
             "@context": [
                 "https://raw.githubusercontent.com/decentralised-dataexchange/data-exchange-agreements/main/interface-specs/jsonld/contexts/dexa-context.jsonld",
-                "https://w3id.org/security/v2"
+                "https://w3id.org/security/v2",
             ],
             "language": kwargs.get("language", "en"),
             "templateId": kwargs.get("templateId", "template-id"),
             "lawfulBasis": kwargs.get("lawfulBasis", "contract"),
-            "codeOfConduct": kwargs.get("codeOfConduct", "https://example.com/code_of_conduct.html"),
-            "dataAttributes": kwargs.get("dataAttributes", [
+            "codeOfConduct": kwargs.get(
+                "codeOfConduct", "https://example.com/code_of_conduct.html"
+            ),
+            "dataAttributes": kwargs.get(
+                "dataAttributes",
+                [
+                    {
+                        "id": "attr-1",
+                        "name": "Data Field",
+                        "category": "string",
+                        "description": "Sample data field",
+                        "sensitivity": False,
+                        "restrictions": None,
+                    }
+                ],
+            ),
+            "dataController": kwargs.get(
+                "dataController",
                 {
-                    "id": "attr-1",
-                    "name": "Data Field",
-                    "category": "string",
-                    "description": "Sample data field",
-                    "sensitivity": False,
-                    "restrictions": None
-                }
-            ]),
-            "dataController": kwargs.get("dataController", {
-                "url": "https://example.com/policy.html",
-                "name": kwargs.get("controller_name", "Data Controller"),
-                "legalId": "N/A",
-                "publicKey": "N/A",
-                "industrySector": kwargs.get("industry", "Technology")
-            }),
+                    "url": "https://example.com/policy.html",
+                    "name": kwargs.get("controller_name", "Data Controller"),
+                    "legalId": "N/A",
+                    "publicKey": "N/A",
+                    "industrySector": kwargs.get("industry", "Technology"),
+                },
+            ),
             "agreementPeriod": kwargs.get("agreementPeriod", 365),
             "dataAgreementId": kwargs.get("dataAgreementId", "agreement-id"),
             "templateVersion": kwargs.get("templateVersion", "1.0.0"),
@@ -70,7 +89,13 @@ class SearchViewTests(TestCase):
             "dataset": kwargs.get("dataset", ""),
         }
 
-    def _create_dda_template(self, organisation, record=None, tags=None, use_realistic_structure=True):
+    def _create_dda_template(
+        self,
+        organisation: Organisation,
+        record: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
+        use_realistic_structure: bool = True,
+    ) -> DataDisclosureAgreementTemplate:
         if record is None:
             if use_realistic_structure:
                 record = self._create_realistic_dda_record()
@@ -89,18 +114,18 @@ class SearchViewTests(TestCase):
             tags=tags,
         )
 
-    def _get(self, params):
+    def _get(self, params: dict[str, str]) -> Any:
         url = reverse("search")
         return self.client.get(url, params)
 
-    def test_missing_search_returns_invalid_request(self):
+    def test_missing_search_returns_invalid_request(self) -> None:
         response = self._get({})
         self.assertEqual(response.status_code, 400)
         data = json.loads(response.content)
         self.assertEqual(data.get("error"), "invalid_request")
         self.assertIn("search parameter is required", data.get("error_description", ""))
 
-    def test_all_scopes_false_returns_invalid_request(self):
+    def test_all_scopes_false_returns_invalid_request(self) -> None:
         response = self._get(
             {
                 "search": "foo",
@@ -118,14 +143,14 @@ class SearchViewTests(TestCase):
             "At least one search scope must be true", data.get("error_description", "")
         )
 
-    def test_invalid_boolean_value_returns_invalid_request(self):
+    def test_invalid_boolean_value_returns_invalid_request(self) -> None:
         response = self._get({"search": "foo", "searchOrgName": "maybe"})
         self.assertEqual(response.status_code, 400)
         data = json.loads(response.content)
         self.assertEqual(data.get("error"), "invalid_request")
         self.assertIn("searchOrgName", data.get("error_description", ""))
 
-    def test_search_by_org_name_only_returns_matching_org(self):
+    def test_search_by_org_name_only_returns_matching_org(self) -> None:
         matching = self._create_organisation(name="Alpha Hospital")
         self._create_organisation(name="Beta Clinic")
 
@@ -145,14 +170,12 @@ class SearchViewTests(TestCase):
         self.assertEqual(orgs[0]["organisation"]["name"], matching.name)
         self.assertEqual(data.get("ddas"), [])
 
-    def test_search_by_dda_only_returns_matching_dda(self):
+    def test_search_by_dda_only_returns_matching_dda(self) -> None:
         org = self._create_organisation(name="Org One")
         self._create_dda_template(
             organisation=org,
             record=self._create_realistic_dda_record(
-                purpose="mobility research",
-                description="test",
-                dataset="vehicles"
+                purpose="mobility research", description="test", dataset="vehicles"
             ),
         )
 
@@ -173,13 +196,12 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(ddas), 1)
         self.assertEqual(ddas[0]["organisationName"], org.name)
 
-    def test_all_scopes_true_org_and_dda_match(self):
+    def test_all_scopes_true_org_and_dda_match(self) -> None:
         org = self._create_organisation(name="Mobility Org")
         self._create_dda_template(
             organisation=org,
             record=self._create_realistic_dda_record(
-                purpose="mobility research",
-                description="something"
+                purpose="mobility research", description="something"
             ),
         )
 
@@ -201,7 +223,7 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(ddas), 1)
         self.assertEqual(ddas[0]["organisationName"], org.name)
 
-    def test_all_scopes_true_org_match_no_dda(self):
+    def test_all_scopes_true_org_match_no_dda(self) -> None:
         org = self._create_organisation(name="Mobility Org")
         # No DDA created, so only organisation name can match
 
@@ -222,13 +244,12 @@ class SearchViewTests(TestCase):
         self.assertEqual(orgs[0]["organisation"]["name"], org.name)
         self.assertEqual(len(ddas), 0)
 
-    def test_all_scopes_true_dda_match_org_name_not_matching(self):
+    def test_all_scopes_true_dda_match_org_name_not_matching(self) -> None:
         org = self._create_organisation(name="Org X")
         self._create_dda_template(
             organisation=org,
             record=self._create_realistic_dda_record(
-                purpose="mobility research",
-                description="something"
+                purpose="mobility research", description="something"
             ),
         )
 
@@ -249,7 +270,7 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(ddas), 1)
         self.assertEqual(ddas[0]["organisationName"], org.name)
 
-    def test_search_by_org_location_returns_matching_org(self):
+    def test_search_by_org_location_returns_matching_org(self) -> None:
         matching = self._create_organisation(name="Test Org", location="London")
         self._create_organisation(name="Other Org", location="Paris")
 
@@ -268,7 +289,7 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(orgs), 1)
         self.assertEqual(orgs[0]["organisation"]["name"], matching.name)
 
-    def test_search_by_org_description_matches(self):
+    def test_search_by_org_description_matches(self) -> None:
         org = self._create_organisation(
             name="Test Org", description="This is a unique description"
         )
@@ -288,14 +309,12 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(orgs), 1)
         self.assertEqual(orgs[0]["organisation"]["name"], org.name)
 
-    def test_search_by_dda_dataset_no_longer_matches(self):
+    def test_search_by_dda_dataset_no_longer_matches(self) -> None:
         org = self._create_organisation(name="Org One")
         self._create_dda_template(
             organisation=org,
             record=self._create_realistic_dda_record(
-                purpose="research",
-                description="test description",
-                dataset="vehicles"
+                purpose="research", description="test description", dataset="vehicles"
             ),
         )
 
@@ -313,14 +332,14 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 0)
 
-    def test_search_by_dda_purpose_and_description_still_works(self):
+    def test_search_by_dda_purpose_and_description_still_works(self) -> None:
         org = self._create_organisation(name="Org One")
         self._create_dda_template(
             organisation=org,
             record=self._create_realistic_dda_record(
                 purpose="mobility research",
                 description="transportation data analysis",
-                dataset="vehicles"
+                dataset="vehicles",
             ),
         )
 
@@ -352,14 +371,14 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 1)
 
-    def test_search_org_name_does_not_return_matching_ddas(self):
+    def test_search_org_name_does_not_return_matching_ddas(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
             record=self._create_realistic_dda_record(
                 purpose="test purpose",
                 description="test description",
-                dataset="vehicles"
+                dataset="vehicles",
             ),
         )
 
@@ -380,14 +399,14 @@ class SearchViewTests(TestCase):
         self.assertEqual(orgs[0]["organisation"]["name"], org.name)
         self.assertEqual(len(ddas), 0)
 
-    def test_all_scopes_true_org_name_match_ddas_not_returned(self):
+    def test_all_scopes_true_org_name_match_ddas_not_returned(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
             record=self._create_realistic_dda_record(
                 purpose="different purpose",
                 description="different description",
-                dataset="vehicles"
+                dataset="vehicles",
             ),
         )
 
@@ -409,7 +428,7 @@ class SearchViewTests(TestCase):
         self.assertEqual(orgs[0]["organisation"]["name"], org.name)
         self.assertEqual(len(ddas), 0)
 
-    def test_pagination_with_multiple_organisations(self):
+    def test_pagination_with_multiple_organisations(self) -> None:
         for i in range(15):
             self._create_organisation(name=f"Org {i}", location=f"Location {i}")
 
@@ -457,7 +476,7 @@ class SearchViewTests(TestCase):
         self.assertTrue(pagination.get("hasPrevious"))
         self.assertFalse(pagination.get("hasNext"))
 
-    def test_pagination_with_multiple_ddas(self):
+    def test_pagination_with_multiple_ddas(self) -> None:
         org = self._create_organisation(name="Test Org")
         for i in range(15):
             self._create_dda_template(
@@ -465,7 +484,7 @@ class SearchViewTests(TestCase):
                 record=self._create_realistic_dda_record(
                     purpose=f"test purpose {i}",
                     description=f"test description {i}",
-                    dataset="vehicles"
+                    dataset="vehicles",
                 ),
             )
 
@@ -513,8 +532,10 @@ class SearchViewTests(TestCase):
         self.assertTrue(pagination.get("hasPrevious"))
         self.assertFalse(pagination.get("hasNext"))
 
-    def test_search_case_insensitive(self):
-        org = self._create_organisation(name="Test Org", location="London", description="Test Description")
+    def test_search_case_insensitive(self) -> None:
+        org = self._create_organisation(
+            name="Test Org", location="London", description="Test Description"
+        )
         response = self._get(
             {
                 "search": "TEST",
@@ -530,8 +551,10 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(orgs), 1)
         self.assertEqual(orgs[0]["organisation"]["name"], org.name)
 
-    def test_search_with_special_characters(self):
-        org = self._create_organisation(name="Test & Co", location="New York", description="Test's description")
+    def test_search_with_special_characters(self) -> None:
+        self._create_organisation(
+            name="Test & Co", location="New York", description="Test's description"
+        )
         response = self._get(
             {
                 "search": "&",
@@ -546,8 +569,8 @@ class SearchViewTests(TestCase):
         orgs = data.get("organisations", [])
         self.assertEqual(len(orgs), 1)
 
-    def test_search_with_null_fields(self):
-        org = self._create_organisation(name="Test Org", location="", description="")
+    def test_search_with_null_fields(self) -> None:
+        self._create_organisation(name="Test Org", location="", description="")
         response = self._get(
             {
                 "search": "test",
@@ -562,9 +585,9 @@ class SearchViewTests(TestCase):
         orgs = data.get("organisations", [])
         self.assertEqual(len(orgs), 1)
 
-    def test_dda_with_null_record(self):
+    def test_dda_with_null_record(self) -> None:
         org = self._create_organisation(name="Test Org")
-        dda = DataDisclosureAgreementTemplate.objects.create(
+        DataDisclosureAgreementTemplate.objects.create(
             organisationId=org,
             status="listed",
             isLatestVersion=True,
@@ -584,13 +607,12 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 0)
 
-    def test_search_term_in_both_org_and_dda(self):
+    def test_search_term_in_both_org_and_dda(self) -> None:
         org = self._create_organisation(name="Mobility Org")
         self._create_dda_template(
             organisation=org,
             record=self._create_realistic_dda_record(
-                purpose="mobility research",
-                description="test"
+                purpose="mobility research", description="test"
             ),
         )
         response = self._get(
@@ -609,13 +631,12 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(orgs), 1)
         self.assertEqual(len(ddas), 1)
 
-    def test_search_term_only_in_dda_but_org_scope_only(self):
+    def test_search_term_only_in_dda_but_org_scope_only(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
             record=self._create_realistic_dda_record(
-                purpose="mobility research",
-                description="test"
+                purpose="mobility research", description="test"
             ),
         )
         response = self._get(
@@ -634,8 +655,8 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(orgs), 0)
         self.assertEqual(len(ddas), 0)
 
-    def test_search_term_only_in_org_but_dda_scope_only(self):
-        org = self._create_organisation(name="Mobility Org")
+    def test_search_term_only_in_org_but_dda_scope_only(self) -> None:
+        self._create_organisation(name="Mobility Org")
         response = self._get(
             {
                 "search": "mobility",
@@ -652,7 +673,7 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(orgs), 0)
         self.assertEqual(len(ddas), 0)
 
-    def test_pagination_beyond_results(self):
+    def test_pagination_beyond_results(self) -> None:
         self._create_organisation(name="Test Org")
         response = self._get(
             {
@@ -673,7 +694,7 @@ class SearchViewTests(TestCase):
         self.assertEqual(pagination.get("totalItems"), 1)
         self.assertEqual(pagination.get("currentPage"), 11)
 
-    def test_pagination_with_zero_limit(self):
+    def test_pagination_with_zero_limit(self) -> None:
         for i in range(5):
             self._create_organisation(name=f"Org {i}")
         response = self._get(
@@ -695,7 +716,7 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(orgs), 1)
         self.assertEqual(pagination.get("limit"), 1)
 
-    def test_pagination_with_negative_offset(self):
+    def test_pagination_with_negative_offset(self) -> None:
         self._create_organisation(name="Test Org")
         response = self._get(
             {
@@ -714,8 +735,8 @@ class SearchViewTests(TestCase):
         # Should normalize negative offset to 0
         self.assertEqual(len(orgs), 1)
 
-    def test_search_with_whitespace(self):
-        org = self._create_organisation(name="Test Org")
+    def test_search_with_whitespace(self) -> None:
+        self._create_organisation(name="Test Org")
         response = self._get(
             {
                 "search": "   test   ",
@@ -730,11 +751,13 @@ class SearchViewTests(TestCase):
         orgs = data.get("organisations", [])
         self.assertEqual(len(orgs), 1)
 
-    def test_tags_search_with_empty_tags(self):
+    def test_tags_search_with_empty_tags(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="test", description="test"),
+            record=self._create_realistic_dda_record(
+                purpose="test", description="test"
+            ),
             tags=[],
         )
         response = self._get(
@@ -752,11 +775,13 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 0)
 
-    def test_tags_search_with_matching_tags(self):
+    def test_tags_search_with_matching_tags(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="other", description="other"),
+            record=self._create_realistic_dda_record(
+                purpose="other", description="other"
+            ),
             tags=["mobility", "research"],
         )
         response = self._get(
@@ -774,11 +799,13 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 1)
 
-    def test_tags_search_case_insensitive(self):
+    def test_tags_search_case_insensitive(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="other", description="other"),
+            record=self._create_realistic_dda_record(
+                purpose="other", description="other"
+            ),
             tags=["Diabetes", "Healthcare"],
         )
         response = self._get(
@@ -796,11 +823,13 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 1)
 
-    def test_tags_search_with_all_scopes(self):
+    def test_tags_search_with_all_scopes(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="other", description="other"),
+            record=self._create_realistic_dda_record(
+                purpose="other", description="other"
+            ),
             tags=["diabetes", "research"],
         )
         response = self._get(
@@ -818,11 +847,13 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 1)
 
-    def test_tags_search_partial_match(self):
+    def test_tags_search_partial_match(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="other", description="other"),
+            record=self._create_realistic_dda_record(
+                purpose="other", description="other"
+            ),
             tags=["healthcare", "medical-research"],
         )
         response = self._get(
@@ -840,11 +871,13 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 1)
 
-    def test_tags_search_with_special_characters(self):
+    def test_tags_search_with_special_characters(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="other", description="other"),
+            record=self._create_realistic_dda_record(
+                purpose="other", description="other"
+            ),
             tags=["e-health", "data-science"],
         )
         response = self._get(
@@ -862,21 +895,27 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 1)
 
-    def test_tags_search_multiple_ddas(self):
+    def test_tags_search_multiple_ddas(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="other", description="other"),
+            record=self._create_realistic_dda_record(
+                purpose="other", description="other"
+            ),
             tags=["diabetes", "healthcare"],
         )
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="other", description="other"),
+            record=self._create_realistic_dda_record(
+                purpose="other", description="other"
+            ),
             tags=["diabetes", "research"],
         )
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="other", description="other"),
+            record=self._create_realistic_dda_record(
+                purpose="other", description="other"
+            ),
             tags=["mobility", "research"],
         )
         response = self._get(
@@ -894,11 +933,13 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 2)
 
-    def test_tags_search_no_match(self):
+    def test_tags_search_no_match(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="other", description="other"),
+            record=self._create_realistic_dda_record(
+                purpose="other", description="other"
+            ),
             tags=["mobility", "research"],
         )
         response = self._get(
@@ -916,10 +957,10 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 0)
 
-    def test_multiple_organisations_same_name_distinct(self):
+    def test_multiple_organisations_same_name_distinct(self) -> None:
         admin1 = DataspaceUser.objects.create(email="admin1@example.com")
         admin2 = DataspaceUser.objects.create(email="admin2@example.com")
-        org1 = Organisation.objects.create(
+        Organisation.objects.create(
             coverImageUrl="cover",
             logoUrl="logo",
             name="Same Name",
@@ -929,7 +970,7 @@ class SearchViewTests(TestCase):
             description="Description 1",
             admin=admin1,
         )
-        org2 = Organisation.objects.create(
+        Organisation.objects.create(
             coverImageUrl="cover",
             logoUrl="logo",
             name="Same Name",
@@ -955,8 +996,8 @@ class SearchViewTests(TestCase):
         org_names = [org["organisation"]["name"] for org in orgs]
         self.assertEqual(org_names.count("Same Name"), 2)
 
-    def test_very_long_search_term(self):
-        org = self._create_organisation(name="Test Org")
+    def test_very_long_search_term(self) -> None:
+        self._create_organisation(name="Test Org")
         long_search = "a" * 1000
         response = self._get(
             {
@@ -972,8 +1013,10 @@ class SearchViewTests(TestCase):
         orgs = data.get("organisations", [])
         self.assertEqual(len(orgs), 0)
 
-    def test_search_with_unicode_characters(self):
-        org = self._create_organisation(name="Test Org", description="Test with émojis 🚀 and spëcial çhars")
+    def test_search_with_unicode_characters(self) -> None:
+        self._create_organisation(
+            name="Test Org", description="Test with émojis 🚀 and spëcial çhars"
+        )
         response = self._get(
             {
                 "search": "émojis",
@@ -988,11 +1031,13 @@ class SearchViewTests(TestCase):
         orgs = data.get("organisations", [])
         self.assertEqual(len(orgs), 1)
 
-    def test_sort_by_org_name_with_dda_scope_only(self):
+    def test_sort_by_org_name_with_dda_scope_only(self) -> None:
         org = self._create_organisation(name="Test Org")
         self._create_dda_template(
             organisation=org,
-            record=self._create_realistic_dda_record(purpose="test", description="test"),
+            record=self._create_realistic_dda_record(
+                purpose="test", description="test"
+            ),
         )
         response = self._get(
             {
@@ -1010,7 +1055,7 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 1)
 
-    def test_search_returns_empty_when_no_matches(self):
+    def test_search_returns_empty_when_no_matches(self) -> None:
         self._create_organisation(name="Test Org")
         response = self._get(
             {
@@ -1028,15 +1073,15 @@ class SearchViewTests(TestCase):
         self.assertEqual(len(orgs), 0)
         self.assertEqual(len(ddas), 0)
 
-    def test_search_with_production_like_dda_structure(self):
+    def test_search_with_production_like_dda_structure(self) -> None:
         """Test search with realistic production DDA data structure to catch JSONField bugs"""
         # Create Dexcom organisation
         dexcom = self._create_organisation(
             name="Dexcom",
             location="Sweden",
-            description="For queries about how we are managing your data please contact the Data Protection Officer"
+            description="For queries about how we are managing your data please contact the Data Protection Officer",
         )
-        
+
         # Create realistic DDA with production-like nested structure
         realistic_dda_record = {
             "@id": "690cb5dff59bb6a8e5848e67",
@@ -1047,7 +1092,7 @@ class SearchViewTests(TestCase):
             "version": "1.0.0",
             "@context": [
                 "https://raw.githubusercontent.com/decentralised-dataexchange/data-exchange-agreements/main/interface-specs/jsonld/contexts/dexa-context.jsonld",
-                "https://w3id.org/security/v2"
+                "https://w3id.org/security/v2",
             ],
             "language": "en",
             "templateId": "690cb5dff59bb6a8e5848e67",
@@ -1060,7 +1105,7 @@ class SearchViewTests(TestCase):
                     "category": "number",
                     "description": "Blood glucose reading in mg/dL",
                     "sensitivity": True,
-                    "restrictions": None
+                    "restrictions": None,
                 },
                 {
                     "id": "690ca9e8f59bb6a8e5848e61",
@@ -1068,28 +1113,28 @@ class SearchViewTests(TestCase):
                     "category": "datetime",
                     "description": "Time of glucose reading",
                     "sensitivity": False,
-                    "restrictions": None
-                }
+                    "restrictions": None,
+                },
             ],
             "dataController": {
                 "url": "https://dexcom.se/policy.html",
                 "name": "Dexcom",
                 "legalId": "N/A",
                 "publicKey": "N/A",
-                "industrySector": "Healthcare"
+                "industrySector": "Healthcare",
             },
             "agreementPeriod": 365,
             "dataAgreementId": "690ca9e8f59bb6a8e5848e5d",
             "templateVersion": "1.0.0",
-            "purposeDescription": "Provide continuous glucose monitoring data for patient-driven health applications and research organisations developing diabetes management tools."
+            "purposeDescription": "Provide continuous glucose monitoring data for patient-driven health applications and research organisations developing diabetes management tools.",
         }
-        
+
         self._create_dda_template(
             organisation=dexcom,
             record=realistic_dda_record,
-            tags=["diabetes", "glucose", "healthcare", "monitoring"]
+            tags=["diabetes", "glucose", "healthcare", "monitoring"],
         )
-        
+
         # Test 1: Search by purpose field in nested JSON
         response = self._get(
             {
@@ -1106,7 +1151,7 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 1, "Should find DDA by purpose field")
         self.assertEqual(ddas[0]["organisationName"], "Dexcom")
-        
+
         # Test 2: Search by purposeDescription field
         response = self._get(
             {
@@ -1123,7 +1168,7 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         # Note: description field maps to purposeDescription in production
         # This test validates the search works with complex nested JSON
-        
+
         # Test 3: Search by tags
         response = self._get(
             {
@@ -1139,7 +1184,7 @@ class SearchViewTests(TestCase):
         data = json.loads(response.content)
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 1, "Should find DDA by tags")
-        
+
         # Test 4: Search for "dexcom" - should match org name AND dataController.name
         response = self._get(
             {
@@ -1157,7 +1202,7 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(orgs), 1, "Should find Dexcom organisation")
         # DDAs won't match on dataController.name as we only search top-level fields
-        
+
         # Test 5: Case insensitive search with complex data
         response = self._get(
             {
@@ -1174,25 +1219,65 @@ class SearchViewTests(TestCase):
         ddas = data.get("ddas", [])
         self.assertEqual(len(ddas), 1, "Case insensitive search should work")
 
-    def test_search_with_production_organisations(self):
+    def test_search_with_production_organisations(self) -> None:
         """Test search with real demo production organisation data"""
         # Create organisations similar to demo production data
         production_orgs = [
-            {"name": "Data Analysis AB", "location": "Sweden", "description": "For queries about how we are managing your data please contact the Data Protection Officer", "sector": "Scientific research and development"},
-            {"name": "Dexcom", "location": "Sweden", "description": "For queries about how we are managing your data please contact the Data Protection Officer", "sector": "Healthcare"},
-            {"name": "Medtronic", "location": "Sweden", "description": "For queries about how we are managing your data please contact the Data Protection Officer", "sector": "Healthcare"},
-            {"name": "Nordic Health Innovation", "location": "Sweden", "description": "For queries about how we are managing your data please contact the Data Protection Officer.", "sector": "Healthcare"},
-            {"name": "Hamling IT AB", "location": "Sweden", "description": "Consultancy and Medical Device reseller in the Nordics.", "sector": "Scientific research and development"},
-            {"name": "Data4Diabetes", "location": "Sweden", "description": "For queries about how we are managing your data please contact the Data Protection Officer.", "sector": "Healthcare"},
-            {"name": "Tellu AS", "location": "Norway", "description": "Tellu AS is a Norwegian software and technology company that delivers cloud-based IoT and eHealth solutions.", "sector": "Healthcare"},
-            {"name": "ECG247", "location": "Norway", "description": "ECG247 is a medically certified sensor for continuous long-term monitoring of the heart rhythm for assessment of heart rhythm disorders.", "sector": "Healthcare"},
+            {
+                "name": "Data Analysis AB",
+                "location": "Sweden",
+                "description": "For queries about how we are managing your data please contact the Data Protection Officer",
+                "sector": "Scientific research and development",
+            },
+            {
+                "name": "Dexcom",
+                "location": "Sweden",
+                "description": "For queries about how we are managing your data please contact the Data Protection Officer",
+                "sector": "Healthcare",
+            },
+            {
+                "name": "Medtronic",
+                "location": "Sweden",
+                "description": "For queries about how we are managing your data please contact the Data Protection Officer",
+                "sector": "Healthcare",
+            },
+            {
+                "name": "Nordic Health Innovation",
+                "location": "Sweden",
+                "description": "For queries about how we are managing your data please contact the Data Protection Officer.",
+                "sector": "Healthcare",
+            },
+            {
+                "name": "Hamling IT AB",
+                "location": "Sweden",
+                "description": "Consultancy and Medical Device reseller in the Nordics.",
+                "sector": "Scientific research and development",
+            },
+            {
+                "name": "Data4Diabetes",
+                "location": "Sweden",
+                "description": "For queries about how we are managing your data please contact the Data Protection Officer.",
+                "sector": "Healthcare",
+            },
+            {
+                "name": "Tellu AS",
+                "location": "Norway",
+                "description": "Tellu AS is a Norwegian software and technology company that delivers cloud-based IoT and eHealth solutions.",
+                "sector": "Healthcare",
+            },
+            {
+                "name": "ECG247",
+                "location": "Norway",
+                "description": "ECG247 is a medically certified sensor for continuous long-term monitoring of the heart rhythm for assessment of heart rhythm disorders.",
+                "sector": "Healthcare",
+            },
         ]
 
         for org_data in production_orgs:
             self._create_organisation(
                 name=org_data["name"],
                 location=org_data["location"],
-                description=org_data["description"]
+                description=org_data["description"],
             )
 
         # Test search by organisation name
@@ -1288,12 +1373,15 @@ class SearchViewTests(TestCase):
         orgs = data.get("organisations", [])
         self.assertEqual(len(orgs), 0)
 
+
 class OrganisationFilteringTest(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.url = reverse("organisations")
-        
+
         # Create unverified org
-        self.user1 = DataspaceUser.objects.create(email="user1_filtering@example.com", name="user1")
+        self.user1 = DataspaceUser.objects.create(
+            email="user1_filtering@example.com", name="user1"
+        )
         self.org_unverified = Organisation.objects.create(
             name="Unverified Org",
             coverImageUrl="http://example.com/cover.jpg",
@@ -1302,7 +1390,7 @@ class OrganisationFilteringTest(TestCase):
             location="Test Location",
             policyUrl="http://example.com/policy",
             description="Unverified Description",
-            admin=self.user1
+            admin=self.user1,
         )
         # Create Identity but NOT verify it
         OrganisationIdentity.objects.create(
@@ -1310,11 +1398,13 @@ class OrganisationFilteringTest(TestCase):
             presentationExchangeId="ex_unverified",
             presentationState="proposed",
             isPresentationVerified=False,
-            presentationRecord={}
+            presentationRecord={},
         )
 
         # Create verified org
-        self.user2 = DataspaceUser.objects.create(email="user2_filtering@example.com", name="user2")
+        self.user2 = DataspaceUser.objects.create(
+            email="user2_filtering@example.com", name="user2"
+        )
         self.org_verified = Organisation.objects.create(
             name="Verified Org",
             coverImageUrl="http://example.com/cover.jpg",
@@ -1323,7 +1413,7 @@ class OrganisationFilteringTest(TestCase):
             location="Test Location",
             policyUrl="http://example.com/policy",
             description="Verified Description",
-            admin=self.user2
+            admin=self.user2,
         )
         # Create Identity AND verify it
         OrganisationIdentity.objects.create(
@@ -1331,47 +1421,57 @@ class OrganisationFilteringTest(TestCase):
             presentationExchangeId="ex_verified",
             presentationState="verified",
             isPresentationVerified=True,
-            presentationRecord={}
+            presentationRecord={},
         )
 
-    def test_list_organisations_default_excludes_unverified(self):
+    def test_list_organisations_default_excludes_unverified(self) -> None:
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         orgs = data.get("organisations", [])
-        
+
         # Should only contain the verified org
         # Filter to ensure we only check against our test orgs (in case other tests left data)
         test_org_ids = [str(self.org_verified.id), str(self.org_unverified.id)]
-        returned_test_orgs = [o for o in orgs if o["organisation"]["id"] in test_org_ids]
-        
-        self.assertEqual(len(returned_test_orgs), 1)
-        self.assertEqual(returned_test_orgs[0]["organisation"]["id"], str(self.org_verified.id))
+        returned_test_orgs = [
+            o for o in orgs if o["organisation"]["id"] in test_org_ids
+        ]
 
-    def test_list_organisations_include_unverified_true(self):
+        self.assertEqual(len(returned_test_orgs), 1)
+        self.assertEqual(
+            returned_test_orgs[0]["organisation"]["id"], str(self.org_verified.id)
+        )
+
+    def test_list_organisations_include_unverified_true(self) -> None:
         response = self.client.get(self.url, {"includeUnverified": "true"})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         orgs = data.get("organisations", [])
-        
+
         # Should contain both
         test_org_ids = [str(self.org_verified.id), str(self.org_unverified.id)]
-        returned_test_orgs = [o for o in orgs if o["organisation"]["id"] in test_org_ids]
-        
+        returned_test_orgs = [
+            o for o in orgs if o["organisation"]["id"] in test_org_ids
+        ]
+
         self.assertEqual(len(returned_test_orgs), 2)
         org_ids = [o["organisation"]["id"] for o in returned_test_orgs]
         self.assertIn(str(self.org_verified.id), org_ids)
         self.assertIn(str(self.org_unverified.id), org_ids)
 
-    def test_list_organisations_include_unverified_false(self):
+    def test_list_organisations_include_unverified_false(self) -> None:
         response = self.client.get(self.url, {"includeUnverified": "false"})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         orgs = data.get("organisations", [])
-        
+
         # Should only contain the verified org
         test_org_ids = [str(self.org_verified.id), str(self.org_unverified.id)]
-        returned_test_orgs = [o for o in orgs if o["organisation"]["id"] in test_org_ids]
-        
+        returned_test_orgs = [
+            o for o in orgs if o["organisation"]["id"] in test_org_ids
+        ]
+
         self.assertEqual(len(returned_test_orgs), 1)
-        self.assertEqual(returned_test_orgs[0]["organisation"]["id"], str(self.org_verified.id))
+        self.assertEqual(
+            returned_test_orgs[0]["organisation"]["id"], str(self.org_verified.id)
+        )

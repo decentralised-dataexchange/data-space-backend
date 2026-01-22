@@ -1,10 +1,12 @@
 import os
+from typing import Any
 
 import requests
 from constance import config
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework import status as http_status
+from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from organisation.models import Organisation
@@ -13,7 +15,9 @@ from software_statement.serializers import SoftwareStatementSerializer
 
 
 # Create your views here.
-def _get_organisation_or_400(user):
+def _get_organisation_or_400(
+    user: Any,
+) -> tuple[Organisation | None, JsonResponse | None]:
     try:
         return Organisation.objects.get(admin=user), None
     except Organisation.DoesNotExist:
@@ -26,7 +30,7 @@ class SoftwareStatementView(APIView):
     serializer_class = SoftwareStatementSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         organisation, error_response = _get_organisation_or_400(request.user)
         if error_response:
             return error_response
@@ -60,10 +64,16 @@ class SoftwareStatementView(APIView):
 
         return JsonResponse(response_data)
 
-    def post(self, request):
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         organisation, error_response = _get_organisation_or_400(request.user)
         if error_response:
             return error_response
+
+        if organisation is None:
+            return JsonResponse(
+                {"error": "Organisation not found"},
+                status=http_status.HTTP_400_BAD_REQUEST,
+            )
 
         ows_base_url = organisation.owsBaseUrl
         credential_offer_endpoint = organisation.credentialOfferEndpoint
@@ -85,9 +95,8 @@ class SoftwareStatementView(APIView):
                 status=http_status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            softwareStatementTemplate = SoftwareStatementTemplate.objects.first()
-        except SoftwareStatementTemplate.DoesNotExist:
+        softwareStatementTemplate = SoftwareStatementTemplate.objects.first()
+        if softwareStatementTemplate is None:
             return JsonResponse(
                 {"error": "Software Statement Template not found"},
                 status=http_status.HTTP_400_BAD_REQUEST,
@@ -171,7 +180,7 @@ class SoftwareStatementView(APIView):
 
         return JsonResponse(response_data)
 
-    def delete(self, request):
+    def delete(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         organisation, error_response = _get_organisation_or_400(request.user)
         if error_response:
             return error_response

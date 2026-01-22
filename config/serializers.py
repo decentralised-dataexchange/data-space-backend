@@ -3,7 +3,7 @@ from rest_framework import serializers
 from .models import DataSource, Verification, VerificationTemplate
 
 
-class VerificationSerializer(serializers.ModelSerializer):
+class VerificationSerializer(serializers.ModelSerializer[Verification]):
     class Meta:
         model = Verification
         fields = [
@@ -15,7 +15,7 @@ class VerificationSerializer(serializers.ModelSerializer):
         ]
 
 
-class DataSourceSerializer(serializers.ModelSerializer):
+class DataSourceSerializer(serializers.ModelSerializer[DataSource]):
     class Meta:
         model = DataSource
         fields = [
@@ -32,7 +32,7 @@ class DataSourceSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
-class VerificationTemplateSerializer(serializers.ModelSerializer):
+class VerificationTemplateSerializer(serializers.ModelSerializer[VerificationTemplate]):
     class Meta:
         model = VerificationTemplate
         fields = "__all__"

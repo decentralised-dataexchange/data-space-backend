@@ -1,10 +1,11 @@
 import json
 import uuid
+from typing import Any, cast
 
-from django.db.models import Q
-from django.http import JsonResponse
+from django.db.models import Q, QuerySet
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.views import View
 from rest_framework import status
-from rest_framework.views import View
 
 from config.models import DataSource, Verification
 from config.serializers import DataSourceSerializer, VerificationSerializer
@@ -26,10 +27,10 @@ from organisation.serializers import (
 from software_statement.models import SoftwareStatement
 
 
-def _build_datasource_ddas(data_source):
+def _build_datasource_ddas(data_source: DataSource) -> list[dict[str, Any]]:
     data_disclosure_agreements_template_ids = (
         DataDisclosureAgreement.list_unique_dda_template_ids_for_a_data_source(
-            data_source_id=data_source.id
+            data_source_id=str(data_source.id)
         )
     )
     ddas = []
@@ -37,7 +38,7 @@ def _build_datasource_ddas(data_source):
         dda_for_template_id = (
             DataDisclosureAgreement.read_latest_dda_by_template_id_and_data_source_id(
                 template_id=dda_template_id,
-                data_source_id=data_source.id,
+                data_source_id=str(data_source.id),
             )
         )
 
@@ -55,17 +56,17 @@ def _build_datasource_ddas(data_source):
     return ddas
 
 
-def _build_organisation_ddas(organisation):
+def _build_organisation_ddas(organisation: Organisation) -> list[dict[str, Any]]:
     data_disclosure_agreements_template_ids = (
         DataDisclosureAgreementTemplate.list_unique_dda_template_ids_for_a_data_source(
-            data_source_id=organisation.id
+            data_source_id=str(organisation.id)
         )
     )
     ddas = []
     for dda_template_id in data_disclosure_agreements_template_ids:
         dda_for_template_id = DataDisclosureAgreementTemplate.read_latest_dda_by_template_id_and_data_source_id(
             template_id=dda_template_id,
-            data_source_id=organisation.id,
+            data_source_id=str(organisation.id),
         )
 
         data_disclosure_agreement_serializer = (
@@ -85,7 +86,7 @@ def _build_organisation_ddas(organisation):
     return ddas
 
 
-def _get_datasource_verification_payload(data_source):
+def _get_datasource_verification_payload(data_source: DataSource) -> dict[str, Any]:
     try:
         verification = Verification.objects.get(dataSourceId=data_source)
         verification_serializer = VerificationSerializer(verification)
@@ -100,7 +101,7 @@ def _get_datasource_verification_payload(data_source):
         }
 
 
-def _get_organisation_identity_payload(organisation):
+def _get_organisation_identity_payload(organisation: Organisation) -> dict[str, Any]:
     try:
         verification = OrganisationIdentity.objects.get(organisationId=organisation)
         verification_serializer = OrganisationIdentitySerializer(verification)
@@ -116,15 +117,15 @@ def _get_organisation_identity_payload(organisation):
         }
 
 
-def _get_software_statement_payload(organisation):
+def _get_software_statement_payload(organisation: Organisation) -> dict[str, Any]:
     try:
         software_statement = SoftwareStatement.objects.get(organisationId=organisation)
-        return software_statement.credentialHistory
+        return cast(dict[str, Any], software_statement.credentialHistory)
     except SoftwareStatement.DoesNotExist:
         return {}
 
 
-def _serialize_organisation_summary(organisation):
+def _serialize_organisation_summary(organisation: Organisation) -> dict[str, Any]:
     organisation_serializer = OrganisationSerializer(organisation)
     organisation_data = organisation_serializer.data
     organisation_data["softwareStatement"] = _get_software_statement_payload(
@@ -139,20 +140,29 @@ def _serialize_organisation_summary(organisation):
 
 
 class DataSourceCoverImageView(View):
-    def get(self, request, dataSourceId):
+    def get(
+        self, request: HttpRequest, dataSourceId: str, *args: Any, **kwargs: Any
+    ) -> HttpResponse | JsonResponse:
         # Get the DataSource instance
         datasource, error_response = get_instance_or_400(
             DataSource, dataSourceId, "Data source not found"
         )
         if error_response:
             return error_response
+
+        if datasource is None:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Return the binary image data as the HTTP response
         return get_image_response(datasource.coverImageId, "Cover image not found")
 
 
 class DataSourceLogoImageView(View):
-    def get(self, request, dataSourceId):
+    def get(
+        self, request: HttpRequest, dataSourceId: str, *args: Any, **kwargs: Any
+    ) -> HttpResponse | JsonResponse:
         # Get the DataSource instance
         datasource, error_response = get_instance_or_400(
             DataSource, dataSourceId, "Data source not found"
@@ -160,20 +170,27 @@ class DataSourceLogoImageView(View):
         if error_response:
             return error_response
 
+        if datasource is None:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Return the binary image data as the HTTP response
         return get_image_response(datasource.logoId, "Logo image not found")
 
 
 class DataSourcesView(View):
-    def get(self, request):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
         dataSourceId_param = request.GET.get("dataSourceId")
 
         if dataSourceId_param:
-            data_sources = DataSource.objects.filter(pk=dataSourceId_param)
+            data_sources_qs: QuerySet[DataSource] = DataSource.objects.filter(
+                pk=dataSourceId_param
+            )
         else:
-            data_sources = DataSource.objects.all().order_by("createdAt")
+            data_sources_qs = DataSource.objects.all().order_by("createdAt")
 
-        data_sources, pagination_data = paginate_queryset(data_sources, request)
+        data_sources, pagination_data = paginate_queryset(data_sources_qs, request)
         serialized_data_sources = []
         for data_source in data_sources:
             ddas = _build_datasource_ddas(data_source)
@@ -201,20 +218,29 @@ class DataSourcesView(View):
 
 
 class OrganisationCoverImageView(View):
-    def get(self, request, organisationId):
+    def get(
+        self, request: HttpRequest, organisationId: str, *args: Any, **kwargs: Any
+    ) -> HttpResponse | JsonResponse:
         # Get the organisation instance
         organisation, error_response = get_instance_or_400(
             Organisation, organisationId, "Organisation not found"
         )
         if error_response:
             return error_response
+
+        if organisation is None:
+            return JsonResponse(
+                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Return the binary image data as the HTTP response
         return get_image_response(organisation.coverImageId, "Cover image not found")
 
 
 class OrganisationLogoImageView(View):
-    def get(self, request, organisationId):
+    def get(
+        self, request: HttpRequest, organisationId: str, *args: Any, **kwargs: Any
+    ) -> HttpResponse | JsonResponse:
         # Get the organisation instance
         organisation, error_response = get_instance_or_400(
             Organisation, organisationId, "Organisation not found"
@@ -222,36 +248,42 @@ class OrganisationLogoImageView(View):
         if error_response:
             return error_response
 
+        if organisation is None:
+            return JsonResponse(
+                {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Return the binary image data as the HTTP response
         return get_image_response(organisation.logoId, "Logo image not found")
 
 
 class OrganisationsView(View):
-    def get(self, request):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
         organisation_id_param = request.GET.get("organisationId")
         include_unverified_param = request.GET.get("includeUnverified", "false")
-        
+
         # Parse includeUnverified parameter
         include_unverified = include_unverified_param.lower() == "true"
 
+        organisations_qs: QuerySet[Organisation]
         if organisation_id_param:
             try:
                 organisation_uuid = uuid.UUID(organisation_id_param)
-                organisations = Organisation.objects.filter(pk=organisation_uuid)
+                organisations_qs = Organisation.objects.filter(pk=organisation_uuid)
             except ValueError:
                 return JsonResponse({"error": "Invalid organisationId"}, status=400)
-            organisations = Organisation.objects.filter(pk=organisation_id_param)
+            organisations_qs = Organisation.objects.filter(pk=organisation_id_param)
         else:
-            organisations = Organisation.objects.all().order_by("createdAt")
-        
+            organisations_qs = Organisation.objects.all().order_by("createdAt")
+
         # Filter to only verified organisations unless includeUnverified is true
         if not include_unverified:
             verified_org_ids = OrganisationIdentity.objects.filter(
                 isPresentationVerified=True
             ).values_list("organisationId_id", flat=True)
-            organisations = organisations.filter(pk__in=verified_org_ids)
+            organisations_qs = organisations_qs.filter(pk__in=verified_org_ids)
 
-        organisations, pagination_data = paginate_queryset(organisations, request)
+        organisations, pagination_data = paginate_queryset(organisations_qs, request)
         serialized_organisations = []
         for organisation in organisations:
             serialized_organisation = _serialize_organisation_summary(organisation)
@@ -269,7 +301,7 @@ class OrganisationsView(View):
 
 
 class SearchView(View):
-    def get(self, request):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
         search = request.GET.get("search", "")
         search = search.strip()
         if not search:
@@ -287,7 +319,9 @@ class SearchView(View):
         raw_search_dataset = request.GET.get("searchDataset")
         raw_search_tags = request.GET.get("searchTags")
 
-        def parse_bool_param(raw_value, param_name, default=True):
+        def parse_bool_param(
+            raw_value: str | None, param_name: str, default: bool = True
+        ) -> bool:
             if raw_value is None:
                 return default
             value = str(raw_value).lower()
@@ -368,7 +402,6 @@ class SearchView(View):
         )
 
         ddas_qs = DataDisclosureAgreementTemplate.objects.none()
-        organisation_ids_from_ddas = []
         if dda_scopes_enabled:
             # Use Python filtering for all databases since jsonfield library
             # doesn't support ORM-level nested key lookups
@@ -384,25 +417,34 @@ class SearchView(View):
                 record = dda.dataDisclosureAgreementRecord or {}
                 purpose = record.get("purpose", "")
                 # Check both 'description' and 'purposeDescription' for compatibility
-                description = record.get("description", "") or record.get("purposeDescription", "")
+                description = record.get("description", "") or record.get(
+                    "purposeDescription", ""
+                )
 
                 purpose_matches = search_dda_purpose and search_lower in purpose.lower()
-                description_matches = search_dda_description and search_lower in description.lower()
-                tags_matches = search_tags and search_lower in json.dumps(dda.tags or []).lower()
+                description_matches = (
+                    search_dda_description and search_lower in description.lower()
+                )
+                tags_matches = (
+                    search_tags and search_lower in json.dumps(dda.tags or []).lower()
+                )
 
                 if purpose_matches or description_matches or tags_matches:
                     matching_ids.append(dda.id)
-                    org_ids_set.add(dda.organisationId_id)
+                    org_ids_set.add(dda.organisationId.id)
 
             if matching_ids:
                 ddas_qs = base_ddas_qs.filter(id__in=matching_ids)
-                organisation_ids_from_ddas = list(org_ids_set)
 
         org_filter = Q()
         has_filter = False
 
         if search_org_name:
-            org_filter |= Q(name__icontains=search) | Q(location__icontains=search) | Q(description__icontains=search)
+            org_filter |= (
+                Q(name__icontains=search)
+                | Q(location__icontains=search)
+                | Q(description__icontains=search)
+            )
             has_filter = True
 
         if has_filter:

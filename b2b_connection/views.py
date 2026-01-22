@@ -1,6 +1,10 @@
+from typing import Any, cast
+
+from django.db.models import QuerySet
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from b2b_connection.models import B2BConnection
@@ -18,7 +22,7 @@ class B2BConnectionView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[B2BConnection]:
         """Filter clients by the authenticated user's organisation"""
         user = self.request.user
         try:
@@ -27,7 +31,7 @@ class B2BConnectionView(APIView):
         except Organisation.DoesNotExist:
             return B2BConnection.objects.none()
 
-    def get(self, request, pk):
+    def get(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> JsonResponse:
         """Get specific client"""
         client = get_object_or_404(self.get_queryset(), pk=pk)
         serializer = B2BConnectionSerializer(client)
@@ -38,7 +42,7 @@ class B2BConnectionView(APIView):
 class B2BConnectionsView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[B2BConnection]:
         """Filter clients by the authenticated user's organisation"""
         user = self.request.user
         try:
@@ -47,13 +51,15 @@ class B2BConnectionsView(APIView):
         except Organisation.DoesNotExist:
             return B2BConnection.objects.none()
 
-    def get(self, request):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         """List all connections"""
         # List all clients
         clients = self.get_queryset()
         serializer = B2BConnectionsSerializer(clients, many=True)
 
-        b2b_connections, pagination_data = paginate_queryset(serializer.data, request)
+        b2b_connections, pagination_data = paginate_queryset(
+            cast(list[Any], serializer.data), request
+        )
         response_data = {
             "b2bConnection": b2b_connections,
             "pagination": pagination_data,

@@ -1,8 +1,12 @@
+from typing import Any, cast
+
 from django.db import IntegrityError
+from django.db.models import QuerySet
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -27,7 +31,7 @@ class OAuth2ClientView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[OAuth2Clients]:
         """Filter clients by the authenticated user's organisation"""
         user = self.request.user
         try:
@@ -36,14 +40,16 @@ class OAuth2ClientView(APIView):
         except Organisation.DoesNotExist:
             return OAuth2Clients.objects.none()
 
-    def get(self, request, pk):
+    def get(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> JsonResponse:
         """Get specific client"""
         client = get_object_or_404(self.get_queryset(), pk=pk)
         serializer = OAuth2ClientsSerializer(client)
         response_data = {"oAuth2Client": serializer.data}
         return JsonResponse(response_data)
 
-    def post(self, request):
+    def post(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         """Create new OAuth client"""
         serializer = OAuth2ClientsCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -64,7 +70,9 @@ class OAuth2ClientView(APIView):
             return JsonResponse(response_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request, pk):
+    def put(
+        self, request: Request, pk: str, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         """Update OAuth client"""
         client = get_object_or_404(self.get_queryset(), pk=pk)
         serializer = OAuth2ClientsUpdateSerializer(client, data=request.data)
@@ -85,7 +93,7 @@ class OAuth2ClientView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk):
+    def delete(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
         """Hard delete OAuth client"""
         client = get_object_or_404(self.get_queryset(), pk=pk)
         client.delete()
@@ -100,7 +108,7 @@ class OAuth2ClientsView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[OAuth2Clients]:
         """Filter clients by the authenticated user's organisation"""
         user = self.request.user
         try:
@@ -109,13 +117,15 @@ class OAuth2ClientsView(APIView):
         except Organisation.DoesNotExist:
             return OAuth2Clients.objects.none()
 
-    def get(self, request):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         """List all clients"""
         # List all clients
         clients = self.get_queryset()
         serializer = OAuth2ClientsSerializer(clients, many=True)
 
-        oauth_clients, pagination_data = paginate_queryset(serializer.data, request)
+        oauth_clients, pagination_data = paginate_queryset(
+            cast(list[Any], serializer.data), request
+        )
         response_data = {
             "oAuth2Clients": oauth_clients,
             "pagination": pagination_data,
@@ -131,7 +141,7 @@ class OrganisationOAuth2ClientView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[OrganisationOAuth2Clients]:
         """Filter clients by the authenticated user's organisation"""
         user = self.request.user
         try:
@@ -140,14 +150,16 @@ class OrganisationOAuth2ClientView(APIView):
         except Organisation.DoesNotExist:
             return OrganisationOAuth2Clients.objects.none()
 
-    def get(self, request, pk):
+    def get(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> JsonResponse:
         """Get specific client"""
         client = get_object_or_404(self.get_queryset(), pk=pk)
         serializer = OrganisationOAuth2ClientsSerializer(client)
         response_data = {"organisationOAuth2Client": serializer.data}
         return JsonResponse(response_data)
 
-    def post(self, request):
+    def post(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         """Create new OAuth client"""
         serializer = OrganisationOAuth2ClientsCreateSerializer(data=request.data)
         if serializer.is_valid():
@@ -168,7 +180,9 @@ class OrganisationOAuth2ClientView(APIView):
             return JsonResponse(response_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def put(self, request, pk):
+    def put(
+        self, request: Request, pk: str, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         """Update OAuth client"""
         client = get_object_or_404(self.get_queryset(), pk=pk)
         serializer = OrganisationOAuth2ClientsCreateSerializer(
@@ -191,7 +205,7 @@ class OrganisationOAuth2ClientView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, pk):
+    def delete(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
         """Hard delete OAuth client"""
         client = get_object_or_404(self.get_queryset(), pk=pk)
         client.delete()
@@ -201,7 +215,7 @@ class OrganisationOAuth2ClientView(APIView):
 class OrganisationOAuth2ClientsView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[OrganisationOAuth2Clients]:
         """Filter clients by the authenticated user's organisation"""
         user = self.request.user
         try:
@@ -210,13 +224,15 @@ class OrganisationOAuth2ClientsView(APIView):
         except Organisation.DoesNotExist:
             return OrganisationOAuth2Clients.objects.none()
 
-    def get(self, request):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         """List all clients"""
         # List all clients
         clients = self.get_queryset()
         serializer = OrganisationOAuth2ClientsSerializer(clients, many=True)
 
-        oauth_clients, pagination_data = paginate_queryset(serializer.data, request)
+        oauth_clients, pagination_data = paginate_queryset(
+            cast(list[Any], serializer.data), request
+        )
         response_data = {
             "organisationOAuth2Client": oauth_clients,
             "pagination": pagination_data,
