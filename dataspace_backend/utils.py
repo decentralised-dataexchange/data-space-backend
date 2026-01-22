@@ -11,6 +11,8 @@ These utilities reduce code duplication and standardize error handling patterns
 throughout the codebase.
 """
 
+from __future__ import annotations
+
 from typing import Any, TypeVar
 
 from django.db.models import Model, QuerySet

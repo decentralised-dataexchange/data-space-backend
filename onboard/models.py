@@ -6,6 +6,8 @@ custom user authentication using email as the primary identifier instead of
 username, which is the standard approach for modern web applications.
 """
 
+from __future__ import annotations
+
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone

@@ -14,6 +14,8 @@ These clients enable secure API authentication using the OAuth2
 client_credentials grant type.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from rest_framework import serializers
@@ -21,7 +23,7 @@ from rest_framework import serializers
 from .models import OAuth2Clients, OrganisationOAuth2Clients
 
 
-class OAuth2ClientsSerializer(serializers.ModelSerializer[OAuth2Clients]):
+class OAuth2ClientsSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for OAuth2Clients read operations and listing.
 
@@ -68,7 +70,7 @@ class OAuth2ClientsSerializer(serializers.ModelSerializer[OAuth2Clients]):
         extra_kwargs = {"organisation": {"write_only": True}}
 
 
-class OAuth2ClientsCreateSerializer(serializers.ModelSerializer[OAuth2Clients]):
+class OAuth2ClientsCreateSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for creating new OAuth2 clients.
 
@@ -93,7 +95,7 @@ class OAuth2ClientsCreateSerializer(serializers.ModelSerializer[OAuth2Clients]):
         return OAuth2Clients.objects.create(**validated_data)
 
 
-class OAuth2ClientsUpdateSerializer(serializers.ModelSerializer[OAuth2Clients]):
+class OAuth2ClientsUpdateSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for updating existing OAuth2 clients.
 
@@ -109,8 +111,8 @@ class OAuth2ClientsUpdateSerializer(serializers.ModelSerializer[OAuth2Clients]):
 
 
 class OrganisationOAuth2ClientsSerializer(
-    serializers.ModelSerializer[OrganisationOAuth2Clients]
-):
+    serializers.ModelSerializer
+):  # type: ignore[type-arg]
     """
     Serializer for OrganisationOAuth2Clients read operations and listing.
 
@@ -154,8 +156,8 @@ class OrganisationOAuth2ClientsSerializer(
 
 
 class OrganisationOAuth2ClientsCreateSerializer(
-    serializers.ModelSerializer[OrganisationOAuth2Clients]
-):
+    serializers.ModelSerializer
+):  # type: ignore[type-arg]
     """
     Serializer for creating organisation-managed OAuth2 clients.
 

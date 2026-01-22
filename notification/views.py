@@ -7,6 +7,8 @@ synchronization of Data Disclosure Agreement (DDA) templates, DDA records,
 and B2B connections between the DISP and the local data marketplace instance.
 """
 
+from __future__ import annotations
+
 import json
 from typing import Any
 

@@ -9,12 +9,14 @@ The serializers handle token request validation and response
 formatting according to OAuth2 specifications (RFC 6749).
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from rest_framework import serializers
 
 
-class TokenRequestSerializer(serializers.Serializer[dict[str, Any]]):
+class TokenRequestSerializer(serializers.Serializer):  # type: ignore[type-arg]
     """
     Serializer for validating OAuth2 token requests.
 
@@ -61,7 +63,7 @@ class TokenRequestSerializer(serializers.Serializer[dict[str, Any]]):
         return value
 
 
-class TokenResponseSerializer(serializers.Serializer[dict[str, Any]]):
+class TokenResponseSerializer(serializers.Serializer):  # type: ignore[type-arg]
     """
     Serializer for formatting OAuth2 token responses.
 

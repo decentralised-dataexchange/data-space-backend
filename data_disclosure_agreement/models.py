@@ -10,6 +10,8 @@ DDAs are central to the data space's trust framework, ensuring that all data exc
 activities are transparent, compliant, and governed by mutual consent.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4

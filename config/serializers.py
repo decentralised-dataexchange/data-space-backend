@@ -11,12 +11,14 @@ the data space. Each data source must be verified through credential
 presentations before it can participate in data exchanges.
 """
 
+from __future__ import annotations
+
 from rest_framework import serializers
 
 from .models import DataSource, Verification, VerificationTemplate
 
 
-class VerificationSerializer(serializers.ModelSerializer[Verification]):
+class VerificationSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for data source verification records.
 
@@ -44,7 +46,7 @@ class VerificationSerializer(serializers.ModelSerializer[Verification]):
         ]
 
 
-class DataSourceSerializer(serializers.ModelSerializer[DataSource]):
+class DataSourceSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for data source profile information.
 
@@ -84,7 +86,7 @@ class DataSourceSerializer(serializers.ModelSerializer[DataSource]):
         read_only_fields = ["id"]
 
 
-class VerificationTemplateSerializer(serializers.ModelSerializer[VerificationTemplate]):
+class VerificationTemplateSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for data source verification templates.
 

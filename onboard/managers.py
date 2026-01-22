@@ -20,6 +20,8 @@ Usage:
             objects = DataspaceUserManager()
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 
 from django.contrib.auth.base_user import BaseUserManager
@@ -30,7 +32,7 @@ if TYPE_CHECKING:
     from onboard.models import DataspaceUser
 
 
-class DataspaceUserManager(BaseUserManager["DataspaceUser"]):
+class DataspaceUserManager(BaseUserManager):  # type: ignore[type-arg]
     """
     Custom user model manager for email-based authentication.
 

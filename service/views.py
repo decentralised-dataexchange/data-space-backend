@@ -12,6 +12,8 @@ The service layer exposes data to marketplace consumers and provides:
 - Image retrieval for logos and cover images
 """
 
+from __future__ import annotations
+
 import json
 import uuid
 from typing import Any, cast

@@ -11,6 +11,8 @@ infrastructure, allowing parties to establish trusted relationships before
 engaging in data sharing activities.
 """
 
+from __future__ import annotations
+
 from typing import Any
 from uuid import UUID, uuid4
 

@@ -15,6 +15,8 @@ Note:
     or customized branding.
 """
 
+from __future__ import annotations
+
 from typing import Callable
 
 from django.contrib import admin
@@ -25,7 +27,7 @@ from customadminsite.admin import myadminsite
 from .models import DataDisclosureAgreementTemplate
 
 
-class DataDisclosureAgreementAdmin(admin.ModelAdmin[DataDisclosureAgreementTemplate]):
+class DataDisclosureAgreementAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     """
     Custom admin configuration for the DataDisclosureAgreementTemplate model.
 
