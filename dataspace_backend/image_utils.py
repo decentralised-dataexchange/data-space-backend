@@ -1,7 +1,11 @@
 import os
+from typing import Any
+from uuid import UUID
 
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.core.files.uploadedfile import UploadedFile
+from django.db.models import Model
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from rest_framework import status
 
 from config.models import ImageModel
@@ -9,7 +13,7 @@ from config.models import ImageModel
 DEFAULT_ASSETS_DIR = os.path.join(settings.BASE_DIR, "resources", "assets")
 
 
-def get_protocol():
+def get_protocol() -> str:
     """Return https:// for prod, http:// otherwise."""
     return "https://" if os.environ.get("ENV") == "prod" else "http://"
 
@@ -20,7 +24,7 @@ def construct_image_url(
     entity_type: str,
     image_type: str,
     is_public_endpoint: bool = False,
-):
+) -> str:
     """
     Construct URL for entity images.
 
@@ -38,22 +42,24 @@ def construct_image_url(
 
 
 def construct_cover_image_url(
-    baseurl, entity_id, entity_type, is_public_endpoint=False
-):
+    baseurl: str, entity_id: str, entity_type: str, is_public_endpoint: bool = False
+) -> str:
     """Construct cover image URL for an entity."""
     return construct_image_url(
         baseurl, entity_id, entity_type, "coverimage", is_public_endpoint
     )
 
 
-def construct_logo_image_url(baseurl, entity_id, entity_type, is_public_endpoint=False):
+def construct_logo_image_url(
+    baseurl: str, entity_id: str, entity_type: str, is_public_endpoint: bool = False
+) -> str:
     """Construct logo image URL for an entity."""
     return construct_image_url(
         baseurl, entity_id, entity_type, "logoimage", is_public_endpoint
     )
 
 
-def load_default_image(filename: str):
+def load_default_image(filename: str) -> UUID:
     """Load a default image from assets and save to ImageModel."""
     image_path = os.path.join(DEFAULT_ASSETS_DIR, filename)
     with open(image_path, "rb") as image_file:
@@ -62,7 +68,9 @@ def load_default_image(filename: str):
         return image.id
 
 
-def get_image_response(image_id, missing_error_message: str):
+def get_image_response(
+    image_id: Any, missing_error_message: str
+) -> HttpResponse | JsonResponse:
     """Return HTTP response with image data or error."""
     try:
         image = ImageModel.objects.get(pk=image_id)
@@ -74,13 +82,13 @@ def get_image_response(image_id, missing_error_message: str):
 
 
 def update_entity_image(
-    request,
-    entity,
-    uploaded_image,
+    request: HttpRequest,
+    entity: Model,
+    uploaded_image: UploadedFile | None,
     image_id_attr: str,
     url_attr: str,
     entity_type: str,
-):
+) -> JsonResponse:
     """
     Generic image update for any entity (DataSource or Organisation).
 
@@ -120,7 +128,7 @@ def update_entity_image(
         url_attr,
         url_builder(
             baseurl=request.get_host(),
-            entity_id=str(entity.id),
+            entity_id=str(entity.id),  # type: ignore[attr-defined]
             entity_type=entity_type,
             is_public_endpoint=True,
         ),

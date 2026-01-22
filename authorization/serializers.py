@@ -1,14 +1,16 @@
+from typing import Any
+
 from rest_framework import serializers
 
 
-class TokenRequestSerializer(serializers.Serializer):
+class TokenRequestSerializer(serializers.Serializer[dict[str, Any]]):
     """Serializer for OAuth 2.0 token request (client_credentials-like)"""
 
     client_id = serializers.CharField(max_length=255)
     client_secret = serializers.CharField(max_length=255)
     grant_type = serializers.CharField(max_length=50)
 
-    def validate_grant_type(self, value):
+    def validate_grant_type(self, value: str) -> str:
         if value != "client_credentials":
             raise serializers.ValidationError(
                 "Only 'client_credentials' grant type is supported"
@@ -16,7 +18,7 @@ class TokenRequestSerializer(serializers.Serializer):
         return value
 
 
-class TokenResponseSerializer(serializers.Serializer):
+class TokenResponseSerializer(serializers.Serializer[dict[str, Any]]):
     """Serializer for OAuth 2.0 token response"""
 
     access_token = serializers.CharField()

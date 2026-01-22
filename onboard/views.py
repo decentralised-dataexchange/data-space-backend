@@ -1,11 +1,13 @@
 import io
 import logging
+from typing import Any, cast
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.http import FileResponse
 from rest_framework import permissions, status
 from rest_framework.generics import CreateAPIView
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -15,6 +17,7 @@ from dataspace_backend.image_utils import (
     construct_logo_image_url,
     load_default_image,
 )
+from onboard.models import DataspaceUser
 from onboard.permissions import IsOwnerOrReadOnly
 from organisation.models import CodeOfConduct, Organisation, Sector
 from organisation.serializers import OrganisationSerializer, SectorSerializer
@@ -24,7 +27,7 @@ from .serializers import DataspaceUserSerializer, RegisterDataspaceUserSerialize
 logger = logging.getLogger(__name__)
 
 
-class CreateUserView(CreateAPIView):
+class CreateUserView(CreateAPIView):  # type: ignore[type-arg]
     model = get_user_model()
     permission_classes = [permissions.AllowAny]  # Or anon users can't register
     serializer_class = RegisterDataspaceUserSerializer
@@ -34,29 +37,29 @@ class UserDetail(APIView):
     serializer_class = DataspaceUserSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
-    def get(self, request):
-        serializer = self.serializer_class(request.user, many=False)
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        user = cast(DataspaceUser, request.user)
+        serializer = self.serializer_class(user, many=False)
         return Response(serializer.data)
 
 
-class UserLogin(TokenObtainPairView):
-    def post(self, request, *args, **kwargs):
+class UserLogin(TokenObtainPairView):  # type: ignore[misc]
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         if request.data.get("email") and request.data.get("password"):
-            User = get_user_model()
             user_email = request.data.get("email")
-            user = User.objects.filter(email=user_email).first()
+            user = DataspaceUser.objects.filter(email=user_email).first()
             if user and user.is_staff:
                 return Response(
                     {"Error": "Admin users are not allowed to login"},
                     status=status.HTTP_403_FORBIDDEN,
                 )
-        return super().post(request, *args, **kwargs)
+        return Response(super().post(request, *args, **kwargs).data)
 
 
 class CreateUserAndOrganisationView(APIView):
     permission_classes = [permissions.AllowAny]
 
-    def post(self, request):
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         data = request.data or {}
 
         # Extract organisation details from the new structure
@@ -103,14 +106,12 @@ class CreateUserAndOrganisationView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        User = get_user_model()
-
         try:
             with transaction.atomic():
-                user = User.objects.create_user(
-                    email=data.get("email"),
-                    password=data.get("password"),
-                    name=data.get("name"),
+                user = DataspaceUser.objects.create_user(
+                    email=str(data.get("email", "")),
+                    password=str(data.get("password", "")),
+                    name=str(data.get("name", "")),
                 )
 
                 if Organisation.objects.filter(admin=user).exists():
@@ -169,9 +170,9 @@ class CreateUserAndOrganisationView(APIView):
 
 
 class SectorView(APIView):
-    permission_classes = []  # Make it a public route
+    permission_classes: list[Any] = []  # Make it a public route
 
-    def get(self, request):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         # Check if any sectors exist
         sectors = Sector.objects.all()
 
@@ -190,9 +191,11 @@ class CodeOfConductView(APIView):
     This is a public endpoint.
     """
 
-    permission_classes = []  # Public endpoint
+    permission_classes: list[Any] = []  # Public endpoint
 
-    def get(self, request):
+    def get(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> Response | FileResponse:
         try:
             logger.info("Attempting to fetch latest active code of conduct")
 

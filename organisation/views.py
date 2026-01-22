@@ -1,7 +1,10 @@
+from typing import Any
+
 import requests
 from constance import config
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework import permissions, status
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -24,7 +27,9 @@ class OrganisationView(APIView):
     serializer_class = OrganisationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
@@ -37,7 +42,9 @@ class OrganisationView(APIView):
 
         return JsonResponse(response_data)
 
-    def put(self, request):
+    def put(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         data = request.data.get("organisation", {})
 
         # Get the Organisation instance associated with the current user
@@ -95,7 +102,9 @@ class OrganisationView(APIView):
 class OrganisationCoverImageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> HttpResponse | Response:
         # Get the organisation instance
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
@@ -104,7 +113,9 @@ class OrganisationCoverImageView(APIView):
         # Return the binary image data as the HTTP response
         return get_image_response(organisation.coverImageId, "Cover image not found")
 
-    def put(self, request):
+    def put(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         uploaded_image = request.FILES.get("orgimage")
 
         # Get the Organisation instance
@@ -125,7 +136,9 @@ class OrganisationCoverImageView(APIView):
 class OrganisationLogoImageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> HttpResponse | Response:
         # Get the Organisation instance
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
@@ -134,7 +147,9 @@ class OrganisationLogoImageView(APIView):
         # Return the binary image data as the HTTP response
         return get_image_response(organisation.logoId, "Logo image not found")
 
-    def put(self, request):
+    def put(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         uploaded_image = request.FILES.get("orgimage")
 
         # Get the Organisation instance
@@ -156,7 +171,9 @@ class OrganisationIdentityView(APIView):
     serializer_class = OrganisationIdentitySerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
@@ -190,14 +207,15 @@ class OrganisationIdentityView(APIView):
 
         return JsonResponse(response_data)
 
-    def post(self, request):
+    def post(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
 
-        try:
-            organisationIdentityTemplate = OrganisationIdentityTemplate.objects.first()
-        except OrganisationIdentityTemplate.DoesNotExist:
+        organisationIdentityTemplate = OrganisationIdentityTemplate.objects.first()
+        if organisationIdentityTemplate is None:
             return JsonResponse(
                 {"error": "Organisation identity template not found"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -269,7 +287,9 @@ class OrganisationIdentityView(APIView):
 
         return JsonResponse(response_data)
 
-    def delete(self, request):
+    def delete(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         organisation, error_response = get_organisation_or_400(request.user)
         if error_response:
             return error_response
@@ -292,7 +312,9 @@ class CodeOfConductUpdateView(APIView):
     serializer_class = OrganisationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def put(self, request):
+    def put(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         data = request.data.get("codeOfConduct", False)
 
         # Get the Organisation instance associated with the current user

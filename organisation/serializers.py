@@ -9,7 +9,7 @@ from .models import (
 )
 
 
-class OrganisationSerializer(serializers.ModelSerializer):
+class OrganisationSerializer(serializers.ModelSerializer[Organisation]):
     verificationRequestURLPrefix = serializers.CharField(
         source="owsBaseUrl", read_only=True
     )
@@ -35,7 +35,7 @@ class OrganisationSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
-class OrganisationIdentitySerializer(serializers.ModelSerializer):
+class OrganisationIdentitySerializer(serializers.ModelSerializer[OrganisationIdentity]):
     class Meta:
         model = OrganisationIdentity
         fields = [
@@ -48,20 +48,22 @@ class OrganisationIdentitySerializer(serializers.ModelSerializer):
         ]
 
 
-class OrganisationIdentityTemplateSerializer(serializers.ModelSerializer):
+class OrganisationIdentityTemplateSerializer(
+    serializers.ModelSerializer[OrganisationIdentityTemplate]
+):
     class Meta:
         model = OrganisationIdentityTemplate
         fields = "__all__"
 
 
-class SectorSerializer(serializers.ModelSerializer):
+class SectorSerializer(serializers.ModelSerializer[Sector]):
     class Meta:
         model = Sector
         fields = ["id", "sectorName"]
         read_only_fields = ["id"]
 
 
-class CodeOfConductSerializer(serializers.ModelSerializer):
+class CodeOfConductSerializer(serializers.ModelSerializer[CodeOfConduct]):
     class Meta:
         model = CodeOfConduct
         fields = ["id", "pdfFileName", "isActive", "createdAt", "updatedAt"]

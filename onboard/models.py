@@ -7,16 +7,22 @@ from onboard.managers import DataspaceUserManager
 
 
 class DataspaceUser(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(_("email address"), unique=True)
-    is_staff = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    date_joined = models.DateTimeField(default=timezone.now)
-    name = models.CharField(max_length=250, null=True, blank=True)
+    email: models.EmailField[str, str] = models.EmailField(
+        _("email address"), unique=True
+    )
+    is_staff: models.BooleanField[bool, bool] = models.BooleanField(default=False)
+    is_active: models.BooleanField[bool, bool] = models.BooleanField(default=True)
+    date_joined: models.DateTimeField[str, str] = models.DateTimeField(
+        default=timezone.now
+    )
+    name: models.CharField[str | None, str | None] = models.CharField(
+        max_length=250, null=True, blank=True
+    )
 
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    USERNAME_FIELD: str = "email"
+    REQUIRED_FIELDS: "list[str]" = []  # type: ignore[misc]
 
-    objects = DataspaceUserManager()
+    objects: "DataspaceUserManager" = DataspaceUserManager()  # type: ignore[misc]
 
-    def __str__(self):
-        return self.email
+    def __str__(self) -> str:
+        return str(self.email)

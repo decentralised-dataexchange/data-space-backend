@@ -1,5 +1,6 @@
 from django.contrib.admin import AdminSite
 from django.contrib.auth.forms import AuthenticationForm
+from django.http import HttpRequest
 
 
 # Register your models here.
@@ -12,11 +13,11 @@ class MyAdminSite(AdminSite):
 
     site_header = "CRANE d-HDSI Data Marketplace Administration"
 
-    def has_permission(self, request):
+    def has_permission(self, request: HttpRequest) -> bool:
         """
         Checks if the current user has access.
         """
-        return request.user.is_active
+        return bool(request.user.is_active)
 
 
-myadminsite = MyAdminSite(name="myadmin")
+myadminsite: MyAdminSite = MyAdminSite(name="myadmin")

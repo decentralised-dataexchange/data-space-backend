@@ -1,7 +1,11 @@
+from typing import Any
+
 import requests
+from django.db.models import QuerySet
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
+from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from data_disclosure_agreement.models import (
@@ -18,7 +22,9 @@ from organisation.models import Organisation
 
 
 # Create your views here.
-def _get_dus_organisation_or_400(user):
+def _get_dus_organisation_or_400(
+    user: Any,
+) -> tuple[Organisation | None, JsonResponse | None]:
     try:
         return Organisation.objects.get(admin=user), None
     except Organisation.DoesNotExist:
@@ -31,7 +37,13 @@ def _get_dus_organisation_or_400(user):
 class DataDisclosureAgreementRecordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, dataDisclosureAgreementId):
+    def post(
+        self,
+        request: Request,
+        dataDisclosureAgreementId: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> JsonResponse:
         dus_organisation, error_response = _get_dus_organisation_or_400(request.user)
         if error_response:
             return error_response
@@ -47,6 +59,12 @@ class DataDisclosureAgreementRecordView(APIView):
                 .first()
             )
         except DataDisclosureAgreementTemplate.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data Disclosure Agreement not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if data_disclosure_agreement is None:
             return JsonResponse(
                 {"error": "Data Disclosure Agreement not found"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -138,6 +156,12 @@ class DataDisclosureAgreementRecordView(APIView):
         if isinstance(access_token, JsonResponse):
             return access_token
 
+        if access_token is None:
+            return JsonResponse(
+                {"error": "Failed to retrieve access token"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         dda_record_id = None
         try:
             dda_record = (
@@ -164,7 +188,7 @@ class DataDisclosureAgreementRecordView(APIView):
         else:
             opt_in = True
 
-        url_prefix = dus_organisation.owsBaseUrl
+        url_prefix = dus_organisation.owsBaseUrl if dus_organisation else None
         verification_request = perform_get_verification_request(
             dda_template_revision_id=data_disclosure_agreement_revision_id,
             opt_in=opt_in,
@@ -189,7 +213,13 @@ class DataDisclosureAgreementRecordView(APIView):
 class DataDisclosureAgreementRecordSignInStatusView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, dataDisclosureAgreementId):
+    def get(
+        self,
+        request: Request,
+        dataDisclosureAgreementId: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> JsonResponse:
         dus_organisation, error_response = _get_dus_organisation_or_400(request.user)
         if error_response:
             return error_response
@@ -205,6 +235,12 @@ class DataDisclosureAgreementRecordSignInStatusView(APIView):
                 .first()
             )
         except DataDisclosureAgreementTemplate.DoesNotExist:
+            return JsonResponse(
+                {"error": "Data Disclosure Agreement not found"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if data_disclosure_agreement is None:
             return JsonResponse(
                 {"error": "Data Disclosure Agreement not found"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -249,14 +285,17 @@ class DataDisclosureAgreementRecordSignInStatusView(APIView):
         return JsonResponse(response_data, status=status.HTTP_200_OK)
 
 
-def perform_access_point_discovery(access_point_configuration):
+def perform_access_point_discovery(
+    access_point_configuration: str,
+) -> dict[str, Any] | JsonResponse:
     try:
         access_point_configuration_wellknown_url = (
             access_point_configuration + "/.well-known/access-point-configuration"
         )
         response = requests.get(url=access_point_configuration_wellknown_url)
         response.raise_for_status()
-        return response.json()
+        result: dict[str, Any] = response.json()
+        return result
     except requests.exceptions.RequestException as e:
         return JsonResponse(
             {"error": f"Error discovering access point configuration: {str(e)}"},
@@ -264,14 +303,15 @@ def perform_access_point_discovery(access_point_configuration):
         )
 
 
-def perform_auth_server_discovery(auth_server):
+def perform_auth_server_discovery(auth_server: str) -> dict[str, Any] | JsonResponse:
     try:
         auth_server_wellknown_url = (
             auth_server + "/.well-known/oauth-authorization-server"
         )
         response = requests.get(url=auth_server_wellknown_url)
         response.raise_for_status()
-        return response.json()
+        result: dict[str, Any] = response.json()
+        return result
     except requests.exceptions.RequestException as e:
         return JsonResponse(
             {"error": f"Error discovering authorisation server metadata: {str(e)}"},
@@ -279,7 +319,9 @@ def perform_auth_server_discovery(auth_server):
         )
 
 
-def fetch_access_token(token_endpoint, client_id, client_secret):
+def fetch_access_token(
+    token_endpoint: str, client_id: str, client_secret: str
+) -> str | None | JsonResponse:
     try:
         import base64
 
@@ -294,8 +336,9 @@ def fetch_access_token(token_endpoint, client_id, client_secret):
         data = {"grant_type": "client_credentials"}
         response = requests.post(url=token_endpoint, headers=headers, data=data)
         response.raise_for_status()
-        response_data = response.json()
-        return response_data.get("access_token")
+        response_data: dict[str, Any] = response.json()
+        token: str | None = response_data.get("access_token")
+        return token
 
     except requests.exceptions.RequestException as e:
         return JsonResponse(
@@ -305,20 +348,20 @@ def fetch_access_token(token_endpoint, client_id, client_secret):
 
 
 def perform_get_verification_request(
-    dda_template_revision_id,
-    opt_in,
-    access_token,
-    get_verification_request_endpoint,
-    dda_record_id,
-    url_prefix,
-):
+    dda_template_revision_id: str,
+    opt_in: bool,
+    access_token: str,
+    get_verification_request_endpoint: str,
+    dda_record_id: str | None,
+    url_prefix: str | None,
+) -> str | None | JsonResponse:
     try:
         headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json",
         }
 
-        payload = {
+        payload: dict[str, Any] = {
             "dataDisclosureAgreementTemplateRevisionId": dda_template_revision_id,
             "optIn": opt_in,
             "autoSend": False,
@@ -332,8 +375,9 @@ def perform_get_verification_request(
             url=get_verification_request_endpoint, headers=headers, json=payload
         )
         response.raise_for_status()
-        response_data = response.json()
-        return response_data.get("verificationRequest")
+        response_data: dict[str, Any] = response.json()
+        verification_request: str | None = response_data.get("verificationRequest")
+        return verification_request
 
     except requests.exceptions.RequestException as e:
         return JsonResponse(
@@ -345,7 +389,7 @@ def perform_get_verification_request(
 class SignedAgreementView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[DataDisclosureAgreementRecord]:
         """Filter clients by the authenticated user's organisation"""
         user = self.request.user
         try:
@@ -356,14 +400,16 @@ class SignedAgreementView(APIView):
         except Organisation.DoesNotExist:
             return DataDisclosureAgreementRecord.objects.none()
 
-    def get(self, request, pk):
+    def get(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> JsonResponse:
         """Get specific record"""
         client = get_object_or_404(self.get_queryset(), pk=pk)
         serializer = DataDisclosureAgreementRecordSerializer(client)
         response_data = {"dataDisclosureAgreementRecord": serializer.data}
         return JsonResponse(response_data)
 
-    def delete(self, request, pk):
+    def delete(
+        self, request: Request, pk: str, *args: Any, **kwargs: Any
+    ) -> JsonResponse:
         """Delete a specific record"""
         record = get_object_or_404(self.get_queryset(), pk=pk)
         record.delete()
@@ -376,7 +422,7 @@ class SignedAgreementView(APIView):
 class SignedAgreementsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[DataDisclosureAgreementRecord]:
         """Filter clients by the authenticated user's organisation"""
         user = self.request.user
         try:
@@ -387,13 +433,13 @@ class SignedAgreementsView(APIView):
         except Organisation.DoesNotExist:
             return DataDisclosureAgreementRecord.objects.none()
 
-    def get(self, request):
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         """List all dda records"""
         # List all clients
         clients = self.get_queryset()
         serializer = DataDisclosureAgreementRecordsSerializer(clients, many=True)
 
-        dda_records, pagination_data = paginate_queryset(serializer.data, request)
+        dda_records, pagination_data = paginate_queryset(list(serializer.data), request)
         response_data = {
             "dataDisclosureAgreementRecord": dda_records,
             "pagination": pagination_data,

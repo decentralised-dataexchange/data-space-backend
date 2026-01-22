@@ -1,5 +1,7 @@
+from typing import Any, cast
+
 import requests
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_auth.serializers import PasswordChangeSerializer
 from rest_auth.views import sensitive_post_parameters_m
@@ -7,6 +9,7 @@ from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -20,6 +23,7 @@ from dataspace_backend.image_utils import (
 )
 from dataspace_backend.settings import DATA_MARKETPLACE_APIKEY, DATA_MARKETPLACE_DW_URL
 from dataspace_backend.utils import get_datasource_or_400
+from onboard.models import DataspaceUser
 from onboard.serializers import DataspaceUserSerializer
 
 from .models import DataSource, Verification, VerificationTemplate
@@ -35,7 +39,7 @@ class DataSourceView(APIView):
     verification_serializer_class = VerificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
         admin = request.user
 
         # Check if a DataSource with the same admin already exists
@@ -90,7 +94,9 @@ class DataSourceView(APIView):
             {"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    def get(self, request):
+    def get(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -98,13 +104,14 @@ class DataSourceView(APIView):
         # Serialize the DataSource instance
         datasource_serializer = self.serializer_class(datasource)
 
+        verification_result: dict[str, Any]
         try:
             verification = Verification.objects.get(dataSourceId=datasource)
             verification_serializer = self.verification_serializer_class(verification)
-            verification_data = verification_serializer.data
+            verification_result = verification_serializer.data
         except Verification.DoesNotExist:
             # If no Verification exists, return empty data
-            verification_data = {
+            verification_result = {
                 "id": "",
                 "dataSourceId": "",
                 "presentationExchangeId": "",
@@ -115,18 +122,25 @@ class DataSourceView(APIView):
         # Construct the response data
         response_data = {
             "dataSource": datasource_serializer.data,
-            "verification": verification_data,
+            "verification": verification_result,
         }
 
         return JsonResponse(response_data)
 
-    def put(self, request):
+    def put(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         data = request.data.get("dataSource", {})
 
         # Get the DataSource instance associated with the current user
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
+
+        if datasource is None:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Update the fields if they are not empty
         if data.get("description"):
@@ -149,22 +163,36 @@ class DataSourceView(APIView):
 class DataSourceCoverImageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> HttpResponse | Response:
         # Get the DataSource instance
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
 
+        if datasource is None:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Return the binary image data as the HTTP response
         return get_image_response(datasource.coverImageId, "Cover image not found")
 
-    def put(self, request):
+    def put(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         uploaded_image = request.FILES.get("orgimage")
 
         # Get the DataSource instance
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
+
+        if datasource is None:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         return update_entity_image(
             request=request,
@@ -179,22 +207,36 @@ class DataSourceCoverImageView(APIView):
 class DataSourceLogoImageView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> HttpResponse | Response:
         # Get the DataSource instance
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
 
+        if datasource is None:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Return the binary image data as the HTTP response
         return get_image_response(datasource.logoId, "Logo image not found")
 
-    def put(self, request):
+    def put(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         uploaded_image = request.FILES.get("orgimage")
 
         # Get the DataSource instance
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
+
+        if datasource is None:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         return update_entity_image(
             request=request,
@@ -210,12 +252,13 @@ class AdminView(APIView):
     serializer_class = DataspaceUserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
-        serializer = self.serializer_class(request.user, many=False)
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
+        user = cast(DataspaceUser, request.user)
+        serializer = self.serializer_class(user, many=False)
         return JsonResponse(serializer.data)
 
-    def put(self, request):
-        admin = request.user
+    def put(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
+        admin = cast(DataspaceUser, request.user)
         request_data = request.data
         if "name" not in request_data:
             return JsonResponse(
@@ -233,7 +276,9 @@ class DataSourceVerificationView(APIView):
     serializer_class = VerificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -254,7 +299,9 @@ class DataSourceVerificationView(APIView):
 
         return JsonResponse(response_data)
 
-    def post(self, request):
+    def post(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
@@ -269,9 +316,8 @@ class DataSourceVerificationView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            verificationTemplate = VerificationTemplate.objects.first()
-        except VerificationTemplate.DoesNotExist:
+        verificationTemplate = VerificationTemplate.objects.first()
+        if verificationTemplate is None:
             return JsonResponse(
                 {"error": "Verification template not found"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -333,10 +379,17 @@ class VerificationTemplateView(APIView):
     serializer_class = VerificationTemplateSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
+
+        if datasource is None:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             vt_objects = VerificationTemplate.objects.all()
@@ -363,13 +416,20 @@ class DataSourceOpenApiUrlView(APIView):
     serializer_class = DataSourceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def put(self, request):
+    def put(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
         data = request.data.get("dataSource", {})
 
         # Get the DataSource instance associated with the current user
         datasource, error_response = get_datasource_or_400(request.user)
         if error_response:
             return error_response
+
+        if datasource is None:
+            return JsonResponse(
+                {"error": "Data source not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Update the fields if they are not empty
         if data.get("openApiUrl"):
@@ -387,7 +447,7 @@ class DataSourceOpenApiUrlView(APIView):
         return JsonResponse({"dataSource": serializer.data}, status=status.HTTP_200_OK)
 
 
-class PasswordChangeView(GenericAPIView):
+class PasswordChangeView(GenericAPIView):  # type: ignore[type-arg]
     """
     Calls Django Auth SetPasswordForm save method.
 
@@ -398,11 +458,11 @@ class PasswordChangeView(GenericAPIView):
     serializer_class = PasswordChangeSerializer
     permission_classes = (IsAuthenticated,)
 
-    @sensitive_post_parameters_m
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+    @sensitive_post_parameters_m  # type: ignore[untyped-decorator]
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        return cast(HttpResponse, super().dispatch(request, *args, **kwargs))
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -412,7 +472,7 @@ class PasswordChangeView(GenericAPIView):
 @csrf_exempt
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def AdminReset(request):
+def AdminReset(request: Request) -> HttpResponse:
     try:
         # Delete all connections
         Connection.objects.all().delete()

@@ -23,7 +23,12 @@ django-jsonfield = "^1.4.1"
 
 [tool.poetry.dev-dependencies]
 ruff = "^0.11.0"
-ty = "^0.0.8"
+
+[tool.poetry.group.dev.dependencies]
+mypy = {version = ">=1.0.0", python = ">=3.9"}
+django-stubs = {extras = ["compatible-mypy"], version = "^5.2.9", python = ">=3.10"}
+djangorestframework-stubs = {extras = ["compatible-mypy"], version = "^3.16.7", python = ">=3.10"}
+types-requests = {version = "^2.32.4.20260107", python = ">=3.9"}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -56,10 +61,27 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
-[tool.ty]
-# ty doesn't fully support Django's metaclass magic yet
-# Disable rules that produce false positives for Django models
-[tool.ty.rules]
-unresolved-attribute = "ignore"       # Django models have dynamic .objects, .DoesNotExist
-unresolved-import = "ignore"          # Some Django imports are dynamic
-possibly-missing-attribute = "ignore" # Django field types (JSONField, DateTimeField) are dynamic
+[tool.mypy]
+python_version = "3.10"
+strict = true
+exclude = "migrations/"
+
+# Ignore missing stubs for third-party Django packages
+[[tool.mypy.overrides]]
+module = "*.migrations.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+    "django.*",
+    "rest_framework.*",
+    "django_filters.*",
+    "auditlog.*",
+    "rest_framework_simplejwt.*",
+    "constance.*",
+    "picklefield.*",
+    "jsonfield.*",
+    "rest_auth.*",
+    "corsheaders.*",
+]
+ignore_missing_imports = true

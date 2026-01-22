@@ -1,9 +1,11 @@
 import json
+from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.permissions import AllowAny
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -22,7 +24,7 @@ User = get_user_model()
 class DataMarketPlaceNotificationView(APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request):
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         # Validate Authorization header (Bearer <token>)
         auth_header = request.META.get("HTTP_AUTHORIZATION", "")
         if not auth_header.startswith("Bearer "):
@@ -141,45 +143,53 @@ class DataMarketPlaceNotificationView(APIView):
                 )
 
         if event_type == "dda_template":
+            # dda_template_revision is validated above as a dict
+            revision_dict = (
+                dda_template_revision if isinstance(dda_template_revision, dict) else {}
+            )
             if event_action == "create":
                 create_data_disclosure_agreement(
                     to_be_created_dda=dda_template,
-                    revision=dda_template_revision,
+                    revision=revision_dict,
                     data_source=data_source,
                 )
             elif event_action == "update":
                 create_data_disclosure_agreement(
                     to_be_created_dda=dda_template,
-                    revision=dda_template_revision,
+                    revision=revision_dict,
                     data_source=data_source,
                 )
             elif event_action == "delete":
                 delete_data_disclosure_agreement(
                     to_be_deleted_dda=dda_template,
-                    revision=dda_template_revision,
+                    revision=revision_dict,
                     data_source=data_source,
                 )
         elif event_type == "dda_record":
+            # dda_record is validated above as a dict
+            record_dict = dda_record if isinstance(dda_record, dict) else {}
             if event_action == "create":
                 create_data_disclosure_agreement_record(
-                    dda_record=dda_record, organisation=data_source
+                    dda_record=record_dict, organisation=data_source
                 )
             if event_action == "update":
                 create_data_disclosure_agreement_record(
-                    dda_record=dda_record, organisation=data_source
+                    dda_record=record_dict, organisation=data_source
                 )
         elif event_type == "b2b_connection":
+            # b2b_connection is validated above as a dict
+            connection_dict = b2b_connection if isinstance(b2b_connection, dict) else {}
             if event_action == "create":
                 create_b2b_connection(
-                    b2b_connection=b2b_connection, organisation=data_source
+                    b2b_connection=connection_dict, organisation=data_source
                 )
             elif event_action == "update":
                 create_b2b_connection(
-                    b2b_connection=b2b_connection, organisation=data_source
+                    b2b_connection=connection_dict, organisation=data_source
                 )
             elif event_action == "delete":
                 delete_b2b_connection(
-                    b2b_connection=b2b_connection, organisation=data_source
+                    b2b_connection=connection_dict, organisation=data_source
                 )
             else:
                 pass
@@ -199,7 +209,9 @@ class DataMarketPlaceNotificationView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-def _validate_dda_template_required_fields(event_action: str, dda_template: dict):
+def _validate_dda_template_required_fields(
+    event_action: str, dda_template: dict[str, Any]
+) -> list[str]:
     if event_action in {"create", "update"}:
         required = [
             "@id",
@@ -224,8 +236,10 @@ def _validate_dda_template_required_fields(event_action: str, dda_template: dict
 
 
 def create_data_disclosure_agreement(
-    to_be_created_dda: dict, revision: dict, data_source: Organisation
-):
+    to_be_created_dda: dict[str, Any],
+    revision: dict[str, Any],
+    data_source: Organisation,
+) -> None:
     dda_version = to_be_created_dda["version"]
     dda_template_id = to_be_created_dda["@id"]
 
@@ -251,8 +265,10 @@ def create_data_disclosure_agreement(
 
 
 def delete_data_disclosure_agreement(
-    to_be_deleted_dda: dict, revision: dict, data_source: Organisation
-):
+    to_be_deleted_dda: dict[str, Any],
+    revision: dict[str, Any],
+    data_source: Organisation,
+) -> int:
     # FIXME: DISP is senting revision upon delete, need to handle it.
     dda_template_id = to_be_deleted_dda["@id"]
 
@@ -265,8 +281,8 @@ def delete_data_disclosure_agreement(
 
 
 def create_data_disclosure_agreement_record(
-    dda_record: dict, organisation: Organisation
-):
+    dda_record: dict[str, Any], organisation: Organisation
+) -> None:
     dda_record_id = dda_record.get("canonicalId")
     dda_template_revision_id = dda_record.get(
         "dataDisclosureAgreementTemplateRevision", {}
@@ -327,7 +343,9 @@ def create_data_disclosure_agreement_record(
         return
 
 
-def create_b2b_connection(b2b_connection: dict, organisation: Organisation):
+def create_b2b_connection(
+    b2b_connection: dict[str, Any], organisation: Organisation
+) -> None:
     b2b_connection_id = b2b_connection.get("id")
 
     try:
@@ -350,7 +368,9 @@ def create_b2b_connection(b2b_connection: dict, organisation: Organisation):
     return
 
 
-def delete_b2b_connection(b2b_connection: dict, organisation: Organisation):
+def delete_b2b_connection(
+    b2b_connection: dict[str, Any], organisation: Organisation
+) -> None:
     b2b_connection_id = b2b_connection.get("id")
 
     try:

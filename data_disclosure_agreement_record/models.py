@@ -1,4 +1,6 @@
-from uuid import uuid4
+from datetime import datetime
+from typing import Any
+from uuid import UUID, uuid4
 
 from django.db import models
 from jsonfield.fields import JSONField
@@ -18,20 +20,34 @@ class DataDisclosureAgreementRecord(models.Model):
         ("signed", "signed"),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    state = models.CharField(max_length=255, choices=STATE_CHOICES, default="unsigned")
-    organisationId = models.ForeignKey(Organisation, on_delete=models.CASCADE)
-    dataDisclosureAgreementRecord = JSONField()
-    dataDisclosureAgreementTemplateId = models.CharField(max_length=255, null=False)
-    dataDisclosureAgreementTemplateRevisionId = models.CharField(
+    id: models.UUIDField[UUID, UUID] = models.UUIDField(
+        primary_key=True, default=uuid4, editable=False
+    )
+    state: models.CharField[str, str] = models.CharField(
+        max_length=255, choices=STATE_CHOICES, default="unsigned"
+    )
+    organisationId: models.ForeignKey[Organisation, Organisation] = models.ForeignKey(
+        Organisation, on_delete=models.CASCADE
+    )
+    dataDisclosureAgreementRecord: JSONField[Any, Any] = JSONField()
+    dataDisclosureAgreementTemplateId: models.CharField[str, str] = models.CharField(
         max_length=255, null=False
     )
-    dataDisclosureAgreementRecordId = models.CharField(max_length=255, null=False)
-    optIn = models.BooleanField(default=False)
-    createdAt = models.DateTimeField(auto_now_add=True)
-    updatedAt = models.DateTimeField(auto_now=True)
+    dataDisclosureAgreementTemplateRevisionId: models.CharField[str, str] = (
+        models.CharField(max_length=255, null=False)
+    )
+    dataDisclosureAgreementRecordId: models.CharField[str, str] = models.CharField(
+        max_length=255, null=False
+    )
+    optIn: models.BooleanField[bool, bool] = models.BooleanField(default=False)
+    createdAt: models.DateTimeField[datetime, datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+    updatedAt: models.DateTimeField[datetime, datetime] = models.DateTimeField(
+        auto_now=True
+    )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.id)
 
 
@@ -45,21 +61,37 @@ class DataDisclosureAgreementRecordHistory(models.Model):
         ("signed", "signed"),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    state = models.CharField(max_length=255, choices=STATE_CHOICES, default="unsigned")
-    organisationId = models.ForeignKey(Organisation, on_delete=models.CASCADE)
-    dataDisclosureAgreementRecord = JSONField()
-    dataDisclosureAgreementTemplate = models.ForeignKey(
+    id: models.UUIDField[UUID, UUID] = models.UUIDField(
+        primary_key=True, default=uuid4, editable=False
+    )
+    state: models.CharField[str, str] = models.CharField(
+        max_length=255, choices=STATE_CHOICES, default="unsigned"
+    )
+    organisationId: models.ForeignKey[Organisation, Organisation] = models.ForeignKey(
+        Organisation, on_delete=models.CASCADE
+    )
+    dataDisclosureAgreementRecord: JSONField[Any, Any] = JSONField()
+    dataDisclosureAgreementTemplate: models.ForeignKey[
+        DataDisclosureAgreementTemplate, DataDisclosureAgreementTemplate
+    ] = models.ForeignKey(
         DataDisclosureAgreementTemplate, max_length=255, on_delete=models.CASCADE
     )
-    dataDisclosureAgreementTemplateId = models.CharField(max_length=255, null=False)
-    dataDisclosureAgreementTemplateRevisionId = models.CharField(
+    dataDisclosureAgreementTemplateId: models.CharField[str, str] = models.CharField(
         max_length=255, null=False
     )
-    dataDisclosureAgreementRecordId = models.CharField(max_length=255)
-    optIn = models.BooleanField(default=False)
-    createdAt = models.DateTimeField(auto_now_add=True)
-    updatedAt = models.DateTimeField(auto_now=True)
+    dataDisclosureAgreementTemplateRevisionId: models.CharField[str, str] = (
+        models.CharField(max_length=255, null=False)
+    )
+    dataDisclosureAgreementRecordId: models.CharField[str, str] = models.CharField(
+        max_length=255
+    )
+    optIn: models.BooleanField[bool, bool] = models.BooleanField(default=False)
+    createdAt: models.DateTimeField[datetime, datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+    updatedAt: models.DateTimeField[datetime, datetime] = models.DateTimeField(
+        auto_now=True
+    )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.id)

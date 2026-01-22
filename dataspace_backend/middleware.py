@@ -1,3 +1,6 @@
+from typing import Callable
+
+from django.http import HttpRequest, HttpResponse
 from django.urls import Resolver404, resolve
 
 
@@ -14,10 +17,10 @@ class NonGetAppendSlashMiddleware:
     request body.
     """
 
-    def __init__(self, get_response):
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
         self.get_response = get_response
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest) -> HttpResponse:
         # Only operate on non-safe methods; GET/HEAD/OPTIONS/TRACE keep
         # Django's default APPEND_SLASH redirect behaviour.
         if request.method not in ("GET", "HEAD", "OPTIONS", "TRACE"):

@@ -1,10 +1,17 @@
-from django.http import JsonResponse
+from typing import Any, TypeVar
+
+from django.db.models import Model, QuerySet
+from django.http import HttpRequest, JsonResponse
 from rest_framework import status
 
 from config.models import DataSource
 
+T = TypeVar("T", bound=Model)
 
-def get_model_by_admin_or_400(model, user, error_message: str):
+
+def get_model_by_admin_or_400(
+    model: type[T], user: Any, error_message: str
+) -> tuple[T | None, JsonResponse | None]:
     """Generic helper to get a model instance by admin user."""
     try:
         return model.objects.get(admin=user), None
@@ -14,7 +21,9 @@ def get_model_by_admin_or_400(model, user, error_message: str):
         )
 
 
-def get_instance_or_400(model, pk, error_message: str):
+def get_instance_or_400(
+    model: type[T], pk: Any, error_message: str
+) -> tuple[T | None, JsonResponse | None]:
     """Generic helper to get a model instance by primary key."""
     try:
         return model.objects.get(pk=pk), None
@@ -24,25 +33,27 @@ def get_instance_or_400(model, pk, error_message: str):
         )
 
 
-def paginate_queryset(queryset, request):
-    offset = request.GET.get("offset")
-    limit = request.GET.get("limit")
+def paginate_queryset(
+    queryset: QuerySet[Any] | list[Any], request: HttpRequest
+) -> tuple[QuerySet[Any] | list[Any], dict[str, Any]]:
+    offset_str = request.GET.get("offset")
+    limit_str = request.GET.get("limit")
 
     try:
-        offset = int(offset)
+        offset = int(offset_str)  # type: ignore[arg-type]
     except (ValueError, TypeError):
         offset = 0
 
     try:
-        limit = int(limit)
+        limit = int(limit_str)  # type: ignore[arg-type]
     except (ValueError, TypeError):
         limit = 10
 
     # Total items in the queryset
-    try:
+    if isinstance(queryset, list):
+        total_items: int = len(queryset)
+    else:
         total_items = queryset.count()
-    except TypeError:
-        total_items = len(queryset)
 
     offset = max(offset, 0)
     limit = max(1, min(limit, 100))
@@ -51,7 +62,7 @@ def paginate_queryset(queryset, request):
 
     current_page = (offset // limit) + 1
 
-    pagination_data = {
+    pagination_data: dict[str, Any] = {
         "currentPage": current_page,
         "totalItems": total_items,
         "totalPages": (total_items + limit - 1) // limit,
@@ -63,12 +74,14 @@ def paginate_queryset(queryset, request):
     return queryset, pagination_data
 
 
-def get_datasource_or_400(user):
+def get_datasource_or_400(
+    user: Any,
+) -> tuple[DataSource | None, JsonResponse | None]:
     """Get DataSource by admin user or return 400 error."""
     return get_model_by_admin_or_400(DataSource, user, "Data source not found")
 
 
-def get_organisation_or_400(user):
+def get_organisation_or_400(user: Any) -> tuple[Any, JsonResponse | None]:
     """Get Organisation by admin user or return 400 error."""
     from organisation.models import Organisation
 

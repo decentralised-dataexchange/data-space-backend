@@ -1,6 +1,6 @@
 import json
 
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from rest_framework import status
@@ -15,7 +15,7 @@ from software_statement.models import SoftwareStatement
 # Create your views here.
 @csrf_exempt
 @require_POST
-def verify_certificate(request):
+def verify_certificate(request: HttpRequest) -> HttpResponse:
     response = request.body
     response = json.loads(response)
     presentation_exchange_id = response["data"]["presentation"][
@@ -45,7 +45,7 @@ def verify_certificate(request):
 # Create your views here.
 @csrf_exempt
 @require_POST
-def verify_ows_certificate(request):
+def verify_ows_certificate(request: HttpRequest) -> HttpResponse:
     response = request.body
     response = json.loads(response)
     presentation_exchange_id = response["data"]["presentation"][
@@ -65,7 +65,7 @@ def verify_ows_certificate(request):
         identity = None
 
     if identity:
-        if identity.isPresentationVerified != "verified":
+        if not identity.isPresentationVerified:
             identity.presentationState = presentation_state
             identity.presentationRecord = presentation_record
             identity.isPresentationVerified = is_presentation_verified
@@ -76,7 +76,7 @@ def verify_ows_certificate(request):
 
 @csrf_exempt
 @require_POST
-def receive_ows_issuance_history(request):
+def receive_ows_issuance_history(request: HttpRequest) -> HttpResponse:
     response = request.body
     response = json.loads(response)
     credential_exchange_id = response["data"]["credential"]["CredentialExchangeId"]
@@ -102,7 +102,7 @@ def receive_ows_issuance_history(request):
 
 @csrf_exempt
 @require_POST
-def receive_invitation(request):
+def receive_invitation(request: HttpRequest) -> HttpResponse:
     response = request.body
     response = json.loads(response)
     connection_id = response["connection_id"]
@@ -130,7 +130,7 @@ def receive_invitation(request):
 
 @csrf_exempt
 @require_POST
-def receive_data_disclosure_agreement(request):
+def receive_data_disclosure_agreement(request: HttpRequest) -> HttpResponse:
     response = request.body
     response = json.loads(response)
     connection_id = response["connection_id"]

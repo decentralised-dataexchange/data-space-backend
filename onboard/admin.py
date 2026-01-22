@@ -5,19 +5,19 @@ from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from onboard.models import DataspaceUser
 
 
-class CustomUserCreationForm(UserCreationForm):
+class CustomUserCreationForm(UserCreationForm[DataspaceUser]):
     class Meta:
         model = DataspaceUser
         fields = ("email",)
 
 
-class CustomUserChangeForm(UserChangeForm):
+class CustomUserChangeForm(UserChangeForm[DataspaceUser]):
     class Meta:
         model = DataspaceUser
         fields = ("email",)
 
 
-class DataspaceUserAdmin(BaseUserAdmin, admin.ModelAdmin):
+class DataspaceUserAdmin(BaseUserAdmin, admin.ModelAdmin[DataspaceUser]):  # type: ignore[type-arg]
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
     model = DataspaceUser

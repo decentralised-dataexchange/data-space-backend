@@ -1,12 +1,14 @@
+from typing import Any
+
 from constance import config
-from django.http import JsonResponse
-from rest_framework.views import View
+from django.http import HttpRequest, JsonResponse
+from django.views import View
 
 # Create your views here.
 
 
 class DataMarketPlaceConfigurationView(View):
-    def get(self, request):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
         base_url = config.BASE_URL
         data_space_endpoint = f"{base_url}/service"
         authorization_server = f"{base_url}/service"
@@ -21,7 +23,7 @@ class DataMarketPlaceConfigurationView(View):
 
 
 class DataMarketPlaceAuthorizationConfigurationView(View):
-    def get(self, request):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> JsonResponse:
         base_url = config.BASE_URL
         issuer = f"{base_url}/service"
         token_endpoint = f"{base_url}/service/token"
