@@ -1,3 +1,12 @@
+"""
+Notification module for the Data Marketplace.
+
+This module implements the notification endpoint that receives asynchronous
+events from the Data Intermediary Service Provider (DISP). It handles
+synchronization of Data Disclosure Agreement (DDA) templates, DDA records,
+and B2B connections between the DISP and the local data marketplace instance.
+"""
+
 import json
 from typing import Any
 
@@ -22,9 +31,80 @@ User = get_user_model()
 
 
 class DataMarketPlaceNotificationView(APIView):
+    """
+    Notification endpoint for receiving events from the Data Intermediary Service Provider.
+
+    This endpoint receives webhook-style notifications from the DISP when significant
+    events occur, such as creation, update, or deletion of DDA templates, DDA records,
+    or B2B connections. It synchronizes the local data marketplace state with the DISP.
+
+    Business Context:
+        In the data space architecture, the DISP acts as a central coordinator for
+        data exchange agreements. This notification endpoint allows the DISP to push
+        updates to registered data sources, ensuring consistency across the ecosystem.
+
+        Key entities synchronized:
+        - DDA Templates: Define the terms and conditions for data sharing
+        - DDA Records: Capture the actual agreements signed between parties
+        - B2B Connections: Represent relationships between organisations
+
+    Authentication:
+        Requires a valid JWT Bearer token in the Authorization header.
+        The token must belong to an active user who is an organisation admin.
+        Note: permission_classes is AllowAny, but manual JWT validation is performed.
+
+    Request Format:
+        Content-Type: application/json
+        {
+            "type": "dda_template" | "dda_record" | "b2b_connection",
+            "event": "create" | "update" | "delete",
+            "dataDisclosureAgreementTemplate": {...},  // for dda_template type
+            "dataDisclosureAgreementRecord": {...},    // for dda_record type
+            "b2bConnection": {...}                     // for b2b_connection type
+        }
+
+    Response Format (200 OK):
+        {"status": "ok"}
+
+    Business Rules:
+        - Token must be valid and belong to an active organisation admin
+        - Event type must be one of: dda_template, dda_record, b2b_connection
+        - Event action must be one of: create, update, delete
+        - Required payload object must be present based on event type
+
+    Errors:
+        - 400: Invalid request format or missing required fields
+        - 401: Invalid or missing authentication token
+        - 404: No organisation associated with the token
+    """
+
     permission_classes = [AllowAny]
 
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        Process incoming notification events from the DISP.
+
+        Business Logic:
+            1. Validates the JWT Bearer token from the Authorization header
+            2. Identifies the organisation (data source) associated with the token
+            3. Validates the notification payload structure
+            4. Routes the event to the appropriate handler based on type:
+               - dda_template: Creates/updates/deletes DDA templates
+               - dda_record: Creates/updates DDA agreement records
+               - b2b_connection: Creates/updates/deletes B2B connections
+
+        Event Processing:
+            - DDA Template Create/Update: Marks existing versions as non-latest,
+              creates new template version
+            - DDA Template Delete: Archives existing templates (soft delete)
+            - DDA Record Create/Update: Links to template or creates orphan record
+            - B2B Connection Create/Update: Upserts connection record
+            - B2B Connection Delete: Hard deletes connection record
+
+        Returns:
+            Response with {"status": "ok"} on success.
+            Error response with error and error_description on failure.
+        """
         # Validate Authorization header (Bearer <token>)
         auth_header = request.META.get("HTTP_AUTHORIZATION", "")
         if not auth_header.startswith("Bearer "):
@@ -212,6 +292,33 @@ class DataMarketPlaceNotificationView(APIView):
 def _validate_dda_template_required_fields(
     event_action: str, dda_template: dict[str, Any]
 ) -> list[str]:
+    """
+    Validate that the DDA template contains all required fields for the given action.
+
+    Business Logic:
+        For create/update actions, validates that all required DDA template
+        fields are present and non-empty. For delete actions, only the @id
+        is required to identify the template to remove.
+
+    Args:
+        event_action: The action being performed ("create", "update", or "delete")
+        dda_template: The DDA template data to validate
+
+    Returns:
+        List of missing field names. Empty list if validation passes.
+
+    Required Fields (create/update):
+        - @id: Unique identifier for the DDA template
+        - version: Version number of the template
+        - language: Language code for the agreement text
+        - dataController: Information about the data controller
+        - agreementPeriod: Duration of the agreement
+        - dataSharingRestrictions: Constraints on data sharing
+        - purpose: Purpose of data collection/sharing
+        - purposeDescription: Detailed description of purpose
+        - lawfulBasis: Legal basis for data processing
+        - codeOfConduct: Reference to applicable code of conduct
+    """
     if event_action in {"create", "update"}:
         required = [
             "@id",
@@ -240,6 +347,29 @@ def create_data_disclosure_agreement(
     revision: dict[str, Any],
     data_source: Organisation,
 ) -> None:
+    """
+    Create or update a Data Disclosure Agreement template.
+
+    Business Logic:
+        Creates a new version of a DDA template in the local database.
+        When a new version is created, all existing versions with the same
+        templateId are marked as non-latest (isLatestVersion=False) to
+        maintain version history while clearly indicating the current version.
+
+    Args:
+        to_be_created_dda: The DDA template data including @id, version, etc.
+        revision: The revision metadata from the DISP including serialized snapshot
+        data_source: The organisation (data source) that owns this DDA template
+
+    Business Rules:
+        - Multiple versions of the same template can exist (identified by @id)
+        - Only the most recently created version has isLatestVersion=True
+        - All DDA data is stored including the full revision history
+
+    Side Effects:
+        - Updates isLatestVersion to False for all existing versions
+        - Creates a new DataDisclosureAgreementTemplate record
+    """
     dda_version = to_be_created_dda["version"]
     dda_template_id = to_be_created_dda["@id"]
 
@@ -269,7 +399,30 @@ def delete_data_disclosure_agreement(
     revision: dict[str, Any],
     data_source: Organisation,
 ) -> int:
-    # FIXME: DISP is senting revision upon delete, need to handle it.
+    """
+    Archive a Data Disclosure Agreement template (soft delete).
+
+    Business Logic:
+        Instead of hard-deleting DDA templates, this function performs a
+        soft delete by setting the status to "archived". This preserves
+        the DDA template for historical records and audit purposes.
+
+    Args:
+        to_be_deleted_dda: The DDA template data containing at least the @id
+        revision: The revision metadata (currently unused, reserved for future use)
+        data_source: The organisation (data source) that owns this DDA template
+
+    Returns:
+        The number of DDA template records that were archived.
+
+    Business Rules:
+        - All versions of the template are archived (matching by templateId)
+        - Only templates belonging to the specified organisation are affected
+        - Archives preserve all original data for compliance purposes
+
+    Note:
+        FIXME: DISP is sending revision upon delete, need to handle it.
+    """
     dda_template_id = to_be_deleted_dda["@id"]
 
     updated_count = DataDisclosureAgreementTemplate.objects.filter(
@@ -283,6 +436,35 @@ def delete_data_disclosure_agreement(
 def create_data_disclosure_agreement_record(
     dda_record: dict[str, Any], organisation: Organisation
 ) -> None:
+    """
+    Create or update a Data Disclosure Agreement record (signed agreement).
+
+    Business Logic:
+        DDA records represent actual signed agreements between parties,
+        as opposed to DDA templates which are the unsigned agreement definitions.
+        This function handles both the initial creation and subsequent updates
+        of agreement records.
+
+        The function determines signature status by checking if both data source
+        and data using service have provided signatures. The agreement state is
+        set to "signed" only when both parties have signed.
+
+    Args:
+        dda_record: The DDA record data including signatures, template reference, etc.
+        organisation: The organisation associated with this DDA record
+
+    Record Storage Strategy:
+        - If a matching DDA template exists: Creates a DataDisclosureAgreementRecordHistory
+          entry linked to the template for full traceability
+        - If no matching template exists: Creates a DataDisclosureAgreementRecord
+          as an orphan record (may happen during sync issues)
+
+    Business Rules:
+        - Records are linked to templates via templateRevisionId and templateId
+        - State is "signed" only when both parties have provided signatures
+        - optIn status tracks consent for ongoing data sharing
+        - Missing template reference fields cause silent skip (no record created)
+    """
     dda_record_id = dda_record.get("canonicalId")
     dda_template_revision_id = dda_record.get(
         "dataDisclosureAgreementTemplateRevision", {}
@@ -346,6 +528,26 @@ def create_data_disclosure_agreement_record(
 def create_b2b_connection(
     b2b_connection: dict[str, Any], organisation: Organisation
 ) -> None:
+    """
+    Create or update a B2B (Business-to-Business) connection record.
+
+    Business Logic:
+        B2B connections represent established relationships between organisations
+        in the data space ecosystem. These connections enable data sharing
+        workflows between the connected parties.
+
+        This function implements upsert logic: if a connection with the same ID
+        already exists, it updates the record; otherwise, it creates a new one.
+
+    Args:
+        b2b_connection: The B2B connection data from the DISP
+        organisation: The organisation that owns this connection
+
+    Business Rules:
+        - Each B2B connection is uniquely identified by its ID within an organisation
+        - Connections store the full connection record as received from the DISP
+        - Updates replace the entire connection record (not partial updates)
+    """
     b2b_connection_id = b2b_connection.get("id")
 
     try:
@@ -371,6 +573,24 @@ def create_b2b_connection(
 def delete_b2b_connection(
     b2b_connection: dict[str, Any], organisation: Organisation
 ) -> None:
+    """
+    Delete a B2B (Business-to-Business) connection record.
+
+    Business Logic:
+        Performs a hard delete of the B2B connection when the relationship
+        between organisations is terminated. Unlike DDA templates which are
+        archived, B2B connections are permanently removed as they don't
+        contain agreement data that needs to be retained for compliance.
+
+    Args:
+        b2b_connection: The B2B connection data containing at least the id
+        organisation: The organisation that owns this connection
+
+    Business Rules:
+        - Connection must belong to the specified organisation
+        - Deletion is permanent (hard delete)
+        - Non-existent connections are silently ignored (idempotent)
+    """
     b2b_connection_id = b2b_connection.get("id")
 
     try:

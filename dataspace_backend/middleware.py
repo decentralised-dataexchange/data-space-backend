@@ -1,3 +1,14 @@
+"""
+Custom Django middleware for the Data Space Backend application.
+
+This module contains middleware classes that process requests before they
+reach views and/or process responses before they are returned to clients.
+
+The primary middleware in this module handles URL normalization for non-GET
+requests, solving a common Django issue with trailing slashes and request
+body preservation.
+"""
+
 from typing import Callable
 
 from django.http import HttpRequest, HttpResponse
@@ -5,42 +16,98 @@ from django.urls import Resolver404, resolve
 
 
 class NonGetAppendSlashMiddleware:
-    """Normalize non-GET URLs missing a trailing slash.
+    """
+    Middleware to normalize URLs by handling trailing slashes for non-GET requests.
 
-    For non-safe HTTP methods (e.g. POST, PUT, PATCH, DELETE), when a request
-    comes in without a trailing slash but the corresponding slash-terminated
-    path resolves successfully, this middleware rewrites the request path to
-    use the slash version.
+    Problem Being Solved:
+        Django's built-in CommonMiddleware with APPEND_SLASH=True automatically
+        redirects requests without trailing slashes to slash-terminated URLs.
+        However, for non-safe HTTP methods (POST, PUT, PATCH, DELETE), this
+        redirect causes issues because:
+        1. The redirect loses the request body
+        2. Django raises RuntimeError to prevent silent data loss
 
-    This avoids Django's CommonMiddleware raising a RuntimeError when
-    APPEND_SLASH=True and it cannot safely redirect while preserving the
-    request body.
+    Solution:
+        Instead of redirecting, this middleware rewrites the request path
+        in-place before it reaches the URL dispatcher. This preserves the
+        request body while still routing to the correct view.
+
+    Behavior:
+        - For safe methods (GET, HEAD, OPTIONS, TRACE): Does nothing,
+          allowing Django's default APPEND_SLASH redirect behavior.
+        - For non-safe methods (POST, PUT, PATCH, DELETE):
+          - If the path doesn't end with "/" and the slash-terminated
+            version resolves to a valid view, rewrites the path.
+          - If the path ends with "/" and the non-slash version resolves,
+            rewrites to remove the slash (for consistency).
+
+    Usage:
+        Add to MIDDLEWARE in settings.py, preferably before CommonMiddleware:
+        MIDDLEWARE = [
+            'dataspace_backend.middleware.NonGetAppendSlashMiddleware',
+            'django.middleware.common.CommonMiddleware',
+            ...
+        ]
     """
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
+        """
+        Initialize the middleware with the next handler in the chain.
+
+        Args:
+            get_response: The next middleware or view in the request chain.
+                         Called to continue processing the request.
+        """
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
-        # Only operate on non-safe methods; GET/HEAD/OPTIONS/TRACE keep
-        # Django's default APPEND_SLASH redirect behaviour.
+        """
+        Process the request, potentially rewriting the path for non-safe methods.
+
+        This method is called for every request. It checks if the request uses
+        a non-safe HTTP method and, if so, attempts to normalize the URL path
+        by adding or removing a trailing slash based on URL resolution.
+
+        Args:
+            request: The incoming HTTP request object.
+
+        Returns:
+            The HTTP response from downstream middleware/views.
+        """
+        # Only operate on non-safe methods that would fail with APPEND_SLASH redirect
+        # Safe methods (GET, HEAD, OPTIONS, TRACE) can be safely redirected by
+        # Django's CommonMiddleware since they don't carry request bodies
         if request.method not in ("GET", "HEAD", "OPTIONS", "TRACE"):
+            # Get the current request path
             path_info = request.path_info or ""
 
             if path_info:
+                # Determine the candidate path (opposite slash state)
                 if not path_info.endswith("/"):
+                    # Path doesn't have trailing slash - try adding one
                     candidate_path = f"{path_info}/"
                 else:
+                    # Path has trailing slash - try removing it
                     candidate_path = path_info.rstrip("/")
+                    # Handle edge case: root path "/" becomes empty string
                     if not candidate_path:
                         candidate_path = None
 
+                # Attempt to resolve the candidate path to a valid URL pattern
                 if candidate_path:
                     try:
+                        # Check if the candidate path resolves to a view
                         resolve(candidate_path)
                     except Resolver404:
+                        # Candidate path doesn't resolve - keep original path
+                        # The request will proceed with its original path and may 404
                         pass
                     else:
+                        # Candidate path resolves successfully - rewrite the request path
+                        # This allows the request to be routed correctly without a redirect
                         request.path_info = candidate_path
+                        # Also update META to keep path_info consistent
                         request.META["PATH_INFO"] = candidate_path
 
+        # Continue to the next middleware/view in the chain
         return self.get_response(request)
