@@ -80,7 +80,8 @@ class Sector(models.Model):
 
 class CodeOfConduct(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    pdfFile = models.FileField(upload_to="code_of_conduct/")
+    pdfContent = models.BinaryField(null=True, blank=True)
+    pdfFileName = models.CharField(max_length=255, null=True, blank=True)
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
     isActive = models.BooleanField(default=True)
