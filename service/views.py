@@ -18,7 +18,7 @@ import json
 import uuid
 from typing import Any, Dict, List, cast
 
-from django.db.models import Q, QuerySet
+from django.db.models import Case, IntegerField, Q, QuerySet, Value, When
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views import View
 from rest_framework import status
@@ -595,7 +595,7 @@ class OrganisationsView(View):
                 return JsonResponse({"error": "Invalid organisationId"}, status=400)
             organisations_qs = Organisation.objects.filter(pk=organisation_id_param)
         else:
-            organisations_qs = Organisation.objects.all().order_by("createdAt")
+            organisations_qs = Organisation.objects.all()
 
         # Filter to only verified organisations unless includeUnverified is true
         if not include_unverified:
@@ -603,6 +603,19 @@ class OrganisationsView(View):
                 isPresentationVerified=True
             ).values_list("organisationId_id", flat=True)
             organisations_qs = organisations_qs.filter(pk__in=verified_org_ids)
+
+        # Order organisations: Nordic Health, ECG247, Tellu first, then others
+        organisations_qs = organisations_qs.annotate(
+            priority=Case(
+                When(name__istartswith="Nordic Health", then=Value(0)),
+                When(name__istartswith="ECG247", then=Value(1)),
+                When(name__istartswith="Tellu", then=Value(2)),
+                When(name__istartswith="Data Analysis AB", then=Value(3)),
+                When(name__istartswith="Data4Diabetes", then=Value(4)),
+                default=Value(5),
+                output_field=IntegerField(),
+            )
+        ).order_by("priority", "createdAt")
 
         organisations, pagination_data = paginate_queryset(organisations_qs, request)
         serialized_organisations = []
