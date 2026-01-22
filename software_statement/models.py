@@ -11,6 +11,8 @@ Registration and in trust frameworks where client applications need to prove
 their identity and authorization to access data services.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4

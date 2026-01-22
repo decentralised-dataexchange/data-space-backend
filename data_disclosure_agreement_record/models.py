@@ -10,6 +10,8 @@ These records provide the audit trail and legal evidence for data sharing activi
 enabling compliance with data protection regulations and governance requirements.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4

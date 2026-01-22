@@ -11,6 +11,8 @@ These serializers support the onboarding flow where users register,
 authenticate, and manage their profiles within the data space ecosystem.
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from rest_framework import serializers
@@ -19,7 +21,7 @@ from rest_framework.authtoken.models import Token
 from .models import DataspaceUser
 
 
-class RegisterDataspaceUserSerializer(serializers.ModelSerializer[DataspaceUser]):
+class RegisterDataspaceUserSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for registering new users in the Data Space platform.
 
@@ -60,7 +62,7 @@ class RegisterDataspaceUserSerializer(serializers.ModelSerializer[DataspaceUser]
         return user
 
 
-class DataspaceUserSerializer(serializers.ModelSerializer[DataspaceUser]):
+class DataspaceUserSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for retrieving and updating DataspaceUser profiles.
 
@@ -102,7 +104,7 @@ class DataspaceUserSerializer(serializers.ModelSerializer[DataspaceUser]):
         return instance
 
 
-class CustomTokenSerializer(serializers.ModelSerializer[Token]):
+class CustomTokenSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for authentication token responses with embedded user data.
 
@@ -124,7 +126,7 @@ class CustomTokenSerializer(serializers.ModelSerializer[Token]):
         fields = ("key", "user")
 
 
-class DataspaceUsersSerializer(serializers.ModelSerializer[DataspaceUser]):
+class DataspaceUsersSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for listing multiple DataspaceUser instances.
 

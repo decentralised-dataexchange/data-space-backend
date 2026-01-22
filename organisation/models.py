@@ -8,6 +8,8 @@ supporting models for organisation identity verification, identity templates,
 industry sectors, and code of conduct management.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4

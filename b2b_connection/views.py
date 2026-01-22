@@ -12,6 +12,8 @@ Business Context:
 - Connections are scoped to individual organisations for data isolation
 """
 
+from __future__ import annotations
+
 from typing import Any, cast
 
 from django.db.models import QuerySet

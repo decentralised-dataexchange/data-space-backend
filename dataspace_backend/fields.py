@@ -9,6 +9,8 @@ JSON data in Django admin forms through a textarea widget with automatic
 serialization/deserialization.
 """
 
+from __future__ import annotations
+
 import json
 from typing import Any
 

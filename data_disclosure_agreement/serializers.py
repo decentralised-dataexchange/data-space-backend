@@ -14,6 +14,8 @@ These serializers are used by the DDA API views to convert model instances to/fr
 JSON representations for the REST API.
 """
 
+from __future__ import annotations
+
 from rest_framework import serializers
 
 from .models import DataDisclosureAgreement, DataDisclosureAgreementTemplate

@@ -14,6 +14,8 @@ Both models share a common admin class (OAuth2ClientsAdmin) that provides:
     - Permission controls based on user roles
 """
 
+from __future__ import annotations
+
 from django.contrib import admin
 from django.http import HttpRequest
 
@@ -22,7 +24,7 @@ from .models import OAuth2Clients, OrganisationOAuth2Clients
 
 @admin.register(OAuth2Clients)
 @admin.register(OrganisationOAuth2Clients)
-class OAuth2ClientsAdmin(admin.ModelAdmin[OAuth2Clients]):
+class OAuth2ClientsAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     """
     Custom admin configuration for OAuth2 client models.
 

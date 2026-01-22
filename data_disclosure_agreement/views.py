@@ -18,6 +18,8 @@ Key Concepts:
 - Status workflow: unlisted <-> awaitingForApproval -> approved -> listed -> unlisted
 """
 
+from __future__ import annotations
+
 from typing import Any
 
 from django.http import JsonResponse

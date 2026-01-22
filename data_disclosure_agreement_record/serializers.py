@@ -16,6 +16,8 @@ These serializers are essential for:
 - Providing evidence of consent for data protection regulations
 """
 
+from __future__ import annotations
+
 from rest_framework import serializers
 
 from data_disclosure_agreement_record.models import (

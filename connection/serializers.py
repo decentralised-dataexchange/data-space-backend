@@ -10,12 +10,14 @@ entities in the data space. These connections enable secure, authenticated
 messaging for credential exchange and data sharing operations.
 """
 
+from __future__ import annotations
+
 from rest_framework import serializers
 
 from .models import Connection
 
 
-class DISPConnectionSerializer(serializers.ModelSerializer[Connection]):
+class DISPConnectionSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for DISP (Data Intermediary Service Provider) connections.
 

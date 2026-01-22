@@ -10,6 +10,8 @@ Note: This module appears to be an older/alternative implementation. The primary
 organisation model in organisation/models.py should be used for new features.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4

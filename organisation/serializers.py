@@ -13,6 +13,8 @@ that participate in data exchange. They can act as data providers or consumers
 and must verify their identity through credential presentations.
 """
 
+from __future__ import annotations
+
 from rest_framework import serializers
 
 from .models import (
@@ -24,7 +26,7 @@ from .models import (
 )
 
 
-class OrganisationSerializer(serializers.ModelSerializer[Organisation]):
+class OrganisationSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for Organisation profile data.
 
@@ -81,7 +83,7 @@ class OrganisationSerializer(serializers.ModelSerializer[Organisation]):
         read_only_fields = ["id"]
 
 
-class OrganisationIdentitySerializer(serializers.ModelSerializer[OrganisationIdentity]):
+class OrganisationIdentitySerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for organisation identity verification records.
 
@@ -111,8 +113,8 @@ class OrganisationIdentitySerializer(serializers.ModelSerializer[OrganisationIde
 
 
 class OrganisationIdentityTemplateSerializer(
-    serializers.ModelSerializer[OrganisationIdentityTemplate]
-):
+    serializers.ModelSerializer
+):  # type: ignore[type-arg]
     """
     Serializer for organisation identity verification templates.
 
@@ -129,7 +131,7 @@ class OrganisationIdentityTemplateSerializer(
         fields = "__all__"
 
 
-class SectorSerializer(serializers.ModelSerializer[Sector]):
+class SectorSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for industry sector data.
 
@@ -149,7 +151,7 @@ class SectorSerializer(serializers.ModelSerializer[Sector]):
         read_only_fields = ["id"]
 
 
-class CodeOfConductSerializer(serializers.ModelSerializer[CodeOfConduct]):
+class CodeOfConductSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for Code of Conduct documents.
 

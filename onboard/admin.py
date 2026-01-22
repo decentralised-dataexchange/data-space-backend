@@ -17,7 +17,7 @@ from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 from onboard.models import DataspaceUser
 
 
-class CustomUserCreationForm(UserCreationForm[DataspaceUser]):
+class CustomUserCreationForm(UserCreationForm):  # type: ignore[type-arg]
     """
     Custom form for creating new DataspaceUser instances in the admin.
 
@@ -32,7 +32,7 @@ class CustomUserCreationForm(UserCreationForm[DataspaceUser]):
         fields = ("email",)
 
 
-class CustomUserChangeForm(UserChangeForm[DataspaceUser]):
+class CustomUserChangeForm(UserChangeForm):  # type: ignore[type-arg]
     """
     Custom form for modifying existing DataspaceUser instances in the admin.
 
@@ -46,7 +46,7 @@ class CustomUserChangeForm(UserChangeForm[DataspaceUser]):
         fields = ("email",)
 
 
-class DataspaceUserAdmin(BaseUserAdmin, admin.ModelAdmin[DataspaceUser]):  # type: ignore[type-arg]
+class DataspaceUserAdmin(BaseUserAdmin):  # type: ignore[type-arg]
     """
     Custom admin configuration for the DataspaceUser model.
 

@@ -12,6 +12,8 @@ Two client models are provided:
 These clients support the Client Credentials flow commonly used in B2B/M2M scenarios.
 """
 
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
 from typing import Any

@@ -10,6 +10,8 @@ B2B connections are essential for organizations that need to exchange data
 directly with each other under the governance of Data Disclosure Agreements.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4

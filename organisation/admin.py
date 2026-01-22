@@ -14,6 +14,8 @@ Registered Models:
     - CodeOfConduct: PDF documents defining conduct rules with custom admin handling
 """
 
+from __future__ import annotations
+
 from django import forms
 from django.contrib import admin
 from django.http import HttpRequest
@@ -27,7 +29,7 @@ from organisation.models import (
 )
 
 
-class CodeOfConductAdminForm(forms.ModelForm[CodeOfConduct]):
+class CodeOfConductAdminForm(forms.ModelForm):  # type: ignore[type-arg]
     """
     Custom form for managing CodeOfConduct instances in the admin.
 
@@ -78,7 +80,7 @@ class CodeOfConductAdminForm(forms.ModelForm[CodeOfConduct]):
         return instance
 
 
-class CodeOfConductAdmin(admin.ModelAdmin[CodeOfConduct]):
+class CodeOfConductAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     """
     Custom admin configuration for the CodeOfConduct model.
 

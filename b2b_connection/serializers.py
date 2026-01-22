@@ -10,12 +10,14 @@ The serializers handle the conversion of B2BConnection model instances
 to/from JSON representations for API operations.
 """
 
+from __future__ import annotations
+
 from rest_framework import serializers
 
 from b2b_connection.models import B2BConnection
 
 
-class B2BConnectionsSerializer(serializers.ModelSerializer[B2BConnection]):
+class B2BConnectionsSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for listing multiple B2B connections.
 
@@ -30,7 +32,7 @@ class B2BConnectionsSerializer(serializers.ModelSerializer[B2BConnection]):
         fields = "__all__"
 
 
-class B2BConnectionSerializer(serializers.ModelSerializer[B2BConnection]):
+class B2BConnectionSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for single B2B connection operations.
 

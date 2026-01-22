@@ -13,6 +13,8 @@ centralized storage and easy retrieval without filesystem dependencies
 in production environments.
 """
 
+from __future__ import annotations
+
 import os
 from typing import Any
 from uuid import UUID

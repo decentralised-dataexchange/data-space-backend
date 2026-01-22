@@ -16,12 +16,14 @@ Software statements are commonly used for:
 - Attestation of client application security properties
 """
 
+from __future__ import annotations
+
 from rest_framework import serializers
 
 from software_statement.models import SoftwareStatement, SoftwareStatementTemplate
 
 
-class SoftwareStatementSerializer(serializers.ModelSerializer[SoftwareStatement]):
+class SoftwareStatementSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Full serializer for Software Statement credentials.
 
