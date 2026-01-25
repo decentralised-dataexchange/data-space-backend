@@ -20,6 +20,7 @@ django-rest-auth = "0.9.5"
 django-constance = "2.9.1"
 django-picklefield = "3.0"
 django-jsonfield = "^1.4.1"
+whitenoise = "^6.6.0"
 
 [tool.poetry.dev-dependencies]
 ruff = "^0.11.0"
@@ -81,5 +82,6 @@ module = [
     "jsonfield.*",
     "rest_auth.*",
     "corsheaders.*",
+    "whitenoise.*",
 ]
 ignore_missing_imports = true

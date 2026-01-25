@@ -720,7 +720,21 @@ h2 = ["h2 (>=4,<5)"]
 socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["backports-zstd (>=1.0.0)"]
 
+[[package]]
+name = "whitenoise"
+version = "6.7.0"
+description = "Radically simplified static file serving for WSGI applications"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "whitenoise-6.7.0-py3-none-any.whl", hash = "sha256:a1ae85e01fdc9815d12fa33f17765bc132ed2c54fa76daf9e39e879dd93566f6"},
+    {file = "whitenoise-6.7.0.tar.gz", hash = "sha256:58c7a6cd811e275a6c91af22e96e87da0b1109e9a53bb7464116ef4c963bf636"},
+]
+
+[package.extras]
+brotli = ["brotli"]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "7cff1971a218b51f4f7383a325a4ac4cdd082da766198eb14178b103ce1d978d"
+content-hash = "3f382272e79c929c1eb436a5335312dd13c861627cdeb67519781496d405ee39"
