@@ -17,11 +17,18 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 
 from customadminsite.admin import myadminsite
 
+
+def index(request):
+    return JsonResponse({"status": "ok", "message": "Data Space Backend API"})
+
+
 urlpatterns = [
+    path("", index, name="index"),
     path("admin/", myadminsite.urls),
     path("superadmin/", admin.site.urls),
     path("onboard/", include("onboard.urls")),
