@@ -186,26 +186,26 @@ STATIC_ROOT = "staticfiles"
 
 DATA_MARKETPLACE_DW_URL = os.environ.get(
     "DATA_MARKETPLACE_DW_URL",
-    "https://cloudagent.igrant.io/v1/6609f0860c7d8c0001aea929/admin",
+    "",
 )
 DATA_MARKETPLACE_APIKEY = os.environ.get(
     "DATA_MARKETPLACE_APIKEY",
-    "ApiKey REDACTED_JWT_TOKEN_1",
+    "",
 )
 
 
 CONSTANCE_ADDITIONAL_FIELDS = {"json_field": ["dataspace_backend.fields.JsonField"]}
 CONSTANCE_CONFIG = {
     "DATA_MARKETPLACE_OWS_URL": (
-        "https://staging-api.igrant.io",
-        "Data market place ows url",
+        "",
+        "BASE URL for Organisation Wallet Suite",
     ),
     "DATA_MARKETPLACE_OWS_APIKEY": (
-        "ApiKey REDACTED_JWT_TOKEN_2",
-        "Api key for authentication towards data market palce ows",
+        "",
+        "API key for towards Organisation Wallet Suite",
     ),
     "BASE_URL": (
-        "https://api.nxd.foundation",
-        "Base api url for data market place",
+        "",
+        "BASE URL for Data Marketplace",
     ),
 }
