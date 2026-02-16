@@ -4,7 +4,6 @@ from typing import Any, cast
 
 import requests
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from rest_auth.serializers import PasswordChangeSerializer
 from rest_auth.views import sensitive_post_parameters_m
 from rest_framework import permissions, status
@@ -936,7 +935,6 @@ class PasswordChangeView(GenericAPIView):  # type: ignore[type-arg]
         return Response({"detail": "New password has been saved."})
 
 
-@csrf_exempt
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def AdminReset(request: Request) -> HttpResponse:
