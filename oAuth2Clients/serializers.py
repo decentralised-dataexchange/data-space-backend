@@ -110,9 +110,7 @@ class OAuth2ClientsUpdateSerializer(serializers.ModelSerializer):  # type: ignor
         fields = ["name", "description", "is_active"]
 
 
-class OrganisationOAuth2ClientsSerializer(
-    serializers.ModelSerializer
-):  # type: ignore[type-arg]
+class OrganisationOAuth2ClientsSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for OrganisationOAuth2Clients read operations and listing.
 
@@ -155,9 +153,7 @@ class OrganisationOAuth2ClientsSerializer(
         extra_kwargs = {"organisation": {"write_only": True}}
 
 
-class OrganisationOAuth2ClientsCreateSerializer(
-    serializers.ModelSerializer
-):  # type: ignore[type-arg]
+class OrganisationOAuth2ClientsCreateSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for creating organisation-managed OAuth2 clients.
 

@@ -112,9 +112,7 @@ class OrganisationIdentitySerializer(serializers.ModelSerializer):  # type: igno
         ]
 
 
-class OrganisationIdentityTemplateSerializer(
-    serializers.ModelSerializer
-):  # type: ignore[type-arg]
+class OrganisationIdentityTemplateSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for organisation identity verification templates.
 

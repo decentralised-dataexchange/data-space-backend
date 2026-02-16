@@ -48,6 +48,7 @@ class DISPConnectionView(APIView):
         4. Stores the connection record in pending 'invitation' state
         5. Returns connection details and invitation URLs
     """
+
     serializer_class = DISPConnectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 

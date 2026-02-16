@@ -24,10 +24,12 @@ from connection.models import Connection
 from data_disclosure_agreement.models import DataDisclosureAgreement
 from organisation.models import OrganisationIdentity
 from software_statement.models import SoftwareStatement
+from webhook.security import verify_webhook
 
 
 @csrf_exempt
 @require_POST
+@verify_webhook
 def verify_certificate(request: HttpRequest) -> HttpResponse:
     """
     Webhook endpoint for receiving data source verification results.
@@ -97,6 +99,7 @@ def verify_certificate(request: HttpRequest) -> HttpResponse:
 
 @csrf_exempt
 @require_POST
+@verify_webhook
 def verify_ows_certificate(request: HttpRequest) -> HttpResponse:
     """
     Webhook endpoint for receiving organisation identity (OWS) verification results.
@@ -172,6 +175,7 @@ def verify_ows_certificate(request: HttpRequest) -> HttpResponse:
 
 @csrf_exempt
 @require_POST
+@verify_webhook
 def receive_ows_issuance_history(request: HttpRequest) -> HttpResponse:
     """
     Webhook endpoint for receiving software statement credential issuance updates.
@@ -241,6 +245,7 @@ def receive_ows_issuance_history(request: HttpRequest) -> HttpResponse:
 
 @csrf_exempt
 @require_POST
+@verify_webhook
 def receive_invitation(request: HttpRequest) -> HttpResponse:
     """
     Webhook endpoint for receiving DIDComm connection state updates.
@@ -311,6 +316,7 @@ def receive_invitation(request: HttpRequest) -> HttpResponse:
 
 @csrf_exempt
 @require_POST
+@verify_webhook
 def receive_data_disclosure_agreement(request: HttpRequest) -> HttpResponse:
     """
     Webhook endpoint for receiving new Data Disclosure Agreement templates.

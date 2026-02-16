@@ -30,6 +30,10 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
+# Webhook signature verification secret key
+# See: https://docs.igrant.io/docs/openid4vc-webhooks/#webhook-security
+WEBHOOK_SECRET_KEY = os.environ.get("WEBHOOK_SECRET_KEY", "")
+
 # CORS settings
 CORS_ALLOWED_ORIGINS = (
     os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
