@@ -1,0 +1,2461 @@
+openapi: 3.0.3
+info:
+  title: Data Space Backend API
+  description: |
+    API for the Decentralised Data Exchange Data Space Backend.
+    Manages organisations, data sources, data disclosure agreements,
+    connections, verifications, and B2B workflows.
+  version: 1.0.0
+  contact:
+    name: Decentralised Data Exchange
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: Onboarding
+    description: User registration, login, and sector information
+  - name: Config - Admin
+    description: Admin profile management
+  - name: Config - Data Source
+    description: Data source configuration and management
+  - name: Config - Organisation
+    description: Organisation profile and identity management
+  - name: Config - Connection
+    description: DIDComm connection management
+  - name: Config - Data Disclosure Agreement
+    description: Data disclosure agreement template management
+  - name: Config - OAuth2
+    description: Organisation OAuth2 client management
+  - name: Config - Software Statement
+    description: Software statement credential management
+  - name: Config - B2B
+    description: B2B connection management
+  - name: Service - Discovery
+    description: Public discovery endpoints
+  - name: Service - Token
+    description: OAuth2 token endpoint
+  - name: Service - Notification
+    description: DISP notification endpoint
+  - name: Service - Public
+    description: Public data source and organisation listing
+  - name: Webhook
+    description: Webhook endpoints for external event processing
+
+paths:
+  /:
+    get:
+      summary: Health check
+      description: Returns API status
+      operationId: healthCheck
+      tags:
+        - Service - Discovery
+      responses:
+        "200":
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  message:
+                    type: string
+                    example: Data Space Backend API
+
+  # ─── Onboarding ─────────────────────────────────────────────────
+
+  /onboard/register/:
+    post:
+      summary: Register a new user and organisation
+      operationId: registerUser
+      tags:
+        - Onboarding
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User and organisation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /onboard/login/:
+    post:
+      summary: Login and obtain JWT tokens
+      operationId: loginUser
+      tags:
+        - Onboarding
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  user:
+                    $ref: "#/components/schemas/User"
+        "401":
+          description: Invalid credentials
+
+  /onboard/token/refresh/:
+    post:
+      summary: Refresh JWT access token
+      operationId: refreshToken
+      tags:
+        - Onboarding
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh
+              properties:
+                refresh:
+                  type: string
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+        "401":
+          description: Invalid or expired refresh token
+
+  /onboard/sectors/:
+    get:
+      summary: List available sectors
+      operationId: listSectors
+      tags:
+        - Onboarding
+      security: []
+      responses:
+        "200":
+          description: List of sectors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sectors:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Sector"
+
+  /onboard/code-of-conduct/:
+    get:
+      summary: Download Code of Conduct PDF
+      operationId: getCodeOfConduct
+      tags:
+        - Onboarding
+      security: []
+      responses:
+        "200":
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: No active Code of Conduct found
+
+  # ─── Config - Admin ─────────────────────────────────────────────
+
+  /config/admin/:
+    get:
+      summary: Get admin profile
+      operationId: getAdmin
+      tags:
+        - Config - Admin
+      responses:
+        "200":
+          description: Admin profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      summary: Update admin profile
+      operationId: updateAdmin
+      tags:
+        - Config - Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Admin profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProfile"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/admin/reset-password/:
+    post:
+      summary: Change password
+      operationId: resetPassword
+      tags:
+        - Config - Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - new_password1
+                - new_password2
+              properties:
+                new_password1:
+                  type: string
+                  format: password
+                new_password2:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Password changed successfully
+        "400":
+          description: Validation error
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/admin/reset/:
+    post:
+      summary: Reset all connections and verifications
+      description: |
+        WARNING: Destructive operation. Deletes all connections
+        and resets verification status.
+      operationId: resetAll
+      tags:
+        - Config - Admin
+      responses:
+        "200":
+          description: Reset successful
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─── Config - Data Source ───────────────────────────────────────
+
+  /config/data-source/:
+    get:
+      summary: Get data source for authenticated user
+      operationId: getDataSource
+      tags:
+        - Config - Data Source
+      responses:
+        "200":
+          description: Data source with verification info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataSource:
+                    $ref: "#/components/schemas/DataSource"
+                  verification:
+                    $ref: "#/components/schemas/Verification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Create data source
+      operationId: createDataSource
+      tags:
+        - Config - Data Source
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dataSource
+              properties:
+                dataSource:
+                  type: object
+                  required:
+                    - name
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    location:
+                      type: string
+                    policyUrl:
+                      type: string
+                      format: uri
+      responses:
+        "201":
+          description: Data source created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataSource:
+                    $ref: "#/components/schemas/DataSource"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      summary: Update data source
+      operationId: updateDataSource
+      tags:
+        - Config - Data Source
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dataSource
+              properties:
+                dataSource:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    location:
+                      type: string
+                    policyUrl:
+                      type: string
+                      format: uri
+      responses:
+        "200":
+          description: Data source updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataSource:
+                    $ref: "#/components/schemas/DataSource"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/data-source/coverimage/:
+    get:
+      summary: Get data source cover image
+      operationId: getDataSourceCoverImage
+      tags:
+        - Config - Data Source
+      responses:
+        "200":
+          description: Cover image
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: No cover image found
+    put:
+      summary: Upload data source cover image
+      operationId: uploadDataSourceCoverImage
+      tags:
+        - Config - Data Source
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - orgimage
+              properties:
+                orgimage:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Cover image updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/data-source/logoimage/:
+    get:
+      summary: Get data source logo image
+      operationId: getDataSourceLogoImage
+      tags:
+        - Config - Data Source
+      responses:
+        "200":
+          description: Logo image
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: No logo found
+    put:
+      summary: Upload data source logo image
+      operationId: uploadDataSourceLogoImage
+      tags:
+        - Config - Data Source
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - orgimage
+              properties:
+                orgimage:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Logo image updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/data-source/verification/:
+    get:
+      summary: Get data source verification status
+      operationId: getDataSourceVerification
+      tags:
+        - Config - Data Source
+      responses:
+        "200":
+          description: Verification status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verification:
+                    $ref: "#/components/schemas/Verification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Initiate data source verification
+      operationId: initiateDataSourceVerification
+      tags:
+        - Config - Data Source
+      responses:
+        "200":
+          description: Verification initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verification:
+                    $ref: "#/components/schemas/Verification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/verification/templates:
+    get:
+      summary: Get verification templates
+      operationId: getVerificationTemplates
+      tags:
+        - Config - Data Source
+      responses:
+        "200":
+          description: List of verification templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verificationTemplates:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/VerificationTemplate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/open-api/url:
+    put:
+      summary: Update data source OpenAPI URL
+      operationId: updateOpenApiUrl
+      tags:
+        - Config - Data Source
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dataSource
+              properties:
+                dataSource:
+                  type: object
+                  required:
+                    - openApiUrl
+                  properties:
+                    openApiUrl:
+                      type: string
+                      format: uri
+      responses:
+        "200":
+          description: OpenAPI URL updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─── Config - Connection ────────────────────────────────────────
+
+  /config/connection/:
+    get:
+      summary: Get DISP connection
+      operationId: getConnection
+      tags:
+        - Config - Connection
+      responses:
+        "200":
+          description: Connection details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  connection:
+                    $ref: "#/components/schemas/Connection"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Create DISP connection
+      operationId: createConnection
+      tags:
+        - Config - Connection
+      responses:
+        "200":
+          description: Connection created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  connection:
+                    $ref: "#/components/schemas/Connection"
+                  firebaseDynamicLink:
+                    type: string
+                    format: uri
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/connections/:
+    get:
+      summary: List active DISP connections (paginated)
+      operationId: listConnections
+      tags:
+        - Config - Connection
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: List of connections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  connections:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Connection"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/connection/{connectionId}/:
+    delete:
+      summary: Delete a DISP connection
+      operationId: deleteConnection
+      tags:
+        - Config - Connection
+      parameters:
+        - name: connectionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Connection deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Connection not found
+
+  /config/data-disclosure-agreements/:
+    get:
+      summary: List data disclosure agreement templates
+      operationId: listDDATemplates
+      tags:
+        - Config - Data Disclosure Agreement
+      responses:
+        "200":
+          description: List of DDA templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataDisclosureAgreements:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DataDisclosureAgreementTemplate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─── Config - Organisation ──────────────────────────────────────
+
+  /config/organisation/:
+    get:
+      summary: Get organisation for authenticated user
+      operationId: getOrganisation
+      tags:
+        - Config - Organisation
+      responses:
+        "200":
+          description: Organisation details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organisation:
+                    $ref: "#/components/schemas/Organisation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      summary: Update organisation profile
+      operationId: updateOrganisation
+      tags:
+        - Config - Organisation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - organisation
+              properties:
+                organisation:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    sector:
+                      type: string
+                    location:
+                      type: string
+                    policyUrl:
+                      type: string
+                      format: uri
+                    description:
+                      type: string
+                    verificationRequestURLPrefix:
+                      type: string
+                      format: uri
+                    openApiUrl:
+                      type: string
+                      format: uri
+                    credentialOfferEndpoint:
+                      type: string
+                      format: uri
+                    accessPointEndpoint:
+                      type: string
+                      format: uri
+                    privacyDashboardUrl:
+                      type: string
+                      format: uri
+      responses:
+        "200":
+          description: Organisation updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organisation:
+                    $ref: "#/components/schemas/Organisation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/coverimage/:
+    get:
+      summary: Get organisation cover image
+      operationId: getOrganisationCoverImage
+      tags:
+        - Config - Organisation
+      responses:
+        "200":
+          description: Cover image
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: No cover image found
+    put:
+      summary: Upload organisation cover image
+      operationId: uploadOrganisationCoverImage
+      tags:
+        - Config - Organisation
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - orgimage
+              properties:
+                orgimage:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Cover image updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/logoimage/:
+    get:
+      summary: Get organisation logo image
+      operationId: getOrganisationLogoImage
+      tags:
+        - Config - Organisation
+      responses:
+        "200":
+          description: Logo image
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: No logo found
+    put:
+      summary: Upload organisation logo image
+      operationId: uploadOrganisationLogoImage
+      tags:
+        - Config - Organisation
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - orgimage
+              properties:
+                orgimage:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Logo image updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/identity/:
+    get:
+      summary: Get organisation identity verification status
+      operationId: getOrganisationIdentity
+      tags:
+        - Config - Organisation
+      responses:
+        "200":
+          description: Identity verification status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organisationalIdentity:
+                    $ref: "#/components/schemas/OrganisationIdentity"
+                  organisationId:
+                    type: string
+                    format: uuid
+                  presentationExchangeId:
+                    type: string
+                  state:
+                    type: string
+                  verified:
+                    type: boolean
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      summary: Initiate organisation identity verification
+      operationId: initiateOrganisationIdentity
+      tags:
+        - Config - Organisation
+      responses:
+        "200":
+          description: Verification initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organisationalIdentity:
+                    $ref: "#/components/schemas/OrganisationIdentity"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      summary: Delete organisation identity verification
+      operationId: deleteOrganisationIdentity
+      tags:
+        - Config - Organisation
+      responses:
+        "200":
+          description: Identity verification deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/code-of-conduct:
+    put:
+      summary: Update Code of Conduct acceptance
+      operationId: updateCodeOfConduct
+      tags:
+        - Config - Organisation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - codeOfConduct
+              properties:
+                codeOfConduct:
+                  type: boolean
+      responses:
+        "200":
+          description: Code of Conduct acceptance updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─── Config - OAuth2 ────────────────────────────────────────────
+
+  /config/organisation/oauth2-client/:
+    post:
+      summary: Create OAuth2 client
+      operationId: createOAuth2Client
+      tags:
+        - Config - OAuth2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "201":
+          description: OAuth2 client created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuth2Client"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/oauth2-clients/:
+    get:
+      summary: List organisation OAuth2 clients (paginated)
+      operationId: listOAuth2Clients
+      tags:
+        - Config - OAuth2
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: List of OAuth2 clients
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  oauth2Clients:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OAuth2Client"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/oauth2-client/{pk}/:
+    get:
+      summary: Get specific OAuth2 client
+      operationId: getOAuth2Client
+      tags:
+        - Config - OAuth2
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OAuth2 client details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuth2Client"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: OAuth2 client not found
+
+  /config/organisation/oauth2-client-external/:
+    post:
+      summary: Create external OAuth2 client
+      operationId: createExternalOAuth2Client
+      tags:
+        - Config - OAuth2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "201":
+          description: External OAuth2 client created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganisationOAuth2Client"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/oauth2-clients-external/:
+    get:
+      summary: List external OAuth2 clients (paginated)
+      operationId: listExternalOAuth2Clients
+      tags:
+        - Config - OAuth2
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: List of external OAuth2 clients
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  oauth2Clients:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OrganisationOAuth2Client"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/oauth2-client-external/{pk}/:
+    get:
+      summary: Get specific external OAuth2 client
+      operationId: getExternalOAuth2Client
+      tags:
+        - Config - OAuth2
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: External OAuth2 client details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganisationOAuth2Client"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: External OAuth2 client not found
+
+  # ─── Config - Software Statement ────────────────────────────────
+
+  /config/organisation/software-statement/:
+    post:
+      summary: Create or manage software statement
+      operationId: createSoftwareStatement
+      tags:
+        - Config - Software Statement
+      responses:
+        "200":
+          description: Software statement created/managed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  softwareStatement:
+                    $ref: "#/components/schemas/SoftwareStatement"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─── Config - B2B ───────────────────────────────────────────────
+
+  /config/organisation/b2b-connections/:
+    get:
+      summary: List B2B connections (paginated)
+      operationId: listB2BConnections
+      tags:
+        - Config - B2B
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: List of B2B connections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  b2bConnections:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/B2BConnection"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/b2b-connection/{pk}/:
+    get:
+      summary: Get specific B2B connection
+      operationId: getB2BConnection
+      tags:
+        - Config - B2B
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: B2B connection details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/B2BConnection"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: B2B connection not found
+
+  # ─── Config - Organisation DDA Records ──────────────────────────
+
+  /config/organisation/data-disclosure-agreement-records/:
+    get:
+      summary: List signed DDA records (paginated)
+      operationId: listDDARecords
+      tags:
+        - Config - Data Disclosure Agreement
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: List of signed DDA records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataDisclosureAgreementRecords:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DataDisclosureAgreementRecord"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/data-disclosure-agreement-record/{pk}/:
+    get:
+      summary: Get specific signed DDA record
+      operationId: getDDARecord
+      tags:
+        - Config - Data Disclosure Agreement
+      parameters:
+        - name: pk
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: DDA record details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataDisclosureAgreementRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: DDA record not found
+
+  /config/organisation/data-disclosure-agreement/{dataDisclosureAgreementId}/:
+    post:
+      summary: Initiate DDA signing or unsigning
+      operationId: signDDA
+      tags:
+        - Config - Data Disclosure Agreement
+      parameters:
+        - name: dataDisclosureAgreementId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: DDA signing initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verificationRequest:
+                    type: string
+                  status:
+                    type: string
+                    enum:
+                      - sign
+                      - unsign
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/organisation/data-disclosure-agreement/{dataDisclosureAgreementId}/status/:
+    get:
+      summary: Check DDA record signing status
+      operationId: getDDASigningStatus
+      tags:
+        - Config - Data Disclosure Agreement
+      parameters:
+        - name: dataDisclosureAgreementId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: DDA signing status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ─── Config - DDA Management ────────────────────────────────────
+
+  /config/data-disclosure-agreement/{dataDisclosureAgreementId}/:
+    get:
+      summary: Get specific data disclosure agreement
+      operationId: getDDA
+      tags:
+        - Config - Data Disclosure Agreement
+      parameters:
+        - name: dataDisclosureAgreementId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: version
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Specific version to retrieve
+      responses:
+        "200":
+          description: DDA details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataDisclosureAgreementTemplate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: DDA not found
+    delete:
+      summary: Delete DDA and all versions
+      operationId: deleteDDA
+      tags:
+        - Config - Data Disclosure Agreement
+      parameters:
+        - name: dataDisclosureAgreementId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: DDA deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: DDA not found
+
+  /config/data-disclosure-agreement/{dataDisclosureAgreementId}/status/:
+    put:
+      summary: Update DDA status
+      operationId: updateDDAStatus
+      tags:
+        - Config - Data Disclosure Agreement
+      parameters:
+        - name: dataDisclosureAgreementId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - listed
+                    - unlisted
+                    - awaitingForApproval
+                    - approved
+                    - rejected
+      responses:
+        "200":
+          description: DDA status updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/data-disclosure-agreement/{dataDisclosureAgreementId}/tags/:
+    put:
+      summary: Update DDA tags
+      operationId: updateDDATags
+      tags:
+        - Config - Data Disclosure Agreement
+      parameters:
+        - name: dataDisclosureAgreementId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - tags
+              properties:
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: DDA tags updated
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/data-disclosure-agreement/{dataDisclosureAgreementId}/history/:
+    get:
+      summary: List DDA version history (paginated)
+      operationId: getDDAHistory
+      tags:
+        - Config - Data Disclosure Agreement
+      parameters:
+        - name: dataDisclosureAgreementId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: DDA version history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataDisclosureAgreements:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DataDisclosureAgreementTemplate"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /config/data-disclosure-agreement/{dataDisclosureAgreementId}/history/{pk}/:
+    delete:
+      summary: Delete specific DDA version
+      operationId: deleteDDAVersion
+      tags:
+        - Config - Data Disclosure Agreement
+      parameters:
+        - name: dataDisclosureAgreementId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pk
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: DDA version deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: DDA version not found
+
+  # ─── Service - Discovery ────────────────────────────────────────
+
+  /.well-known/data-space-configuration/:
+    get:
+      summary: Data space configuration discovery
+      operationId: dataSpaceConfiguration
+      tags:
+        - Service - Discovery
+      security: []
+      responses:
+        "200":
+          description: Data space configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data_space_endpoint:
+                    type: string
+                    format: uri
+                  authorization_servers:
+                    type: array
+                    items:
+                      type: string
+                      format: uri
+                  notification_endpoint:
+                    type: string
+                    format: uri
+
+  /.well-known/oauth-authorization-server/:
+    get:
+      summary: OAuth 2.0 authorization server metadata
+      operationId: oauthServerMetadata
+      tags:
+        - Service - Discovery
+      security: []
+      responses:
+        "200":
+          description: OAuth server metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  issuer:
+                    type: string
+                    format: uri
+                  token_endpoint:
+                    type: string
+                    format: uri
+
+  # ─── Service - Token ────────────────────────────────────────────
+
+  /service/token:
+    post:
+      summary: OAuth 2.0 token endpoint (client_credentials)
+      operationId: getAccessToken
+      tags:
+        - Service - Token
+      security:
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - grant_type
+              properties:
+                grant_type:
+                  type: string
+                  enum:
+                    - client_credentials
+      responses:
+        "200":
+          description: Access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  expires_in:
+                    type: integer
+                    example: 86400
+        "401":
+          description: Invalid client credentials
+        "400":
+          description: Unsupported grant type
+
+  # ─── Service - Notification ─────────────────────────────────────
+
+  /service/notification:
+    post:
+      summary: Receive DISP notifications
+      description: |
+        Receives notifications about DDA templates, DDA records,
+        and B2B connections from the DISP. Requires a valid Bearer JWT token.
+      operationId: receiveNotification
+      tags:
+        - Service - Notification
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - event
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - dda_template
+                    - dda_record
+                    - b2b_connection
+                event:
+                  type: string
+                  enum:
+                    - create
+                    - update
+                    - delete
+                dataDisclosureAgreementTemplate:
+                  type: object
+                  description: DDA template data (when type is dda_template)
+                dataDisclosureAgreementRecord:
+                  type: object
+                  description: DDA record data (when type is dda_record)
+                b2bConnection:
+                  type: object
+                  description: B2B connection data (when type is b2b_connection)
+      responses:
+        "200":
+          description: Notification processed
+        "401":
+          description: Invalid or missing JWT token
+        "400":
+          description: Invalid notification payload
+
+  # ─── Service - Public Data Sources ──────────────────────────────
+
+  /service/data-sources/:
+    get:
+      summary: List data sources (public)
+      operationId: listPublicDataSources
+      tags:
+        - Service - Public
+      security: []
+      parameters:
+        - name: dataSourceId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter by specific data source ID
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: List of data sources
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataSources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        dataSource:
+                          $ref: "#/components/schemas/DataSource"
+                        dataDisclosureAgreements:
+                          type: array
+                          items:
+                            $ref: "#/components/schemas/DataDisclosureAgreement"
+                        verification:
+                          $ref: "#/components/schemas/Verification"
+                        api:
+                          type: array
+                          items:
+                            type: string
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+
+  /service/data-source/{dataSourceId}/coverimage/:
+    get:
+      summary: Get data source cover image (public)
+      operationId: getPublicDataSourceCoverImage
+      tags:
+        - Service - Public
+      security: []
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Cover image
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Image not found
+
+  /service/data-source/{dataSourceId}/logoimage/:
+    get:
+      summary: Get data source logo image (public)
+      operationId: getPublicDataSourceLogoImage
+      tags:
+        - Service - Public
+      security: []
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Logo image
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Image not found
+
+  # ─── Service - Public Organisations ─────────────────────────────
+
+  /service/organisation/:
+    get:
+      summary: List organisations (public)
+      operationId: listPublicOrganisations
+      tags:
+        - Service - Public
+      security: []
+      parameters:
+        - name: organisationId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter by specific organisation ID
+        - name: includeUnverified
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Include unverified organisations
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: List of organisations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organisations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        organisation:
+                          $ref: "#/components/schemas/Organisation"
+                        dataDisclosureAgreements:
+                          type: array
+                          items:
+                            $ref: "#/components/schemas/DataDisclosureAgreementTemplate"
+                        organisationIdentity:
+                          $ref: "#/components/schemas/OrganisationIdentity"
+                        api:
+                          type: array
+                          items:
+                            type: string
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+
+  /service/organisation/{organisationId}/coverimage/:
+    get:
+      summary: Get organisation cover image (public)
+      operationId: getPublicOrganisationCoverImage
+      tags:
+        - Service - Public
+      security: []
+      parameters:
+        - name: organisationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Cover image
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Image not found
+
+  /service/organisation/{organisationId}/logoimage/:
+    get:
+      summary: Get organisation logo image (public)
+      operationId: getPublicOrganisationLogoImage
+      tags:
+        - Service - Public
+      security: []
+      parameters:
+        - name: organisationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Logo image
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Image not found
+
+  # ─── Service - Search ───────────────────────────────────────────
+
+  /service/search:
+    get:
+      summary: Search organisations and DDAs
+      operationId: search
+      tags:
+        - Service - Public
+      security: []
+      parameters:
+        - name: search
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+        - name: searchOrgName
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Search in organisation names
+        - name: searchDdaPurpose
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Search in DDA purposes
+        - name: searchDdaDescription
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Search in DDA descriptions
+        - name: searchDataset
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Search in datasets
+        - name: searchTags
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+          description: Search in tags
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - relevance
+              - orgName
+              - orgCreatedAt
+              - ddaCreatedAt
+          description: Sort results by field
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+          description: Sort order
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  organisations:
+                    type: array
+                    items:
+                      type: object
+                  organisationsPagination:
+                    $ref: "#/components/schemas/Pagination"
+                  ddas:
+                    type: array
+                    items:
+                      type: object
+                  ddasPagination:
+                    $ref: "#/components/schemas/Pagination"
+                  searchMeta:
+                    type: object
+
+  # ─── Webhooks ───────────────────────────────────────────────────
+
+  /webhook/topic/connections/:
+    post:
+      summary: DIDComm connection state update webhook
+      operationId: webhookConnections
+      tags:
+        - Webhook
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                connection_id:
+                  type: string
+                state:
+                  type: string
+      responses:
+        "200":
+          description: Webhook processed
+
+  /webhook/topic/present_proof/:
+    post:
+      summary: Data source verification result webhook
+      operationId: webhookPresentProof
+      tags:
+        - Webhook
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    presentation:
+                      type: object
+                      properties:
+                        presentationExchangeId:
+                          type: string
+                        status:
+                          type: string
+      responses:
+        "200":
+          description: Webhook processed
+
+  /webhook/topic/ows/present_proof/:
+    post:
+      summary: Organisation identity verification webhook
+      operationId: webhookOwsPresentProof
+      tags:
+        - Webhook
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    presentation:
+                      type: object
+                      properties:
+                        presentationExchangeId:
+                          type: string
+                        status:
+                          type: string
+      responses:
+        "200":
+          description: Webhook processed
+
+  /webhook/topic/ows/issue_credential/:
+    post:
+      summary: Software statement credential issuance webhook
+      operationId: webhookOwsIssueCredential
+      tags:
+        - Webhook
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Webhook processed
+
+  /webhook/topic/published_data_disclosure_agreement/:
+    post:
+      summary: New DDA template received webhook
+      operationId: webhookPublishedDDA
+      tags:
+        - Webhook
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                connection_id:
+                  type: string
+                template_id:
+                  type: string
+                connection_url:
+                  type: string
+                dda:
+                  type: object
+      responses:
+        "200":
+          description: Webhook processed
+
+# ═══════════════════════════════════════════════════════════════════
+# Components
+# ═══════════════════════════════════════════════════════════════════
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /onboard/login/ or /service/token
+    basicAuth:
+      type: http
+      scheme: basic
+      description: HTTP Basic Auth with client_id and client_secret
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1
+      description: Page number
+    PageSizeParam:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 10
+      description: Number of items per page
+
+  responses:
+    Unauthorized:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: Authentication credentials were not provided.
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        is_active:
+          type: boolean
+        date_joined:
+          type: string
+          format: date-time
+
+    AdminProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+
+    Sector:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sectorName:
+          type: string
+
+    Organisation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sector:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        policyUrl:
+          type: string
+          format: uri
+        openApiUrl:
+          type: string
+          format: uri
+        credentialOfferEndpoint:
+          type: string
+          format: uri
+        accessPointEndpoint:
+          type: string
+          format: uri
+        owsBaseUrl:
+          type: string
+          format: uri
+        codeOfConduct:
+          type: boolean
+        coverImageUrl:
+          type: string
+          format: uri
+        logoUrl:
+          type: string
+          format: uri
+
+    OrganisationIdentity:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organisationId:
+          type: string
+          format: uuid
+        presentationExchangeId:
+          type: string
+        presentationState:
+          type: string
+        isPresentationVerified:
+          type: boolean
+        presentationRecord:
+          type: object
+
+    DataSource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        sector:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        policyUrl:
+          type: string
+          format: uri
+        openApiUrl:
+          type: string
+          format: uri
+        coverImageUrl:
+          type: string
+          format: uri
+        logoUrl:
+          type: string
+          format: uri
+
+    Verification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        dataSourceId:
+          type: string
+          format: uuid
+        presentationExchangeId:
+          type: string
+        presentationState:
+          type: string
+        presentationRecord:
+          type: object
+
+    VerificationTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        verificationTemplateName:
+          type: string
+        issuerName:
+          type: string
+        issuerLocation:
+          type: string
+        issuerLogoUrl:
+          type: string
+          format: uri
+        dataAgreementId:
+          type: string
+
+    Connection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        connectionId:
+          type: string
+        connectionState:
+          type: string
+        connectionRecord:
+          type: object
+
+    B2BConnection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organisationId:
+          type: string
+          format: uuid
+        b2bConnectionId:
+          type: string
+        b2bConnectionRecord:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DataDisclosureAgreement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: string
+        templateId:
+          type: string
+        status:
+          type: string
+          enum:
+            - listed
+            - unlisted
+            - awaitingForApproval
+            - approved
+            - rejected
+        dataSourceId:
+          type: string
+          format: uuid
+        dataDisclosureAgreementRecord:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        isLatestVersion:
+          type: boolean
+
+    DataDisclosureAgreementTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: string
+        templateId:
+          type: string
+        status:
+          type: string
+          enum:
+            - listed
+            - unlisted
+            - awaitingForApproval
+            - approved
+            - rejected
+        organisationId:
+          type: string
+          format: uuid
+        dataDisclosureAgreementRecord:
+          type: object
+        dataDisclosureAgreementTemplateRevisionId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        isLatestVersion:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+
+    DataDisclosureAgreementRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        state:
+          type: string
+          enum:
+            - unsigned
+            - signed
+        organisationId:
+          type: string
+          format: uuid
+        dataDisclosureAgreementRecord:
+          type: object
+        dataDisclosureAgreementTemplateId:
+          type: string
+        dataDisclosureAgreementTemplateRevisionId:
+          type: string
+        dataDisclosureAgreementRecordId:
+          type: string
+        optIn:
+          type: boolean
+
+    OAuth2Client:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    OrganisationOAuth2Client:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SoftwareStatement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organisationId:
+          type: string
+          format: uuid
+        credentialExchangeId:
+          type: string
+        status:
+          type: string
+        credentialHistory:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer
+        limit:
+          type: integer
+        hasPrevious:
+          type: boolean
+        hasNext:
+          type: boolean
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - confirmPassword
+        - organisation
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        confirmPassword:
+          type: string
+          format: password
+        organisation:
+          type: object
+          required:
+            - name
+            - sector
+            - location
+          properties:
+            name:
+              type: string
+            sector:
+              type: string
+            location:
+              type: string
+            policyUrl:
+              type: string
+              format: uri
+            description:
+              type: string
+            verificationRequestURLPrefix:
+              type: string
+              format: uri
+        openApiUrl:
+          type: string
+          format: uri
+
+    RegisterResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        organisation:
+          $ref: "#/components/schemas/Organisation"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: object
+
+security:
+  - bearerAuth: []
