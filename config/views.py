@@ -979,8 +979,8 @@ def AdminReset(request: Request) -> HttpResponse:
 
         # Return success response
         return HttpResponse(status=status.HTTP_200_OK)
-    except Exception as e:
-        # Handle other exceptions
-        return HttpResponse(
-            "An error occurred: " + str(e), status=status.HTTP_400_BAD_REQUEST
+    except Exception:
+        return JsonResponse(
+            {"error": "An error occurred while resetting."},
+            status=status.HTTP_400_BAD_REQUEST,
         )
