@@ -453,7 +453,7 @@ def perform_access_point_discovery(
         access_point_configuration_wellknown_url = (
             access_point_configuration + "/.well-known/access-point-configuration"
         )
-        response = requests.get(url=access_point_configuration_wellknown_url)
+        response = requests.get(url=access_point_configuration_wellknown_url, timeout=30)
         response.raise_for_status()
         result: dict[str, Any] = response.json()
         return result
@@ -488,7 +488,7 @@ def perform_auth_server_discovery(auth_server: str) -> dict[str, Any] | JsonResp
         auth_server_wellknown_url = (
             auth_server + "/.well-known/oauth-authorization-server"
         )
-        response = requests.get(url=auth_server_wellknown_url)
+        response = requests.get(url=auth_server_wellknown_url, timeout=30)
         response.raise_for_status()
         result: dict[str, Any] = response.json()
         return result
@@ -536,7 +536,7 @@ def fetch_access_token(
         }
 
         data = {"grant_type": "client_credentials"}
-        response = requests.post(url=token_endpoint, headers=headers, data=data)
+        response = requests.post(url=token_endpoint, headers=headers, data=data, timeout=30)
         response.raise_for_status()
         response_data: dict[str, Any] = response.json()
         token: str | None = response_data.get("access_token")
@@ -599,7 +599,7 @@ def perform_get_verification_request(
             payload["urlPrefix"] = url_prefix
 
         response = requests.post(
-            url=get_verification_request_endpoint, headers=headers, json=payload
+            url=get_verification_request_endpoint, headers=headers, json=payload, timeout=30
         )
         response.raise_for_status()
         response_data: dict[str, Any] = response.json()

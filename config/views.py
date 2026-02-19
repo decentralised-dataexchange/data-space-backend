@@ -672,7 +672,7 @@ class DataSourceVerificationView(APIView):
         authorization_header = DATA_MARKETPLACE_APIKEY
         try:
             response = requests.post(
-                url, headers={"Authorization": authorization_header}, json=payload
+                url, headers={"Authorization": authorization_header}, json=payload, timeout=30
             )
             response.raise_for_status()
             response = response.json()

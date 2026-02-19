@@ -99,7 +99,7 @@ class DISPConnectionView(APIView):
 
         try:
             response = requests.post(
-                url, headers={"Authorization": authorization_header}
+                url, headers={"Authorization": authorization_header}, timeout=30
             )
             response.raise_for_status()
             response = response.json()
@@ -114,7 +114,7 @@ class DISPConnectionView(APIView):
         url = f"{DATA_MARKETPLACE_DW_URL}/v1/connections/{connection_id}/invitation/firebase"
         try:
             create_firebase_dynamic_link_response = requests.post(
-                url, headers={"Authorization": authorization_header}
+                url, headers={"Authorization": authorization_header}, timeout=30
             )
             create_firebase_dynamic_link_response.raise_for_status()
             create_firebase_dynamic_link_response = (

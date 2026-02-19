@@ -273,7 +273,7 @@ class SoftwareStatementView(APIView):
         authorization_header = data_market_place_api_key
         try:
             response = requests.post(
-                url, headers={"Authorization": authorization_header}, json=payload
+                url, headers={"Authorization": authorization_header}, json=payload, timeout=30
             )
             response.raise_for_status()
             response = response.json()
