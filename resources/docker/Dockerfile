@@ -4,7 +4,7 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-RUN pip install poetry==1.8.5
+RUN pip install --upgrade setuptools>=78.1.1 pip && pip install poetry==1.8.5
 
 WORKDIR /app
 
