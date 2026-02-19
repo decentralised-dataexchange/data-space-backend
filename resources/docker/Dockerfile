@@ -25,9 +25,14 @@ ENV DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
 ENV DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL}
 ENV DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME}
 
-RUN chmod 777 /app/resources/docker/entrypoint.sh
+RUN mv /app/resources/docker/entrypoint.sh /app/entrypoint.sh \
+    && chmod +x /app/entrypoint.sh
 
-RUN mv /app/resources/docker/entrypoint.sh /app/entrypoint.sh
+RUN useradd --create-home appuser \
+    && chown -R appuser:appuser /app
+
+USER appuser
+
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 CMD ["gunicorn", "--bind", ":8000", "--workers", "3", "dataspace_backend.wsgi"]
