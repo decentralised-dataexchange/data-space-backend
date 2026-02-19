@@ -63,14 +63,12 @@ INSTALLED_APPS = [
     "oAuth2Clients",
     "rest_framework",
     "rest_framework.authtoken",
-    "rest_auth",
+    "dj_rest_auth",
     "corsheaders",
-    "django_jsonfield_backport",
     "config",
     "webhook",
     "connection",
     "data_disclosure_agreement",
-    "jsonfield",
     "service",
     "software_statement",
     "data_disclosure_agreement_record",
@@ -150,8 +148,6 @@ TIME_ZONE = "UTC"
 
 USE_I18N = True
 
-USE_L10N = True
-
 USE_TZ = True
 
 # URL Configuration
@@ -162,9 +158,11 @@ APPEND_SLASH = True
 
 STATIC_URL = "/static/"
 
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
 AUTH_USER_MODEL = "onboard.DataspaceUser"
 
-REST_AUTH_SERIALIZERS = {
+REST_AUTH = {
     "TOKEN_SERIALIZER": "onboard.serializers.CustomTokenSerializer"
 }
 

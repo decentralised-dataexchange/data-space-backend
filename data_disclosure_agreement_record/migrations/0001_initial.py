@@ -3,7 +3,7 @@
 import uuid
 
 import django.db.models.deletion
-import jsonfield.fields
+import django.db.models
 from django.db import migrations, models
 
 
@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "dataDisclosureAgreementRecord",
-                    jsonfield.fields.JSONField(default=dict),
+                    django.db.models.JSONField(default=dict),
                 ),
                 ("dataDisclosureAgreementTemplateId", models.CharField(max_length=255)),
                 (
@@ -95,7 +95,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "dataDisclosureAgreementRecord",
-                    jsonfield.fields.JSONField(default=dict),
+                    django.db.models.JSONField(default=dict),
                 ),
                 ("dataDisclosureAgreementTemplateId", models.CharField(max_length=255)),
                 (

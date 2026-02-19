@@ -1,17 +1,17 @@
 # syntax=docker/dockerfile:1
-FROM python:3.8
+FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-RUN pip install poetry==1.1.15
+RUN pip install poetry==1.8.5
 
 WORKDIR /app
 
-COPY pyproject.toml /app/
+COPY pyproject.toml poetry.lock /app/
 
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-interaction --no-ansi
+    && poetry install --only main --no-interaction --no-ansi
 
 COPY . /app/
 
