@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 
@@ -37,7 +38,7 @@ class RegisterDataspaceUserSerializer(serializers.ModelSerializer):  # type: ign
     """
 
     # Password is write-only to prevent exposure in API responses
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, validators=[validate_password])
 
     class Meta:
         model = DataspaceUser
