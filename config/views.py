@@ -4,8 +4,8 @@ from typing import Any, cast
 
 import requests
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from rest_auth.serializers import PasswordChangeSerializer
-from rest_auth.views import sensitive_post_parameters_m
+from dj_rest_auth.serializers import PasswordChangeSerializer
+from dj_rest_auth.views import sensitive_post_parameters_m
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import GenericAPIView

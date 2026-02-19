@@ -10,7 +10,7 @@ from .views import (
 )
 
 urlpatterns = [
-    path("extras/", include("rest_auth.urls")),
+    path("extras/", include("dj_rest_auth.urls")),
     path("register/", csrf_exempt(CreateUserAndOrganisationView.as_view())),
     path("login/", UserLogin.as_view(), name="token_obtain_pair"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

@@ -3,7 +3,7 @@
 import uuid
 
 import django.db.models.deletion
-import jsonfield.fields
+import django.db.models
 from django.db import migrations, models
 
 
@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                         serialize=False,
                     ),
                 ),
-                ("b2bConnectionRecord", jsonfield.fields.JSONField(default=dict)),
+                ("b2bConnectionRecord", django.db.models.JSONField(default=dict)),
                 ("b2bConnectionId", models.CharField(max_length=255)),
                 ("createdAt", models.DateTimeField(auto_now_add=True)),
                 ("updatedAt", models.DateTimeField(auto_now=True)),

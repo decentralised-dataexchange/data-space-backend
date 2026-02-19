@@ -18,7 +18,7 @@ from uuid import UUID, uuid4
 
 from django.db import models
 from django.db.models import QuerySet
-from jsonfield.fields import JSONField
+from django.db.models import JSONField
 
 from config.models import DataSource
 from organisation.models import Organisation

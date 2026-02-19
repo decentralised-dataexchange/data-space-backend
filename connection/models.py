@@ -17,7 +17,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from django.db import models
-from jsonfield.fields import JSONField
+from django.db.models import JSONField
 
 from config.models import DataSource
 

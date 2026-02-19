@@ -3,7 +3,7 @@
 import uuid
 
 import django.db.models.deletion
-import jsonfield.fields
+import django.db.models
 from django.db import migrations, models
 
 
@@ -62,7 +62,7 @@ class Migration(migrations.Migration):
                 ),
                 ("presentationState", models.CharField(max_length=50)),
                 ("isPresentationVerified", models.BooleanField(default=False)),
-                ("presentationRecord", jsonfield.fields.JSONField(default=dict)),
+                ("presentationRecord", django.db.models.JSONField(default=dict)),
                 ("createdAt", models.DateTimeField(auto_now_add=True)),
                 (
                     "organisationId",

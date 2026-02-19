@@ -6,20 +6,19 @@ authors = ["George J Padayatti <george.padayatti@igrant.io>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.8"
-Django = "3.0.7"
-django-auditlog = "1.0.0"
-djangorestframework = "3.13.1"
-djangorestframework-simplejwt = "4.3.0"
-django-cors-headers = "3.7.0"
-psycopg2-binary = "2.8.6"
-PyJWT = "1.7.1"
+python = "^3.9"
+Django = "^4.2.0"
+django-auditlog = "^3.0.0"
+djangorestframework = "^3.15.2"
+djangorestframework-simplejwt = "^5.5.0"
+django-cors-headers = "^4.0.0"
+psycopg2-binary = "^2.9.0"
+PyJWT = "^2.8.0"
 gunicorn = "^20.1.0"
-django-filter = "21.1"
-django-rest-auth = "0.9.5"
-django-constance = "2.9.1"
-django-picklefield = "3.0"
-django-jsonfield = "^1.4.1"
+django-filter = "^23.0"
+dj-rest-auth = "^5.0.0"
+django-constance = "^3.0.0"
+django-picklefield = "^3.0"
 whitenoise = "^6.6.0"
 
 [tool.poetry.dev-dependencies]
@@ -35,7 +34,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py39"
 
 [tool.ruff.lint]
 select = [
@@ -79,8 +78,7 @@ module = [
     "rest_framework_simplejwt.*",
     "constance.*",
     "picklefield.*",
-    "jsonfield.*",
-    "rest_auth.*",
+    "dj_rest_auth.*",
     "corsheaders.*",
     "whitenoise.*",
 ]

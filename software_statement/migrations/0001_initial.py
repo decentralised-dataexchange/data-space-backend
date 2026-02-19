@@ -3,7 +3,7 @@
 import uuid
 
 import django.db.models.deletion
-import jsonfield.fields
+import django.db.models
 from django.db import migrations, models
 
 
@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
                 ),
                 ("credentialExchangeId", models.CharField(max_length=50, unique=True)),
                 ("status", models.CharField(max_length=50)),
-                ("credentialHistory", jsonfield.fields.JSONField(default=dict)),
+                ("credentialHistory", django.db.models.JSONField(default=dict)),
                 ("createdAt", models.DateTimeField(auto_now_add=True)),
                 ("updatedAt", models.DateTimeField(auto_now=True)),
                 (
