@@ -1,8 +1,0 @@
-type: string
-title: Data Disclosure Agreement Status
-enum:
-  - unlisted
-  - awaitingForApproval
-  - approved
-  - rejected
-  - listed

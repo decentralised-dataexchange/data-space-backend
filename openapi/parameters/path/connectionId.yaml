@@ -1,6 +1,0 @@
-description: Unique ID of an object
-in: path
-name: connectionId
-required: true
-schema:
-  type: string

@@ -1,6 +1,0 @@
-name: dataSourceId
-in: query
-description: Filter by data source ID
-required: false
-schema:
-  type: string
