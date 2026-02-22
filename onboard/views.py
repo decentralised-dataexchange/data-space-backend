@@ -139,8 +139,8 @@ class UserLogin(TokenObtainPairView):  # type: ignore[misc]
             user = DataspaceUser.objects.filter(email=user_email).first()
             if user and user.is_staff:
                 return Response(
-                    {"Error": "Admin users are not allowed to login"},
-                    status=status.HTTP_403_FORBIDDEN,
+                    {"detail": "No active account found with the given credentials"},
+                    status=status.HTTP_401_UNAUTHORIZED,
                 )
         return Response(super().post(request, *args, **kwargs).data)
 
