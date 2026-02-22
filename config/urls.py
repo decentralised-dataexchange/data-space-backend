@@ -2,7 +2,7 @@ from django.urls import include, path
 from django.views.decorators.csrf import csrf_exempt
 
 from config.views import AdminReset, PasswordChangeView
-from connection.views import DISPConnectionsView, DISPConnectionView
+from connection.views import DISPConnectionsView
 from data_disclosure_agreement.views import (
     DataDisclosureAgreementTemplatesView,
 )
@@ -33,7 +33,6 @@ urlpatterns = [
         DataSourceVerificationView.as_view(),
         name="verification",
     ),
-    path("connection/", DISPConnectionView.as_view(), name="connection"),
     path("connections/", DISPConnectionsView.as_view(), name="connections"),
     path("connection", include("connection.urls")),
     path("data-disclosure-agreement", include("data_disclosure_agreement.urls")),

@@ -128,8 +128,6 @@ For production deployment, configure the following environment variables:
 | `POSTGRES_USER` | PostgreSQL username |
 | `POSTGRES_PASSWORD` | PostgreSQL password |
 | `POSTGRES_HOST` | PostgreSQL host address |
-| `DATA_MARKETPLACE_DW_URL` | Data marketplace DW URL |
-| `DATA_MARKETPLACE_APIKEY` | Data marketplace API key |
 
 ### Local Development (Without Docker)
 

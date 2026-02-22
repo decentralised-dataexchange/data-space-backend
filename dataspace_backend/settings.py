@@ -204,16 +204,6 @@ if os.environ.get("ENV") == "prod":
 
 STATIC_ROOT = "staticfiles"
 
-DATA_MARKETPLACE_DW_URL = os.environ.get(
-    "DATA_MARKETPLACE_DW_URL",
-    "",
-)
-DATA_MARKETPLACE_APIKEY = os.environ.get(
-    "DATA_MARKETPLACE_APIKEY",
-    "",
-)
-
-
 CONSTANCE_ADDITIONAL_FIELDS = {"json_field": ["dataspace_backend.fields.JsonField"]}
 CONSTANCE_CONFIG = {
     "DATA_MARKETPLACE_OWS_URL": (

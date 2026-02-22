@@ -15,150 +15,15 @@ from __future__ import annotations
 
 from typing import Any
 
-import requests
 from django.http import JsonResponse
 from rest_framework import permissions, status
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from dataspace_backend.settings import DATA_MARKETPLACE_APIKEY, DATA_MARKETPLACE_DW_URL
 from dataspace_backend.utils import get_datasource_or_400, paginate_queryset
 
 from .models import Connection
 from .serializers import DISPConnectionSerializer
-
-
-class DISPConnectionView(APIView):
-    """
-    API View for creating new DISP connections.
-
-    Business Purpose:
-        Enables a Data Source to create a new connection invitation that can be
-        shared with mobile wallet users. This is the first step in establishing
-        a secure communication channel for data exchange.
-
-    Authentication:
-        - Requires authenticated user (IsAuthenticated permission)
-        - User must be associated with a valid Data Source
-
-    Workflow:
-        1. Validates the requesting user has an associated Data Source
-        2. Calls the digital wallet API to create a connection invitation
-        3. Generates a Firebase dynamic link for mobile deep-linking
-        4. Stores the connection record in pending 'invitation' state
-        5. Returns connection details and invitation URLs
-    """
-
-    serializer_class = DISPConnectionSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request: Request, *args: Any, **kwargs: Any) -> JsonResponse:
-        """
-        Create a new connection invitation.
-
-        Business Logic:
-            Creates a single-use, auto-accepting connection invitation via the
-            digital wallet API. The invitation can be shared as a URL or QR code.
-
-        Request:
-            POST /connections/
-            No body required
-
-        Response (200 OK):
-            {
-                "connection": {
-                    "connectionId": str,
-                    "invitation": {
-                        "@type": str,
-                        "@id": str,
-                        "serviceEndpoint": str,
-                        "label": str,
-                        "imageUrl": str,
-                        "recipientKeys": list
-                    },
-                    "invitationUrl": str
-                },
-                "firebaseDynamicLink": str
-            }
-
-        Error Responses:
-            - 400: Data source not found or digital wallet API error
-
-        Business Rules:
-            - Connection is created with 'invitation' state initially
-            - Multi-use is disabled (single recipient per invitation)
-            - Auto-accept is enabled for seamless user experience
-        """
-        datasource, error_response = get_datasource_or_400(request.user)
-        if error_response:
-            return error_response
-
-        # Call digital wallet to create connection
-        url = f"{DATA_MARKETPLACE_DW_URL}/v2/connections/create-invitation?multi_use=false&auto_accept=true"
-        authorization_header = DATA_MARKETPLACE_APIKEY
-
-        try:
-            response = requests.post(
-                url, headers={"Authorization": authorization_header}, timeout=30
-            )
-            response.raise_for_status()
-            response = response.json()
-        except requests.exceptions.RequestException as e:
-            return JsonResponse(
-                {"error": f"Error calling digital wallet: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        connection_id = response.get("connection_id")
-
-        url = f"{DATA_MARKETPLACE_DW_URL}/v1/connections/{connection_id}/invitation/firebase"
-        try:
-            create_firebase_dynamic_link_response = requests.post(
-                url, headers={"Authorization": authorization_header}, timeout=30
-            )
-            create_firebase_dynamic_link_response.raise_for_status()
-            create_firebase_dynamic_link_response = (
-                create_firebase_dynamic_link_response.json()
-            )
-        except requests.exceptions.RequestException as e:
-            return JsonResponse(
-                {"error": f"Error creating Firebase dynamic link: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        firebase_dynamic_link = create_firebase_dynamic_link_response.get(
-            "firebase_dynamic_link"
-        )
-
-        # Create a connection record without deleting any active connections
-        Connection.objects.create(
-            dataSourceId=datasource,
-            connectionId=connection_id,
-            connectionState="invitation",
-            connectionRecord={},
-        )
-
-        connection_response_data = {
-            "connectionId": connection_id,
-            "invitation": {
-                "@type": response.get("invitation", {}).get("@type"),
-                "@id": response.get("invitation", {}).get("@id"),
-                "serviceEndpoint": response.get("invitation", {}).get(
-                    "serviceEndpoint"
-                ),
-                "label": response.get("invitation", {}).get("label"),
-                "imageUrl": response.get("invitation", {}).get("imageUrl"),
-                "recipientKeys": response.get("invitation", {}).get("recipientKeys"),
-            },
-            "invitationUrl": response.get("invitation_url"),
-        }
-
-        create_connection_response = {
-            "connection": connection_response_data,
-            "firebaseDynamicLink": firebase_dynamic_link,
-        }
-
-        return JsonResponse(create_connection_response)
 
 
 class DISPConnectionsView(APIView):

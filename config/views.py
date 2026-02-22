@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-import requests
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from dj_rest_auth.serializers import PasswordChangeSerializer
 from dj_rest_auth.views import sensitive_post_parameters_m
@@ -22,7 +21,6 @@ from dataspace_backend.image_utils import (
     load_default_image,
     update_entity_image,
 )
-from dataspace_backend.settings import DATA_MARKETPLACE_APIKEY, DATA_MARKETPLACE_DW_URL
 from dataspace_backend.utils import get_datasource_or_400
 from onboard.models import DataspaceUser
 from onboard.serializers import DataspaceUserSerializer
@@ -596,113 +594,6 @@ class DataSourceVerificationView(APIView):
                 {"error": "Data source verification not found"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        # Construct the response data
-        response_data = {
-            "verification": verification_serializer.data,
-        }
-
-        return JsonResponse(response_data)
-
-    def post(
-        self, request: Request, *args: Any, **kwargs: Any
-    ) -> JsonResponse | Response:
-        """
-        Initiate data source verification.
-
-        Starts the verification process by sending a presentation request
-        through the established DISP connection. The data source must have
-        an active connection before verification can be initiated.
-
-        This method communicates with the Data Marketplace's digital wallet
-        service to create a presentation offer based on the configured
-        verification template (data agreement).
-
-        Response format:
-            {
-                "verification": {
-                    "id": "uuid",
-                    "dataSourceId": "uuid",
-                    "presentationExchangeId": "string",
-                    "presentationState": "offer_sent|...",
-                    "presentationRecord": {...}
-                }
-            }
-
-        Business rules:
-            - Data source must have an active DISP connection.
-            - A VerificationTemplate must be configured in the system.
-            - Creates or updates the Verification record.
-            - Communicates with external Data Marketplace digital wallet.
-
-        Returns:
-            JsonResponse: Initiated verification details with exchange ID.
-            JsonResponse: Error if connection/template not found or service fails.
-        """
-        datasource, error_response = get_datasource_or_400(request.user)
-        if error_response:
-            return error_response
-
-        try:
-            connection = Connection.objects.get(
-                dataSourceId=datasource, connectionState="active"
-            )
-        except Connection.DoesNotExist:
-            return JsonResponse(
-                {"error": "DISP Connection not found"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        verificationTemplate = VerificationTemplate.objects.first()
-        if verificationTemplate is None:
-            return JsonResponse(
-                {"error": "Verification template not found"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        data_agreement_id = verificationTemplate.dataAgreementId
-        connection_id = connection.connectionId
-        payload = {
-            "connection_id": connection_id,
-            "template_id": data_agreement_id,
-        }
-        url = (
-            f"{DATA_MARKETPLACE_DW_URL}/present-proof/data-agreement-negotiation/offer"
-        )
-        authorization_header = DATA_MARKETPLACE_APIKEY
-        try:
-            response = requests.post(
-                url, headers={"Authorization": authorization_header}, json=payload, timeout=30
-            )
-            response.raise_for_status()
-            response = response.json()
-        except requests.exceptions.RequestException as e:
-            return JsonResponse(
-                {"error": f"Error calling digital wallet: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        presentation_exchange_id = response["presentation_exchange_id"]
-        presentation_state = response["state"]
-        presentation_record = response
-
-        # Update or create Verification object
-        try:
-            verification = Verification.objects.get(dataSourceId=datasource)
-            verification.presentationExchangeId = presentation_exchange_id
-            verification.presentationState = presentation_state
-            verification.presentationRecord = presentation_record
-            verification.save()
-        except Verification.DoesNotExist:
-            verification = Verification.objects.create(
-                dataSourceId=datasource,
-                presentationExchangeId=presentation_exchange_id,
-                presentationState=presentation_state,
-                presentationRecord=presentation_record,
-            )
-
-        # Serialize the verification object
-        verification_serializer = VerificationSerializer(verification)
 
         # Construct the response data
         response_data = {
