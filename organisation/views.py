@@ -640,6 +640,16 @@ class CodeOfConductUpdateView(APIView):
         if error_response:
             return error_response
 
+        # Guard: require a verified identity before accepting the code of conduct
+        if data and not OrganisationIdentity.objects.filter(
+            organisationId=organisation,
+            isPresentationVerified=True,
+        ).exists():
+            return Response(
+                {"error": "Organisation identity must be verified before accepting the code of conduct"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         organisation.codeOfConduct = data
 
         # Save the updated organisation instance
