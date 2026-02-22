@@ -81,6 +81,28 @@ deploy/staging: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deplo
 deploy/demo: $(DEPLOY_VERSION_FILE) ## Deploy to K8s cluster (e.g. make deploy/{preview,staging,staging})
 	kubectl set image deployment/prod-dataspace-backend prod-dataspace-backend=$(DEPLOY_VERSION) -n dataspace
 
+POSTGRES_CONTAINER ?= "dataspace_postgres"
+POSTGRES_PORT ?= 5432
+POSTGRES_USER ?= postgres
+POSTGRES_PASSWORD ?= postgres
+POSTGRES_DB ?= dataspace
+
+.PHONY: postgres
+postgres: ## Run PostgreSQL in a Docker container for local development
+	docker run \
+		--rm $(TERM_FLAGS) \
+		--name $(POSTGRES_CONTAINER) \
+		-e POSTGRES_USER=$(POSTGRES_USER) \
+		-e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) \
+		-e POSTGRES_DB=$(POSTGRES_DB) \
+		-p $(POSTGRES_PORT):5432 \
+		-v dataspace_pgdata:/var/lib/postgresql/data \
+		postgres:16-alpine
+
+.PHONY: postgres/stop
+postgres/stop: ## Stop the PostgreSQL container
+	docker stop $(POSTGRES_CONTAINER)
+
 $(DEPLOY_VERSION_FILE):
 	@echo "Missing '$(DEPLOY_VERSION_FILE)' file. Run 'make build/docker/deployable'" >&2
 	exit 1
