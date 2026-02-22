@@ -8,6 +8,8 @@ username, which is the standard approach for modern web applications.
 
 from __future__ import annotations
 
+from uuid import uuid4
+
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
@@ -33,6 +35,9 @@ class DataspaceUser(AbstractBaseUser, PermissionsMixin):
         - One-to-One with Organisation: A user can be the admin of one organisation
         - One-to-One with DataSource: A user can manage one data source
     """
+
+    # Public-facing unique identifier (replaces sequential integer ID in APIs/JWTs)
+    uuid = models.UUIDField(default=uuid4, unique=True, editable=False)
 
     # Primary email address used for authentication and communication
     # This field serves as the unique identifier (USERNAME_FIELD) for login

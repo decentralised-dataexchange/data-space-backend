@@ -37,6 +37,9 @@ class RegisterDataspaceUserSerializer(serializers.ModelSerializer):  # type: ign
         name: User's display name
     """
 
+    # Expose UUID as "id" so the API field name stays the same for clients
+    id = serializers.UUIDField(source="uuid", read_only=True)
+
     # Password is write-only to prevent exposure in API responses
     password = serializers.CharField(write_only=True, validators=[validate_password])
 
@@ -77,6 +80,9 @@ class DataspaceUserSerializer(serializers.ModelSerializer):  # type: ignore[type
         email: User's email address (read-only in updates)
         name: User's display name (editable)
     """
+
+    # Expose UUID as "id" so the API field name stays the same for clients
+    id = serializers.UUIDField(source="uuid", read_only=True)
 
     class Meta:
         model = DataspaceUser
@@ -140,6 +146,9 @@ class DataspaceUsersSerializer(serializers.ModelSerializer):  # type: ignore[typ
         email: User's email address
         name: User's display name
     """
+
+    # Expose UUID as "id" so the API field name stays the same for clients
+    id = serializers.UUIDField(source="uuid", read_only=True)
 
     class Meta:
         model = DataspaceUser
