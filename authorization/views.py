@@ -7,6 +7,7 @@ authentication between data marketplace participants.
 """
 
 import base64
+import logging
 from typing import Any
 
 from django.contrib.auth import get_user_model
@@ -22,6 +23,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from oAuth2Clients.models import OAuth2Clients
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -95,8 +97,10 @@ class DataMarketPlaceTokenView(APIView):
             Error response with error and error_description on failure.
         """
         # Extract grant_type from form or JSON
+        logger.info("[token] Content-Type: %s", request.content_type)
         grant_type = None
         if request.content_type == "application/json":
+            logger.warning("[token] Rejected: Content-Type is application/json")
             return Response(
                 {
                     "error": "invalid_request",
@@ -104,6 +108,7 @@ class DataMarketPlaceTokenView(APIView):
                 }
             )
         if request.content_type != "application/x-www-form-urlencoded":
+            logger.warning("[token] Rejected: unexpected Content-Type")
             return Response(
                 {
                     "error": "invalid_request",
@@ -112,8 +117,10 @@ class DataMarketPlaceTokenView(APIView):
             )
 
         grant_type = request.POST.get("grant_type")
+        logger.info("[token] grant_type: %s", grant_type)
 
         if grant_type != "client_credentials":
+            logger.warning("[token] Rejected: unsupported grant_type=%s", grant_type)
             return Response(
                 {
                     "error": "unsupported_grant_type",
@@ -124,7 +131,9 @@ class DataMarketPlaceTokenView(APIView):
 
         # Parse Basic auth header
         auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+        logger.info("[token] Authorization header present: %s", bool(auth_header))
         if not auth_header.startswith("Basic "):
+            logger.warning("[token] Rejected: missing or non-Basic auth header")
             return Response(
                 {
                     "error": "invalid_client",
@@ -138,7 +147,9 @@ class DataMarketPlaceTokenView(APIView):
             if ":" not in decoded:
                 raise ValueError("Invalid basic auth format")
             client_id, client_secret = decoded.split(":", 1)
+            logger.info("[token] Parsed client_id: %s", client_id)
         except Exception:
+            logger.warning("[token] Rejected: failed to parse Basic auth header")
             return Response(
                 {
                     "error": "invalid_client",
@@ -148,11 +159,18 @@ class DataMarketPlaceTokenView(APIView):
             )
 
         # Find OAuth2 client and associated organisation
+        logger.info("[token] Looking up OAuth2 client: client_id=%s, is_active=True", client_id)
+        matching_by_id = OAuth2Clients.objects.filter(client_id=client_id)
+        logger.info("[token] Clients matching client_id: %d", matching_by_id.count())
+        if matching_by_id.exists():
+            client = matching_by_id.first()
+            logger.info("[token] Found client: is_active=%s, secret_match=%s", client.is_active, client.client_secret == client_secret)
         try:
             oauth_client = OAuth2Clients.objects.select_related("organisation").get(
                 client_id=client_id, client_secret=client_secret, is_active=True
             )
         except OAuth2Clients.DoesNotExist:
+            logger.warning("[token] Rejected: no matching active OAuth2 client for client_id=%s", client_id)
             return Response(
                 {
                     "error": "invalid_client",
@@ -162,9 +180,11 @@ class DataMarketPlaceTokenView(APIView):
             )
 
         organisation = oauth_client.organisation
+        logger.info("[token] Matched organisation: %s (id=%s)", organisation.name, organisation.id)
         try:
             admin_user = organisation.admin
         except Exception:
+            logger.error("[token] Rejected: no admin user for organisation %s", organisation.id)
             return Response(
                 {
                     "error": "server_error",
@@ -173,6 +193,7 @@ class DataMarketPlaceTokenView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         if not admin_user or not admin_user.is_active:
+            logger.warning("[token] Rejected: admin inactive or missing for organisation %s", organisation.id)
             return Response(
                 {
                     "error": "invalid_client",
@@ -182,6 +203,7 @@ class DataMarketPlaceTokenView(APIView):
             )
 
         # Issue JWT access token for organisation admin
+        logger.info("[token] Issuing token for admin user: %s", admin_user.email)
         access = AccessToken.for_user(admin_user)
         expires_in = int(access.lifetime.total_seconds())
 
@@ -190,4 +212,5 @@ class DataMarketPlaceTokenView(APIView):
             "token_type": "Bearer",
             "expires_in": expires_in,
         }
+        logger.info("[token] Token issued successfully for client_id=%s", client_id)
         return Response(response_data, status=status.HTTP_200_OK)
