@@ -81,33 +81,21 @@ class NonGetAppendSlashMiddleware:
             # Get the current request path
             path_info = request.path_info or ""
 
-            if path_info:
-                # Determine the candidate path (opposite slash state)
-                if not path_info.endswith("/"):
-                    # Path doesn't have trailing slash - try adding one
-                    candidate_path = f"{path_info}/"
-                else:
-                    # Path has trailing slash - try removing it
-                    candidate_path = path_info.rstrip("/")
-                    # Handle edge case: root path "/" becomes empty string
-                    if not candidate_path:
-                        candidate_path = None
+            if path_info and not path_info.endswith("/"):
+                # Path doesn't have trailing slash - try adding one
+                candidate_path = f"{path_info}/"
 
-                # Attempt to resolve the candidate path to a valid URL pattern
-                if candidate_path:
-                    try:
-                        # Check if the candidate path resolves to a view
-                        resolve(candidate_path)
-                    except Resolver404:
-                        # Candidate path doesn't resolve - keep original path
-                        # The request will proceed with its original path and may 404
-                        pass
-                    else:
-                        # Candidate path resolves successfully - rewrite the request path
-                        # This allows the request to be routed correctly without a redirect
-                        request.path_info = candidate_path
-                        # Also update META to keep path_info consistent
-                        request.META["PATH_INFO"] = candidate_path
+                try:
+                    # Check if the slash-terminated path resolves to a view
+                    resolve(candidate_path)
+                except Resolver404:
+                    # Candidate path doesn't resolve - keep original path
+                    pass
+                else:
+                    # Candidate path resolves successfully - rewrite the request path
+                    # This allows the request to be routed correctly without a redirect
+                    request.path_info = candidate_path
+                    request.META["PATH_INFO"] = candidate_path
 
         # Continue to the next middleware/view in the chain
         return self.get_response(request)
