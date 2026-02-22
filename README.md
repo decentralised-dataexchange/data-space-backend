@@ -119,15 +119,15 @@ data-space-backend/
 
 ### Environment Variables
 
-For production deployment, configure the following environment variables:
+When `POSTGRES_HOST` is set, the backend uses PostgreSQL; otherwise it defaults to SQLite (zero-config local development).
 
 | Variable | Description |
 |----------|-------------|
-| `ENV` | Set to `prod` for production mode |
+| `POSTGRES_HOST` | PostgreSQL host address (enables PostgreSQL when set) |
 | `POSTGRES_NAME` | PostgreSQL database name |
 | `POSTGRES_USER` | PostgreSQL username |
 | `POSTGRES_PASSWORD` | PostgreSQL password |
-| `POSTGRES_HOST` | PostgreSQL host address |
+| `POSTGRES_PORT` | PostgreSQL port (default: `5432`) |
 
 ### Local Development (Without Docker)
 
