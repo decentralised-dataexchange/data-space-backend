@@ -204,7 +204,8 @@ REST_FRAMEWORK = {
 OLD_PASSWORD_FIELD_ENABLED = True
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "USER_ID_FIELD": "uuid",
     "USER_ID_CLAIM": "user_id",
 }
