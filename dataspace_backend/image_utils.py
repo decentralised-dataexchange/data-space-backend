@@ -15,6 +15,7 @@ in production environments.
 
 from __future__ import annotations
 
+import io
 import os
 from typing import Any
 from uuid import UUID
@@ -23,9 +24,16 @@ from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from django.db.models import Model
 from django.http import HttpRequest, HttpResponse, JsonResponse
+from PIL import Image
 from rest_framework import status
 
 from config.models import ImageModel
+
+# Target dimensions for each image type: (width, height)
+IMAGE_DIMENSIONS: dict[str, tuple[int, int]] = {
+    "cover": (1500, 500),
+    "logo": (400, 400),
+}
 
 # Default directory for static image assets (logos, placeholders, etc.)
 # These are used when entities don't have custom images uploaded
@@ -197,6 +205,42 @@ def get_image_response(
     return HttpResponse(image.image_data, content_type="image/jpeg")
 
 
+def validate_and_process_image(image_data: bytes, url_attr: str) -> bytes:
+    """
+    Validate that the uploaded data is a real image, resize it to the
+    expected dimensions, and re-encode as JPEG.
+
+    Args:
+        image_data: Raw bytes from the upload.
+        url_attr: The entity URL attribute name (e.g. "coverImageUrl")
+                  used to determine target dimensions.
+
+    Returns:
+        Processed JPEG bytes at the correct dimensions.
+
+    Raises:
+        ValueError: If the data is not a valid image.
+    """
+    try:
+        img = Image.open(io.BytesIO(image_data))
+        img.load()  # force full decode to catch truncated/corrupt files
+    except Exception as exc:
+        raise ValueError("Upload is not a valid image") from exc
+
+    # Pick target dimensions based on image type
+    if "cover" in url_attr.lower():
+        target = IMAGE_DIMENSIONS["cover"]
+    else:
+        target = IMAGE_DIMENSIONS["logo"]
+
+    img = img.resize(target, Image.LANCZOS)
+    img = img.convert("RGB")  # ensure compatibility with JPEG
+
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    return buf.getvalue()
+
+
 def update_entity_image(
     request: HttpRequest,
     entity: Model,
@@ -248,8 +292,15 @@ def update_entity_image(
             {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Read binary data from the uploaded file
-    image_data = uploaded_image.read()
+    # Read binary data from the uploaded file and validate/process it
+    raw_data = uploaded_image.read()
+    try:
+        image_data = validate_and_process_image(raw_data, url_attr)
+    except ValueError:
+        return JsonResponse(
+            {"error": "Upload is not a valid image"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     image_id = getattr(entity, image_id_attr)
 
     # Handle new image creation vs. existing image update
