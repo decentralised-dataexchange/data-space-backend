@@ -29,6 +29,9 @@ from rest_framework import status
 
 from config.models import ImageModel
 
+# Maximum allowed image upload size in bytes (1 MB)
+MAX_IMAGE_UPLOAD_SIZE = 1 * 1024 * 1024
+
 # Target dimensions for each image type: (width, height)
 IMAGE_DIMENSIONS: dict[str, tuple[int, int]] = {
     "cover": (1500, 500),
@@ -290,6 +293,13 @@ def update_entity_image(
     if not uploaded_image:
         return JsonResponse(
             {"error": "No image file uploaded"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Enforce maximum upload size (1 MB)
+    if uploaded_image.size and uploaded_image.size > MAX_IMAGE_UPLOAD_SIZE:
+        return JsonResponse(
+            {"error": "Image file too large. Maximum allowed size is 1 MB."},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     # Read binary data from the uploaded file and validate/process it
