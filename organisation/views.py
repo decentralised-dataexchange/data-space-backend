@@ -469,6 +469,15 @@ class OrganisationIdentityView(APIView):
         if error_response:
             return error_response
 
+        if OrganisationIdentity.objects.filter(
+            organisationId=organisation,
+            isPresentationVerified=True,
+        ).exists():
+            return JsonResponse(
+                {"error": "Organisation identity is already verified"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         organisationIdentityTemplate = OrganisationIdentityTemplate.objects.first()
         if organisationIdentityTemplate is None:
             return JsonResponse(
