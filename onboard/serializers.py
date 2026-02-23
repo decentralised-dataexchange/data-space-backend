@@ -86,7 +86,7 @@ class DataspaceUserSerializer(serializers.ModelSerializer):  # type: ignore[type
 
     class Meta:
         model = DataspaceUser
-        fields = ["id", "email", "name"]
+        fields = ["id", "email", "name", "is_mfa_enabled"]
 
     def update(
         self, instance: DataspaceUser, validated_data: dict[str, Any]
@@ -131,6 +131,25 @@ class CustomTokenSerializer(serializers.ModelSerializer):  # type: ignore[type-a
     class Meta:
         model = Token
         fields = ("key", "user")
+
+
+class MFAVerifySerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Serializer for MFA code verification."""
+
+    session_token = serializers.UUIDField()
+    code = serializers.CharField(min_length=6, max_length=6)
+
+
+class MFAResendSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Serializer for requesting a new MFA code."""
+
+    session_token = serializers.UUIDField()
+
+
+class MFAToggleSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Serializer for toggling per-user MFA."""
+
+    is_mfa_enabled = serializers.BooleanField()
 
 
 class DataspaceUsersSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]

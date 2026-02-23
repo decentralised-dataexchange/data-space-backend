@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import hmac
 import io
 import logging
+from datetime import timedelta
 from typing import Any, cast
 
-from django.contrib.auth import get_user_model
+from django.conf import settings as django_settings
+from django.contrib.auth import authenticate, get_user_model
 from django.db import transaction
 from django.http import FileResponse
+from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.generics import CreateAPIView
 from rest_framework.request import Request
@@ -21,12 +25,19 @@ from dataspace_backend.image_utils import (
     construct_logo_image_url,
     load_default_image,
 )
-from onboard.models import DataspaceUser
+from onboard.models import DataspaceUser, MFACode
+from onboard.mfa_utils import cleanup_expired_mfa_codes, send_mfa_code_email
 from onboard.permissions import IsOwnerOrReadOnly
 from organisation.models import CodeOfConduct, Organisation, Sector
 from organisation.serializers import OrganisationSerializer, SectorSerializer
 
-from .serializers import DataspaceUserSerializer, RegisterDataspaceUserSerializer
+from .serializers import (
+    DataspaceUserSerializer,
+    MFAResendSerializer,
+    MFAToggleSerializer,
+    MFAVerifySerializer,
+    RegisterDataspaceUserSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -126,25 +137,68 @@ class UserLogin(TokenObtainPairView):  # type: ignore[misc]
         Admin users are blocked from using this endpoint as they should
         use the Django admin interface instead.
 
+        When MFA is enabled, successful credential validation returns a
+        session_token instead of JWT tokens. The client must then call
+        the MFA verify endpoint with the 6-digit code sent via email.
+
         Args:
             request: Contains email and password in the request body.
 
         Returns:
-            Response: JWT access and refresh tokens on success.
+            Response: JWT access and refresh tokens on success (MFA off),
+                      or MFA session info (MFA on).
 
         Raises:
             403 Forbidden: If the user is a staff/admin user.
             401 Unauthorized: If credentials are invalid (handled by parent).
         """
-        if request.data.get("email") and request.data.get("password"):
-            user_email = request.data.get("email")
-            user = DataspaceUser.objects.filter(email=user_email).first()
+        email = request.data.get("email", "")
+        password = request.data.get("password", "")
+
+        if email and password:
+            user = DataspaceUser.objects.filter(email=email).first()
             if user and user.is_staff:
                 return Response(
                     {"detail": "No active account found with the given credentials"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
-        return Response(super().post(request, *args, **kwargs).data)
+
+        # Check if the user has per-user MFA enabled
+        user_obj = DataspaceUser.objects.filter(email=email).first()
+        if user_obj is None or not user_obj.is_mfa_enabled:
+            # No MFA required — standard JWT login
+            return Response(super().post(request, *args, **kwargs).data)
+
+        # MFA enabled for this user: validate credentials manually
+        user = authenticate(request=request, email=email, password=password)
+
+        if user is None or not user.is_active:
+            return Response(
+                {"detail": "No active account found with the given credentials"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # Cleanup expired codes opportunistically
+        cleanup_expired_mfa_codes()
+
+        # Delete old unused MFA sessions for this user
+        MFACode.objects.filter(user=user, is_used=False).delete()
+
+        # Create new MFA session
+        code = MFACode.generate_code()
+        mfa_session = MFACode.objects.create(user=user, code=code)
+
+        # Send code via email
+        send_mfa_code_email(user.email, code)
+
+        return Response(
+            {
+                "mfa_required": True,
+                "session_token": str(mfa_session.session_token),
+                "detail": "A verification code has been sent to your email address.",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class LogoutView(APIView):
@@ -186,6 +240,179 @@ class LogoutView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(status=status.HTTP_200_OK)
+
+
+class MFAVerifyView(APIView):
+    """
+    Verify a 6-digit MFA code and issue JWT tokens.
+
+    Authentication: None required (uses session_token for identification).
+
+    Request format:
+        POST with JSON body:
+        {
+            "session_token": "uuid",
+            "code": "123456"
+        }
+
+    Response format:
+        200 OK: Returns JWT tokens (access and refresh).
+        400 Bad Request: Invalid or expired session, wrong code.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = MFAVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        session_token = serializer.validated_data["session_token"]
+        submitted_code = serializer.validated_data["code"]
+
+        mfa_session = MFACode.objects.filter(
+            session_token=session_token, is_used=False
+        ).first()
+
+        if mfa_session is None:
+            return Response(
+                {"detail": "Invalid or expired session."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if mfa_session.is_expired:
+            mfa_session.delete()
+            return Response(
+                {"detail": "Verification code has expired. Please login again."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if mfa_session.is_max_attempts_exceeded:
+            mfa_session.delete()
+            return Response(
+                {"detail": "Maximum verification attempts exceeded. Please login again."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Constant-time comparison to prevent timing attacks
+        if not hmac.compare_digest(submitted_code, mfa_session.code):
+            mfa_session.attempts += 1
+            mfa_session.save(update_fields=["attempts"])
+            return Response(
+                {"detail": "Invalid verification code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Mark as used to prevent replay
+        mfa_session.is_used = True
+        mfa_session.save(update_fields=["is_used"])
+
+        # Issue JWT tokens
+        refresh = RefreshToken.for_user(mfa_session.user)
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class MFAResendView(APIView):
+    """
+    Resend a new MFA verification code for an existing session.
+
+    Authentication: None required (uses session_token for identification).
+
+    Request format:
+        POST with JSON body:
+        {
+            "session_token": "uuid"
+        }
+
+    Response format:
+        200 OK: New code sent.
+        400 Bad Request: Invalid or expired session.
+        429 Too Many Requests: Resend cooldown not elapsed.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = MFAResendSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        session_token = serializer.validated_data["session_token"]
+
+        mfa_session = MFACode.objects.filter(
+            session_token=session_token, is_used=False
+        ).first()
+
+        if mfa_session is None:
+            return Response(
+                {"detail": "Invalid or expired session."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if mfa_session.is_expired:
+            mfa_session.delete()
+            return Response(
+                {"detail": "Session has expired. Please login again."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Enforce resend cooldown
+        elapsed = (timezone.now() - mfa_session.last_sent_at).total_seconds()
+        if elapsed < django_settings.MFA_RESEND_COOLDOWN_SECONDS:
+            return Response(
+                {"detail": "Please wait before requesting a new code."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        # Generate new code, reset attempts
+        new_code = MFACode.generate_code()
+        mfa_session.code = new_code
+        mfa_session.attempts = 0
+        mfa_session.last_sent_at = timezone.now()
+        mfa_session.save(update_fields=["code", "attempts", "last_sent_at"])
+
+        send_mfa_code_email(mfa_session.user.email, new_code)
+
+        return Response(
+            {"detail": "A new verification code has been sent to your email address."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class MFAToggleView(APIView):
+    """
+    Toggle MFA on or off for the authenticated user.
+
+    Authentication: JWT token required.
+
+    Request format:
+        POST with JSON body:
+        {
+            "is_mfa_enabled": true
+        }
+
+    Response format:
+        200 OK: Returns the new MFA state.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = MFAToggleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = cast(DataspaceUser, request.user)
+        user.is_mfa_enabled = serializer.validated_data["is_mfa_enabled"]
+        user.save(update_fields=["is_mfa_enabled"])
+
+        return Response(
+            {"is_mfa_enabled": user.is_mfa_enabled},
+            status=status.HTTP_200_OK,
+        )
 
 
 class CreateUserAndOrganisationView(APIView):

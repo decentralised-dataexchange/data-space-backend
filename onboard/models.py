@@ -8,8 +8,10 @@ username, which is the standard approach for modern web applications.
 
 from __future__ import annotations
 
+import secrets
 from uuid import uuid4
 
+from django.conf import settings as django_settings
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
@@ -65,6 +67,9 @@ class DataspaceUser(AbstractBaseUser, PermissionsMixin):
         max_length=250, null=True, blank=True
     )
 
+    # Per-user MFA toggle; when True the user enters the MFA code flow at login
+    is_mfa_enabled: models.BooleanField[bool, bool] = models.BooleanField(default=False)
+
     # Specifies that email is used as the unique identifier for authentication
     USERNAME_FIELD: str = "email"
 
@@ -76,3 +81,42 @@ class DataspaceUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self) -> str:
         return str(self.email)
+
+
+class MFACode(models.Model):
+    """
+    Stores a pending MFA verification code tied to a login session.
+
+    Created after successful password validation when MFA is enabled.
+    The session_token is returned to the client so it can be used to
+    submit the 6-digit code for verification.
+    """
+
+    session_token = models.UUIDField(default=uuid4, unique=True, editable=False)
+    user = models.ForeignKey(
+        DataspaceUser, on_delete=models.CASCADE, related_name="mfa_codes"
+    )
+    code = models.CharField(max_length=6)
+    attempts = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_sent_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"MFA session {self.session_token} for {self.user.email}"
+
+    @property
+    def is_expired(self) -> bool:
+        elapsed = (timezone.now() - self.created_at).total_seconds()
+        return elapsed > django_settings.MFA_CODE_EXPIRY_SECONDS
+
+    @property
+    def is_max_attempts_exceeded(self) -> bool:
+        return self.attempts >= django_settings.MFA_MAX_ATTEMPTS
+
+    @staticmethod
+    def generate_code() -> str:
+        return "".join(secrets.choice("0123456789") for _ in range(6))

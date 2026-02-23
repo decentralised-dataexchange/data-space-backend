@@ -21,9 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY", "REDACTED_DJANGO_SECRET_KEY"
-)
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "REDACTED_DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
@@ -181,9 +179,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "onboard.DataspaceUser"
 
-REST_AUTH = {
-    "TOKEN_SERIALIZER": "onboard.serializers.CustomTokenSerializer"
-}
+REST_AUTH = {"TOKEN_SERIALIZER": "onboard.serializers.CustomTokenSerializer"}
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -210,6 +206,19 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "uuid",
     "USER_ID_CLAIM": "user_id",
 }
+
+# MFA settings
+MFA_ENABLED = os.environ.get("MFA_ENABLED", "False").lower() in ("true", "1", "yes")
+MFA_CODE_EXPIRY_SECONDS = int(os.environ.get("MFA_CODE_EXPIRY_SECONDS", "300"))
+MFA_MAX_ATTEMPTS = int(os.environ.get("MFA_MAX_ATTEMPTS", "5"))
+MFA_RESEND_COOLDOWN_SECONDS = int(os.environ.get("MFA_RESEND_COOLDOWN_SECONDS", "60"))
+
+# SMTP settings (used when MFA is enabled)
+SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+SMTP_ADMIN_EMAIL = os.environ.get("SMTP_ADMIN_EMAIL", "")
 
 LOGGING = {
     "version": 1,

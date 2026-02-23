@@ -14,7 +14,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 
-from onboard.models import DataspaceUser
+from onboard.models import DataspaceUser, MFACode
 
 
 class CustomUserCreationForm(UserCreationForm):  # type: ignore[type-arg]
@@ -139,3 +139,11 @@ class DataspaceUserAdmin(BaseUserAdmin):  # type: ignore[type-arg]
 
 # Register the DataspaceUser model with its custom admin configuration
 admin.site.register(DataspaceUser, DataspaceUserAdmin)
+
+
+@admin.register(MFACode)
+class MFACodeAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    list_display = ("user", "session_token", "created_at", "is_used", "attempts")
+    list_filter = ("is_used",)
+    search_fields = ("user__email",)
+    readonly_fields = ("session_token", "code", "created_at", "last_sent_at")
