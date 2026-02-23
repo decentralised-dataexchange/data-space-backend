@@ -21,6 +21,7 @@ from .views import (
     OrganisationIdentityView,
     OrganisationLogoImageView,
     OrganisationView,
+    WalletConfigView,
 )
 
 urlpatterns = [
@@ -38,6 +39,11 @@ urlpatterns = [
     path("/logoimage/", OrganisationLogoImageView.as_view(), name="logo_image"),
     path(
         "/identity/", OrganisationIdentityView.as_view(), name="organisation_identity"
+    ),
+    path(
+        "/wallet-config/",
+        WalletConfigView.as_view(),
+        name="wallet_config",
     ),
     path("/oauth2-client/", OAuth2ClientView.as_view(), name="create-auth2-client"),
     path("/oauth2-client/<uuid:pk>/", OAuth2ClientView.as_view(), name="client-detail"),

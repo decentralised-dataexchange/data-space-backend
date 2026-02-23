@@ -14,6 +14,7 @@ from dataspace_backend.image_utils import (
     get_image_response,
     update_entity_image,
 )
+from dataspace_backend.password_confirm import verify_confirm_password
 from dataspace_backend.utils import get_organisation_or_400
 from organisation.models import (
     OrganisationIdentity,
@@ -22,6 +23,7 @@ from organisation.models import (
 from organisation.serializers import (
     OrganisationIdentitySerializer,
     OrganisationSerializer,
+    WalletConfigSerializer,
 )
 
 
@@ -668,4 +670,49 @@ class CodeOfConductUpdateView(APIView):
         serializer = self.serializer_class(organisation)
         return JsonResponse(
             {"organisation": serializer.data}, status=status.HTTP_202_ACCEPTED
+        )
+
+
+class WalletConfigView(APIView):
+    """
+    Update wallet-related configuration for the organisation.
+
+    Requires password confirmation before applying changes.
+
+    Authentication: JWT token required.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> JsonResponse | Response:
+        password_error = verify_confirm_password(request)
+        if password_error:
+            return password_error
+
+        organisation, error_response = get_organisation_or_400(request.user)
+        if error_response:
+            return error_response
+
+        serializer = WalletConfigSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        data = serializer.validated_data
+
+        if "verificationRequestURLPrefix" in data:
+            organisation.owsBaseUrl = data["verificationRequestURLPrefix"]
+        if "credentialOfferEndpoint" in data:
+            organisation.credentialOfferEndpoint = data["credentialOfferEndpoint"]
+        if "accessPointEndpoint" in data:
+            organisation.accessPointEndpoint = data["accessPointEndpoint"]
+
+        organisation.save()
+
+        org_serializer = OrganisationSerializer(organisation)
+        return JsonResponse(
+            {"organisation": org_serializer.data}, status=status.HTTP_200_OK
         )

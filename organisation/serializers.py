@@ -149,6 +149,12 @@ class SectorSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
         read_only_fields = ["id"]
 
 
+class WalletConfigSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    verificationRequestURLPrefix = serializers.CharField(required=False)
+    credentialOfferEndpoint = serializers.CharField(required=False)
+    accessPointEndpoint = serializers.CharField(required=False)
+
+
 class CodeOfConductSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """
     Serializer for Code of Conduct documents.

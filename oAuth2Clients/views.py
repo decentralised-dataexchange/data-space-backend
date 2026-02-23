@@ -12,6 +12,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from dataspace_backend.password_confirm import verify_confirm_password
 from dataspace_backend.utils import paginate_queryset
 from organisation.models import Organisation
 
@@ -431,6 +432,10 @@ class OrganisationOAuth2ClientView(APIView):
         Errors:
             - 400: Validation errors or duplicate client name
         """
+        password_error = verify_confirm_password(request)
+        if password_error:
+            return password_error
+
         serializer = OrganisationOAuth2ClientsCreateSerializer(data=request.data)
         if serializer.is_valid():
             user = self.request.user
@@ -486,6 +491,10 @@ class OrganisationOAuth2ClientView(APIView):
             - 400: Validation errors or duplicate client name
             - 404: Configuration not found or not owned by user's organisation
         """
+        password_error = verify_confirm_password(request)
+        if password_error:
+            return password_error
+
         client = get_object_or_404(self.get_queryset(), pk=pk)
         serializer = OrganisationOAuth2ClientsCreateSerializer(
             client, data=request.data
@@ -527,6 +536,10 @@ class OrganisationOAuth2ClientView(APIView):
             - Deletion is permanent and cannot be undone
             - Any integrations using this configuration will stop working
         """
+        password_error = verify_confirm_password(request)
+        if password_error:
+            return password_error
+
         client = get_object_or_404(self.get_queryset(), pk=pk)
         client.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
