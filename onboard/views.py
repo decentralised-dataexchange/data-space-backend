@@ -12,6 +12,8 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from dataspace_backend.image_utils import (
@@ -143,6 +145,47 @@ class UserLogin(TokenObtainPairView):  # type: ignore[misc]
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
         return Response(super().post(request, *args, **kwargs).data)
+
+
+class LogoutView(APIView):
+    """
+    Logout by blacklisting the provided refresh token.
+
+    This endpoint invalidates a refresh token so it can no longer be used
+    to obtain new access tokens. The existing short-lived access token
+    will expire naturally within its configured lifetime.
+
+    Authentication: JWT token required.
+
+    Request format:
+        POST with JSON body:
+        {
+            "refresh": "<refresh_token>"
+        }
+
+    Response format:
+        200 OK: Token successfully blacklisted.
+        400 Bad Request: Token is invalid, expired, or missing.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response(
+                {"detail": "Refresh token is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except TokenError:
+            return Response(
+                {"detail": "Token is invalid or expired."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(status=status.HTTP_200_OK)
 
 
 class CreateUserAndOrganisationView(APIView):

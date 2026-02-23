@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "organisation",
     "oAuth2Clients",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "rest_framework.authtoken",
     "dj_rest_auth",
     "corsheaders",
