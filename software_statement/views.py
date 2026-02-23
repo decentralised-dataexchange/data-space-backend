@@ -60,7 +60,7 @@ def _get_organisation_or_400(
         return Organisation.objects.get(admin=user), None
     except Organisation.DoesNotExist:
         return None, JsonResponse(
-            {"error": "Organisation not found"}, status=status.HTTP_400_BAD_REQUEST
+            {"error": "Not found"}, status=status.HTTP_400_BAD_REQUEST
         )
 
 

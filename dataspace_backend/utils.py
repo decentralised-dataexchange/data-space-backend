@@ -26,7 +26,7 @@ T = TypeVar("T", bound=Model)
 
 
 def get_model_by_admin_or_400(
-    model: type[T], user: Any, error_message: str
+    model: type[T], user: Any
 ) -> tuple[T | None, JsonResponse | None]:
     """
     Retrieve a model instance where the given user is the admin.
@@ -38,7 +38,6 @@ def get_model_by_admin_or_400(
     Args:
         model: The Django model class to query (must have an 'admin' field).
         user: The user instance to match against the model's admin field.
-        error_message: The error message to include in the JSON response if not found.
 
     Returns:
         A tuple containing:
@@ -46,7 +45,7 @@ def get_model_by_admin_or_400(
         - None if found, or a JsonResponse with 400 status if not found.
 
     Example:
-        datasource, error = get_model_by_admin_or_400(DataSource, request.user, "Not found")
+        datasource, error = get_model_by_admin_or_400(DataSource, request.user)
         if error:
             return error
         # Use datasource safely here
@@ -55,7 +54,7 @@ def get_model_by_admin_or_400(
         return model.objects.get(admin=user), None
     except model.DoesNotExist:
         return None, JsonResponse(
-            {"error": error_message}, status=status.HTTP_400_BAD_REQUEST
+            {"error": "Not found"}, status=status.HTTP_400_BAD_REQUEST
         )
 
 
@@ -186,9 +185,9 @@ def get_datasource_or_400(
         A tuple containing:
         - The DataSource instance if found, or None if not found.
         - None if found, or a JsonResponse with 400 status and
-          "Data source not found" message if not found.
+          generic "Not found" message if not found.
     """
-    return get_model_by_admin_or_400(DataSource, user, "Data source not found")
+    return get_model_by_admin_or_400(DataSource, user)
 
 
 def get_organisation_or_400(user: Any) -> tuple[Any, JsonResponse | None]:
@@ -209,9 +208,9 @@ def get_organisation_or_400(user: Any) -> tuple[Any, JsonResponse | None]:
         A tuple containing:
         - The Organisation instance if found, or None if not found.
         - None if found, or a JsonResponse with 400 status and
-          "Organisation not found" message if not found.
+          generic "Not found" message if not found.
     """
     # Local import to avoid circular dependency between utils and organisation app
     from organisation.models import Organisation
 
-    return get_model_by_admin_or_400(Organisation, user, "Organisation not found")
+    return get_model_by_admin_or_400(Organisation, user)
