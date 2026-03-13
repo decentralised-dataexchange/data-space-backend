@@ -138,6 +138,20 @@ button, input, select, textarea {
     font-weight: 400;
 }
 
+.app-bar-divider {
+    width: 1px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.25);
+    margin: 0 16px;
+}
+
+.app-bar-section-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9375rem;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
 .app-bar-right {
     display: flex;
     align-items: center;
@@ -930,6 +944,10 @@ button, input, select, textarea {
     }
     .app-bar-subtitle {
         font-size: 0.6rem;
+    }
+    .app-bar-divider,
+    .app-bar-section-label {
+        display: none;
     }
 }
 
