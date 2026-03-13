@@ -22,20 +22,20 @@
                 <div style="width: 100%; max-width: 340px;">
                     <div class="login-inputs-container">
                         <div class="login-input-row">
-                            <svg class="input-icon" viewBox="0 0 16 16" fill="none" stroke="#999" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.5-5 6-5s6 2 6 5"/></svg>
+                            <svg class="input-icon" viewBox="0 0 256 256" fill="#999" xmlns="http://www.w3.org/2000/svg"><path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"/></svg>
                             <input type="email" name="email" required autofocus
                                    placeholder="User ID"
                                    value="{{ email|default:'' }}">
                         </div>
                         <div class="login-divider"></div>
                         <div class="login-input-row">
-                            <svg class="input-icon" viewBox="0 0 16 16" fill="none" stroke="#999" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+                            <svg class="input-icon" viewBox="0 0 256 256" fill="#999" xmlns="http://www.w3.org/2000/svg"><path d="M208,80H96V56a32,32,0,0,1,32-32c15.37,0,29.2,11,32.16,25.59a8,8,0,0,0,15.68-3.18C171.32,24.15,151.2,8,128,8A48.05,48.05,0,0,0,80,56V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80Zm0,128H48V96H208V208Zm-68-56a12,12,0,1,1-12-12A12,12,0,0,1,140,152Z"/></svg>
                             <input type="password" name="password" required
                                    placeholder="Password">
+                            <button type="submit" class="login-arrow-btn" aria-label="Sign In">
+                                <svg viewBox="0 0 13.229166 13.229167" fill="#333" fill-opacity="0.893" xmlns="http://www.w3.org/2000/svg"><circle r="6.3607345" cy="6.614583" cx="6.614583" style="fill:none;stroke:#333333;stroke-width:0.47625"/><path d="m 7.1952649,3.45964 v 1.86033 H 2.2259613 v 2.58923 h 4.9693036 v 1.86033 l 1.9039687,-1.57747 1.9039704,-1.57747 -1.9039704,-1.57748 z"/></svg>
+                            </button>
                         </div>
-                    </div>
-                    <div class="login-submit-row">
-                        <button type="submit" class="login-submit-btn">Sign In</button>
                     </div>
                 </div>
             </form>
