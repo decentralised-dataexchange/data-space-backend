@@ -18,8 +18,25 @@
                 </div>
             </a>
             <div class="app-bar-right">
-                <span class="app-bar-user">{{ request.user.email }}</span>
-                <a href="{% url 'governance:logout' %}" class="app-bar-logout-btn">Sign Out</a>
+                <div class="avatar-menu">
+                    <button class="avatar-btn" id="avatar-btn" aria-label="User menu">
+                        <svg width="22" height="22" viewBox="0 0 256 256" fill="white"><path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"/></svg>
+                    </button>
+                    <div class="avatar-dropdown" id="avatar-dropdown">
+                        <div class="avatar-dropdown-header">
+                            <div class="avatar-dropdown-icon">
+                                <svg width="28" height="28" viewBox="0 0 256 256" fill="#555"><path d="M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z"/></svg>
+                            </div>
+                            <span class="avatar-dropdown-name">{{ request.user.get_full_name|default:request.user.email }}</span>
+                            <span class="avatar-dropdown-email">{{ request.user.email }}</span>
+                        </div>
+                        <div class="avatar-dropdown-divider"></div>
+                        <a href="{% url 'governance:logout' %}" class="avatar-dropdown-item">
+                            <svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="M124,216a12,12,0,0,1-12,12H48a12,12,0,0,1-12-12V40A12,12,0,0,1,48,28h64a12,12,0,0,1,0,24H60V204h52A12,12,0,0,1,124,216Zm108.49-96.49-40-40a12,12,0,0,0-17,17L195,116H112a12,12,0,0,0,0,24h83l-19.52,19.51a12,12,0,0,0,17,17l40-40A12,12,0,0,0,232.49,119.51Z"/></svg>
+                            Signout
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -28,7 +45,7 @@
             <ul class="sidebar-nav">
                 <li>
                     <a href="{% url 'governance:dashboard' %}" class="active">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
                         DDA Governance
                     </a>
                 </li>
@@ -39,6 +56,23 @@
         </main>
     </div>
     <script src="{% static 'unfold/js/htmx/htmx.js' %}"></script>
+    <script>
+        (function() {
+            var btn = document.getElementById('avatar-btn');
+            var dropdown = document.getElementById('avatar-dropdown');
+            if (btn && dropdown) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('open');
+                });
+                document.addEventListener('click', function(e) {
+                    if (!dropdown.contains(e.target)) {
+                        dropdown.classList.remove('open');
+                    }
+                });
+            }
+        })();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
