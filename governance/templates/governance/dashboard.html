@@ -1,0 +1,74 @@
+{% extends "governance/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>DDA Governance</h1>
+    <p>Review and manage Data Disclosure Agreements</p>
+</div>
+
+<div id="metric-cards-container"
+     hx-get="{% url 'governance:metric_cards' %}"
+     hx-trigger="load, dda-status-changed from:body"
+     hx-swap="innerHTML">
+    {% include "governance/partials/metric_cards.html" %}
+</div>
+
+<div class="status-filters" id="status-filters">
+    <a class="filter-btn{% if current_status == '' %} active{% endif %}"
+       hx-get="{% url 'governance:dda_table' %}"
+       hx-target="#dda-table-container"
+       hx-swap="innerHTML"
+       hx-push-url="{% url 'governance:dashboard' %}">All</a>
+    <a class="filter-btn{% if current_status == 'listed' %} active{% endif %}"
+       hx-get="{% url 'governance:dda_table' %}?status=listed"
+       hx-target="#dda-table-container"
+       hx-swap="innerHTML"
+       hx-push-url="{% url 'governance:dashboard' %}?status=listed">Listed</a>
+    <a class="filter-btn{% if current_status == 'unlisted' %} active{% endif %}"
+       hx-get="{% url 'governance:dda_table' %}?status=unlisted"
+       hx-target="#dda-table-container"
+       hx-swap="innerHTML"
+       hx-push-url="{% url 'governance:dashboard' %}?status=unlisted">Unlisted</a>
+    <a class="filter-btn{% if current_status == 'awaitingForApproval' %} active{% endif %}"
+       hx-get="{% url 'governance:dda_table' %}?status=awaitingForApproval"
+       hx-target="#dda-table-container"
+       hx-swap="innerHTML"
+       hx-push-url="{% url 'governance:dashboard' %}?status=awaitingForApproval">Awaiting Approval</a>
+    <a class="filter-btn{% if current_status == 'approved' %} active{% endif %}"
+       hx-get="{% url 'governance:dda_table' %}?status=approved"
+       hx-target="#dda-table-container"
+       hx-swap="innerHTML"
+       hx-push-url="{% url 'governance:dashboard' %}?status=approved">Approved</a>
+    <a class="filter-btn{% if current_status == 'rejected' %} active{% endif %}"
+       hx-get="{% url 'governance:dda_table' %}?status=rejected"
+       hx-target="#dda-table-container"
+       hx-swap="innerHTML"
+       hx-push-url="{% url 'governance:dashboard' %}?status=rejected">Rejected</a>
+</div>
+
+<div id="dda-table-container">
+    {% include "governance/partials/dda_table.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Update active filter button on HTMX navigation
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'dda-table-container') {
+            var url = new URL(window.location);
+            var status = url.searchParams.get('status') || '';
+            document.querySelectorAll('.filter-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+                var btnUrl = new URL(btn.getAttribute('hx-push-url'), window.location.origin);
+                var btnStatus = btnUrl.searchParams.get('status') || '';
+                if (btnStatus === status) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — CRANE d-HDSI Data Marketplace</title>
+    <link rel="stylesheet" href="{% static 'governance/css/styles.css' %}">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <a href="{% url 'governance:dashboard' %}" class="login-logo-link">
+                <img class="login-logo" src="{% static 'governance/img/logo.jpg' %}" alt="CRANE d-HDSI Data Marketplace logo">
+            </a>
+            <div class="login-title">Login to CRANE d-HDSI Data Marketplace</div>
+            {% if error %}
+            <div class="error-message">{{ error }}</div>
+            {% endif %}
+            <form method="post" action="{% url 'governance:login' %}" class="login-form">
+                {% csrf_token %}
+                <div style="width: 100%; max-width: 340px;">
+                    <div class="login-inputs-container">
+                        <div class="login-input-row">
+                            <svg class="input-icon" viewBox="0 0 16 16" fill="none" stroke="#999" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.5-5 6-5s6 2 6 5"/></svg>
+                            <input type="email" name="email" required autofocus
+                                   placeholder="User ID"
+                                   value="{{ email|default:'' }}">
+                        </div>
+                        <div class="login-divider"></div>
+                        <div class="login-input-row">
+                            <svg class="input-icon" viewBox="0 0 16 16" fill="none" stroke="#999" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+                            <input type="password" name="password" required
+                                   placeholder="Password">
+                        </div>
+                    </div>
+                    <div class="login-submit-row">
+                        <button type="submit" class="login-submit-btn">Sign In</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

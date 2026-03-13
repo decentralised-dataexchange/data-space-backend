@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     "software_statement",
     "data_disclosure_agreement_record",
     "b2b_connection",
+    "governance",
 ]
 
 MIDDLEWARE = [

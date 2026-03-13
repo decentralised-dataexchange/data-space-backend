@@ -1,0 +1,755 @@
+/* Governance Dashboard — Matching data-space-portal design system */
+
+@font-face {
+    font-family: "UntitledSans";
+    src: url("../../fonts/UntitledSans-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --primary-color: #1d1d1f;
+    --secondary-color: #86868b;
+    --background-color: #fafafa;
+    --text-color: #1d1d1f;
+    --border-color: rgba(0, 0, 0, 0.06);
+    --light-gray: #f5f5f7;
+    --white: #ffffff;
+    --accent-blue: #1890FF;
+    --error-red: #f44336;
+    --app-bar-bg: #00182C;
+    --app-bar-height: 80px;
+    --radius-pill: 980px;
+    --radius-card: 20px;
+    --radius-input: 10px;
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-elevated: 0 4px 24px rgba(0, 0, 0, 0.06);
+    --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --transition: all 0.2s ease;
+    --transition-fast: background-color 0.15s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+html, body {
+    font-family: "UntitledSans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.8125rem;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button, input, select, textarea {
+    font-family: inherit;
+}
+
+/* ========================================
+   App Bar (matching portal MainAppBar)
+   ======================================== */
+
+.app-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--app-bar-height);
+    background-color: var(--app-bar-bg);
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    box-shadow: none;
+}
+
+.app-bar-inner {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 100%;
+}
+
+.app-bar-brand {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    gap: 0;
+}
+
+.app-bar-logo {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    margin: 0 10px;
+    object-fit: cover;
+}
+
+.app-bar-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.app-bar-title {
+    color: var(--white);
+    font-size: 1.5rem;
+    line-height: 1;
+    font-weight: 400;
+}
+
+.app-bar-subtitle {
+    color: var(--white);
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+
+.app-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.app-bar-user {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+}
+
+.app-bar-logout-btn {
+    background: transparent;
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: var(--radius-pill);
+    padding: 6px 20px;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-transform: none;
+    text-decoration: none;
+    transition: var(--transition);
+    cursor: pointer;
+    display: inline-block;
+}
+
+.app-bar-logout-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--white);
+    color: var(--white);
+}
+
+/* ========================================
+   Layout
+   ======================================== */
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+    padding-top: var(--app-bar-height);
+}
+
+.sidebar {
+    width: 260px;
+    background: rgb(247, 246, 246);
+    border-right: 1px solid var(--border-color);
+    padding: 15px 0;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: var(--app-bar-height);
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+}
+
+.sidebar-nav {
+    list-style: none;
+    flex: 1;
+}
+
+.sidebar-nav li a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    margin: 2px 8px;
+    border-radius: 8px;
+    color: #757575;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 400;
+    transition: var(--transition-fast);
+}
+
+.sidebar-nav li a:hover {
+    background-color: var(--light-gray);
+}
+
+.sidebar-nav li a.active {
+    color: #000000;
+    font-weight: 700;
+    background-color: var(--light-gray);
+}
+
+.main-content {
+    flex: 1;
+    margin-left: 260px;
+    padding: 32px 40px;
+}
+
+.page-header {
+    margin-bottom: 28px;
+}
+
+.page-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--primary-color);
+    letter-spacing: -0.02em;
+}
+
+.page-header p {
+    color: var(--secondary-color);
+    margin-top: 4px;
+    font-size: 0.875rem;
+}
+
+/* ========================================
+   Metric Cards
+   ======================================== */
+
+.metric-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.metric-card {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.metric-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+.metric-card .metric-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--secondary-color);
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+}
+
+.metric-card .metric-value {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--primary-color);
+    letter-spacing: -0.02em;
+}
+
+/* ========================================
+   Status Filters
+   ======================================== */
+
+.status-filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 20px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--light-gray);
+    color: var(--primary-color);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+    display: inline-block;
+}
+
+.filter-btn:hover {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+/* ========================================
+   Table
+   ======================================== */
+
+.table-container {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+}
+
+.dda-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dda-table thead th {
+    background: var(--light-gray);
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+    border: none;
+    border-bottom: 1px solid #e8e8ed;
+}
+
+.dda-table tbody td {
+    padding: 10px 16px;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--primary-color);
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.dda-table tbody tr {
+    border: none;
+    transition: var(--transition-fast);
+}
+
+.dda-table tbody tr:hover {
+    background-color: var(--light-gray);
+}
+
+.dda-table .template-id {
+    font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12px;
+    color: var(--secondary-color);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dda-table .purpose-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dda-table .org-cell {
+    font-weight: 500;
+}
+
+/* ========================================
+   Status Badge
+   ======================================== */
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.status-badge.status-listed {
+    background: #e8f9ee;
+    color: #1a8d3e;
+}
+
+.status-badge.status-unlisted {
+    background: var(--light-gray);
+    color: var(--secondary-color);
+}
+
+.status-badge.status-awaitingForApproval {
+    background: #fff3e0;
+    color: #c77800;
+}
+
+.status-badge.status-approved {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.status-badge.status-rejected {
+    background: #ffeaea;
+    color: var(--error-red);
+}
+
+/* ========================================
+   Action Buttons (portal pill style)
+   ======================================== */
+
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.action-btn {
+    padding: 6px 16px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--light-gray);
+    color: var(--primary-color);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+    font-family: inherit;
+    text-transform: none;
+}
+
+.action-btn:hover {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.action-btn.action-approve:hover {
+    background: #11aa11;
+    border-color: #11aa11;
+}
+
+.action-btn.action-reject:hover {
+    background: var(--error-red);
+    border-color: var(--error-red);
+}
+
+.action-btn.action-list:hover {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+
+/* ========================================
+   Version Dropdown
+   ======================================== */
+
+.version-toggle {
+    cursor: pointer;
+    color: var(--accent-blue);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.version-toggle:hover {
+    text-decoration: underline;
+}
+
+.version-dropdown {
+    padding: 8px 0;
+}
+
+.version-dropdown .version-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 16px;
+    font-size: 12px;
+}
+
+.version-dropdown .version-item .version-num {
+    font-family: "SF Mono", SFMono-Regular, Consolas, monospace;
+    font-weight: 500;
+    min-width: 50px;
+}
+
+/* ========================================
+   Pagination
+   ======================================== */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.pagination-info {
+    font-size: 0.8125rem;
+    color: var(--secondary-color);
+}
+
+.pagination-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.page-btn {
+    padding: 8px 20px;
+    border-radius: var(--radius-pill);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--white);
+    color: var(--primary-color);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.page-btn:hover:not(.disabled) {
+    background: var(--light-gray);
+    border-color: var(--primary-color);
+}
+
+.page-btn.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+/* ========================================
+   Login Page (matching portal login.module.scss)
+   ======================================== */
+
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 32px 16px;
+    width: 100%;
+    min-height: 100dvh;
+    background-color: var(--light-gray);
+}
+
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--white);
+    width: 100%;
+    max-width: 440px;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-elevated);
+    padding: 40px 40px 32px;
+}
+
+.login-logo-link {
+    display: flex;
+    justify-content: center;
+}
+
+.login-logo {
+    width: 100px;
+    height: auto;
+    border-radius: 50%;
+}
+
+.login-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--primary-color);
+    letter-spacing: -0.02em;
+    text-align: center;
+    margin-top: 16px;
+    margin-bottom: 24px;
+}
+
+.login-form {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.login-inputs-container {
+    border-radius: var(--radius-input);
+    border: 1px solid #e0e0e0;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 340px;
+    padding: 2px;
+}
+
+.login-input-row {
+    display: flex;
+    align-items: center;
+    height: 44px;
+    padding: 6px 12px;
+}
+
+.login-input-row .input-icon {
+    color: #999;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.login-input-row input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 0.875rem;
+    color: var(--primary-color);
+    width: 100%;
+    padding: 0;
+    font-family: inherit;
+}
+
+.login-input-row input::placeholder {
+    font-size: 0.875rem;
+    color: #9c9c9c;
+    opacity: 1;
+}
+
+.login-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 0;
+}
+
+.login-submit-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 340px;
+    margin-top: 20px;
+}
+
+.login-submit-btn {
+    width: 100%;
+    padding: 10px 16px;
+    text-align: center;
+    text-transform: none;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--light-gray);
+    border-radius: var(--radius-pill);
+    color: var(--primary-color);
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--transition);
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.login-submit-btn:hover {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.error-message {
+    background: #ffeaea;
+    color: var(--error-red);
+    padding: 10px 14px;
+    border-radius: var(--radius-input);
+    font-size: 0.8125rem;
+    margin-bottom: 16px;
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+}
+
+/* ========================================
+   Empty State
+   ======================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--secondary-color);
+}
+
+.empty-state p {
+    font-size: 0.875rem;
+}
+
+/* ========================================
+   HTMX loading indicator
+   ======================================== */
+
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.htmx-request .htmx-indicator {
+    opacity: 1;
+}
+
+/* ========================================
+   Responsive
+   ======================================== */
+
+@media (max-width: 1239px) {
+    .metric-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .app-bar-title {
+        font-size: 1rem;
+    }
+    .app-bar-subtitle {
+        font-size: 0.6rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .sidebar {
+        display: none;
+    }
+    .main-content {
+        margin-left: 0;
+        padding: 20px;
+    }
+    .metric-cards {
+        grid-template-columns: 1fr;
+    }
+    .login-container {
+        padding: 32px 24px 24px;
+        max-width: 100%;
+    }
+    .app-bar-logo {
+        display: none;
+    }
+    .app-bar-user {
+        display: none;
+    }
+    .app-bar-logout-btn {
+        padding: 5px 14px;
+        font-size: 12px;
+    }
+}

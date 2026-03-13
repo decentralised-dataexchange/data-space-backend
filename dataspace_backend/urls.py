@@ -35,4 +35,5 @@ urlpatterns = [
     path("config/", include("config.urls")),
     path("webhook/", include("webhook.urls")),
     path("service/", include("service.urls")),
+    path("governance/", include("governance.urls")),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

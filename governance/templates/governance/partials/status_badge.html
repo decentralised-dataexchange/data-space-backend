@@ -1,0 +1,1 @@
+<span class="status-badge status-{{ status }}">{% if status == "awaitingForApproval" %}Awaiting Approval{% elif status == "listed" %}Listed{% elif status == "unlisted" %}Unlisted{% elif status == "approved" %}Approved{% elif status == "rejected" %}Rejected{% else %}{{ status }}{% endif %}</span>

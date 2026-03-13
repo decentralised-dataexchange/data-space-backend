@@ -1,0 +1,105 @@
+<div class="table-container">
+    {% if ddas %}
+    <table class="dda-table">
+        <thead>
+            <tr>
+                <th>Template ID</th>
+                <th>Purpose</th>
+                <th>Organisation</th>
+                <th>Version</th>
+                <th>Status</th>
+                <th>Lawful Basis</th>
+                <th>Last Modified</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dda in ddas %}
+            <tr>
+                <td class="template-id" title="{{ dda.templateId }}">{{ dda.templateId|truncatechars:12 }}</td>
+                <td class="purpose-cell" title="{{ dda.purpose }}">{{ dda.purpose|default:"—"|truncatechars:40 }}</td>
+                <td class="org-cell">{{ dda.organisationId.name|default:"—" }}</td>
+                <td>
+                    <span class="version-toggle"
+                          hx-get="{% url 'governance:dda_versions' dda.templateId %}"
+                          hx-target="#versions-{{ dda.id }}"
+                          hx-swap="innerHTML">
+                        v{{ dda.version }} &#9662;
+                    </span>
+                    <div id="versions-{{ dda.id }}"></div>
+                </td>
+                <td>{% include "governance/partials/status_badge.html" with status=dda.status %}</td>
+                <td>{{ dda.lawful_basis|default:"—" }}</td>
+                <td style="white-space: nowrap;">{{ dda.updatedAt|date:"M d, Y" }}</td>
+                <td>
+                    <div class="action-buttons">
+                        {% if dda.status == "awaitingForApproval" %}
+                        <button class="action-btn action-approve"
+                                hx-post="{% url 'governance:dda_status_update' dda.id %}"
+                                hx-vals='{"new_status": "approved"}'
+                                hx-confirm="Approve this DDA?"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-swap="none">Approve</button>
+                        <button class="action-btn action-reject"
+                                hx-post="{% url 'governance:dda_status_update' dda.id %}"
+                                hx-vals='{"new_status": "rejected"}'
+                                hx-confirm="Reject this DDA?"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-swap="none">Reject</button>
+                        {% elif dda.status == "approved" %}
+                        <button class="action-btn action-list"
+                                hx-post="{% url 'governance:dda_status_update' dda.id %}"
+                                hx-vals='{"new_status": "listed"}'
+                                hx-confirm="List this DDA to the marketplace?"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-swap="none">List</button>
+                        {% elif dda.status == "listed" %}
+                        <button class="action-btn"
+                                hx-post="{% url 'governance:dda_status_update' dda.id %}"
+                                hx-vals='{"new_status": "unlisted"}'
+                                hx-confirm="Unlist this DDA from the marketplace?"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-swap="none">Unlist</button>
+                        {% elif dda.status == "rejected" %}
+                        <button class="action-btn"
+                                hx-post="{% url 'governance:dda_status_update' dda.id %}"
+                                hx-vals='{"new_status": "awaitingForApproval"}'
+                                hx-confirm="Allow resubmission of this DDA?"
+                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                hx-swap="none">Resubmit</button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="pagination">
+        <span class="pagination-info">
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+        </span>
+        <div class="pagination-buttons">
+            {% if page_obj.has_previous %}
+            <a class="page-btn"
+               hx-get="{% url 'governance:dda_table' %}?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}"
+               hx-target="#dda-table-container"
+               hx-swap="innerHTML">Previous</a>
+            {% else %}
+            <span class="page-btn disabled">Previous</span>
+            {% endif %}
+            {% if page_obj.has_next %}
+            <a class="page-btn"
+               hx-get="{% url 'governance:dda_table' %}?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}"
+               hx-target="#dda-table-container"
+               hx-swap="innerHTML">Next</a>
+            {% else %}
+            <span class="page-btn disabled">Next</span>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No Data Disclosure Agreements found{% if current_status %} with status "{{ current_status }}"{% endif %}.</p>
+    </div>
+    {% endif %}
+</div>
