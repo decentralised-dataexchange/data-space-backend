@@ -82,6 +82,29 @@ button, input, select, textarea {
     height: 100%;
 }
 
+.app-bar-left {
+    display: flex;
+    align-items: center;
+}
+
+.hamburger-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    margin-right: 4px;
+    color: var(--white);
+    border-radius: 50%;
+    transition: var(--transition);
+}
+
+.hamburger-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .app-bar-brand {
     display: flex;
     align-items: center;
@@ -235,9 +258,14 @@ button, input, select, textarea {
     flex-direction: column;
     position: fixed;
     top: var(--app-bar-height);
-    left: 0;
+    left: -260px;
     bottom: 0;
     z-index: 100;
+    transition: left 225ms cubic-bezier(0.0, 0, 0.2, 1) 0ms;
+}
+
+.sidebar.open {
+    left: 0;
 }
 
 .sidebar-nav {
@@ -280,6 +308,46 @@ button, input, select, textarea {
     flex: 1;
     margin-left: 260px;
     padding: 32px 40px;
+    transition: margin 225ms cubic-bezier(0.0, 0, 0.2, 1) 0ms;
+}
+
+.main-content.sidebar-collapsed {
+    margin-left: 0;
+}
+
+/* ========================================
+   Breadcrumb
+   ======================================== */
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    letter-spacing: -0.01em;
+    padding: 0 0 0.75rem 0;
+    margin: 0;
+}
+
+.breadcrumb a {
+    color: var(--secondary-color);
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.breadcrumb-sep {
+    margin: 0 8px;
+    color: var(--secondary-color);
+}
+
+.breadcrumb-current {
+    color: var(--primary-color);
 }
 
 .page-header {
@@ -859,10 +927,13 @@ button, input, select, textarea {
 
 @media (max-width: 767px) {
     .sidebar {
-        display: none;
+        z-index: 1200;
+    }
+    .sidebar.open ~ .sidebar-backdrop {
+        display: block;
     }
     .main-content {
-        margin-left: 0;
+        margin-left: 0 !important;
         padding: 20px;
     }
     .metric-cards {

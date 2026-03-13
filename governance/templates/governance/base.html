@@ -10,13 +10,18 @@
 <body>
     <header class="app-bar">
         <div class="app-bar-inner">
-            <a href="{% url 'governance:dashboard' %}" class="app-bar-brand">
-                <img class="app-bar-logo" src="{% static 'governance/img/logo.jpg' %}" alt="Logo">
-                <div class="app-bar-text">
-                    <span class="app-bar-title">CRANE d-HDSI Data Marketplace</span>
-                    <span class="app-bar-subtitle">Sweden - Region Västerbotten</span>
-                </div>
-            </a>
+            <div class="app-bar-left">
+                <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle sidebar">
+                    <svg width="32" height="32" viewBox="0 0 256 256" fill="white"><path d="M228,128a12,12,0,0,1-12,12H40a12,12,0,0,1,0-24H216A12,12,0,0,1,228,128ZM40,76H216a12,12,0,0,0,0-24H40a12,12,0,0,0,0,24ZM216,180H40a12,12,0,0,0,0,24H216a12,12,0,0,0,0-24Z"/></svg>
+                </button>
+                <a href="{% url 'governance:dashboard' %}" class="app-bar-brand">
+                    <img class="app-bar-logo" src="{% static 'governance/img/logo.jpg' %}" alt="Logo">
+                    <div class="app-bar-text">
+                        <span class="app-bar-title">CRANE d-HDSI Data Marketplace</span>
+                        <span class="app-bar-subtitle">Sweden - Region Västerbotten</span>
+                    </div>
+                </a>
+            </div>
             <div class="app-bar-right">
                 <div class="avatar-menu">
                     <button class="avatar-btn" id="avatar-btn" aria-label="User menu">
@@ -41,7 +46,7 @@
         </div>
     </header>
     <div class="layout">
-        <aside class="sidebar">
+        <aside class="sidebar open" id="sidebar">
             <ul class="sidebar-nav">
                 <li>
                     <a href="{% url 'governance:dashboard' %}" class="active">
@@ -51,17 +56,23 @@
                 </li>
             </ul>
         </aside>
-        <main class="main-content">
+        <main class="main-content" id="main-content">
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="{% url 'governance:dashboard' %}">Home</a>
+                <span class="breadcrumb-sep">/</span>
+                <span class="breadcrumb-current">{% block breadcrumb %}DDA Governance{% endblock %}</span>
+            </nav>
             {% block content %}{% endblock %}
         </main>
     </div>
     <script src="{% static 'unfold/js/htmx/htmx.js' %}"></script>
     <script>
         (function() {
-            var btn = document.getElementById('avatar-btn');
+            // Avatar dropdown toggle
+            var avatarBtn = document.getElementById('avatar-btn');
             var dropdown = document.getElementById('avatar-dropdown');
-            if (btn && dropdown) {
-                btn.addEventListener('click', function(e) {
+            if (avatarBtn && dropdown) {
+                avatarBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     dropdown.classList.toggle('open');
                 });
@@ -69,6 +80,17 @@
                     if (!dropdown.contains(e.target)) {
                         dropdown.classList.remove('open');
                     }
+                });
+            }
+
+            // Sidebar toggle
+            var hamburgerBtn = document.getElementById('hamburger-btn');
+            var sidebar = document.getElementById('sidebar');
+            var mainContent = document.getElementById('main-content');
+            if (hamburgerBtn && sidebar && mainContent) {
+                hamburgerBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('open');
+                    mainContent.classList.toggle('sidebar-collapsed');
                 });
             }
         })();
