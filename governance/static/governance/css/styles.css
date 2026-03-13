@@ -791,6 +791,14 @@ button, input, select, textarea {
     letter-spacing: -0.02em;
     text-align: center;
     margin-top: 16px;
+    margin-bottom: 4px;
+}
+
+.login-subtitle {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--secondary-color);
+    text-align: center;
     margin-bottom: 24px;
 }
 
