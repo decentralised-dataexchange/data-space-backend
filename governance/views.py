@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_protect
@@ -20,14 +21,44 @@ GOVERNANCE_STATUS_TRANSITIONS = {
 }
 
 
+SORTABLE_FIELDS = {
+    "purpose": "dataDisclosureAgreementRecord__purpose",
+    "organisation": "organisationId__name",
+    "version": "version",
+    "status": "status",
+    "updatedAt": "updatedAt",
+}
+
+
 def _get_base_queryset():
     """Return DDA templates: latest versions, excluding archived."""
     return (
         DataDisclosureAgreementTemplate.objects.filter(isLatestVersion=True)
         .exclude(status="archived")
         .select_related("organisationId")
-        .order_by("-updatedAt")
     )
+
+
+def _apply_search_and_sort(qs, request):
+    """Apply search filtering and column sorting from request params."""
+    search = request.GET.get("search", "").strip()
+    if search:
+        qs = qs.filter(
+            Q(organisationId__name__icontains=search)
+            | Q(dataDisclosureAgreementRecord__purpose__icontains=search)
+        )
+
+    sort = request.GET.get("sort", "")
+    order = request.GET.get("order", "asc")
+    db_field = SORTABLE_FIELDS.get(sort)
+    if db_field:
+        if order == "desc":
+            db_field = f"-{db_field}"
+        qs = qs.order_by(db_field)
+    else:
+        qs = qs.order_by("-updatedAt")
+
+    return qs
 
 
 def _get_lawful_basis(dda):
@@ -69,8 +100,12 @@ def logout_view(request):
 def dashboard_view(request):
     qs = _get_base_queryset()
     current_status = request.GET.get("status", "")
+    search = request.GET.get("search", "").strip()
+    sort = request.GET.get("sort", "")
+    order = request.GET.get("order", "asc")
 
     filtered_qs = qs.filter(status=current_status) if current_status else qs
+    filtered_qs = _apply_search_and_sort(filtered_qs, request)
     paginator = Paginator(filtered_qs, 10)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
@@ -82,6 +117,9 @@ def dashboard_view(request):
         "ddas": page_obj,
         "page_obj": page_obj,
         "current_status": current_status,
+        "search": search,
+        "current_sort": sort,
+        "current_order": order,
         # Metrics
         "total": qs.count(),
         "awaiting": qs.filter(status="awaitingForApproval").count(),
@@ -109,8 +147,12 @@ def metric_cards_view(request):
 def dda_table_view(request):
     qs = _get_base_queryset()
     current_status = request.GET.get("status", "")
+    search = request.GET.get("search", "").strip()
+    sort = request.GET.get("sort", "")
+    order = request.GET.get("order", "asc")
 
     filtered_qs = qs.filter(status=current_status) if current_status else qs
+    filtered_qs = _apply_search_and_sort(filtered_qs, request)
     paginator = Paginator(filtered_qs, 10)
     page_obj = paginator.get_page(request.GET.get("page", 1))
 
@@ -121,6 +163,9 @@ def dda_table_view(request):
         "ddas": page_obj,
         "page_obj": page_obj,
         "current_status": current_status,
+        "search": search,
+        "current_sort": sort,
+        "current_order": order,
     }
     return render(request, "governance/partials/dda_table.html", context)
 

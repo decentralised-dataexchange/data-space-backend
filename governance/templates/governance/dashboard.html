@@ -15,37 +15,53 @@
     {% include "governance/partials/metric_cards.html" %}
 </div>
 
-<div class="status-filters" id="status-filters">
-    <a class="filter-btn{% if current_status == '' %} active{% endif %}"
-       hx-get="{% url 'governance:dda_table' %}"
-       hx-target="#dda-table-container"
-       hx-swap="innerHTML"
-       hx-push-url="{% url 'governance:dashboard' %}">All</a>
-    <a class="filter-btn{% if current_status == 'listed' %} active{% endif %}"
-       hx-get="{% url 'governance:dda_table' %}?status=listed"
-       hx-target="#dda-table-container"
-       hx-swap="innerHTML"
-       hx-push-url="{% url 'governance:dashboard' %}?status=listed">Listed</a>
-    <a class="filter-btn{% if current_status == 'unlisted' %} active{% endif %}"
-       hx-get="{% url 'governance:dda_table' %}?status=unlisted"
-       hx-target="#dda-table-container"
-       hx-swap="innerHTML"
-       hx-push-url="{% url 'governance:dashboard' %}?status=unlisted">Unlisted</a>
-    <a class="filter-btn{% if current_status == 'awaitingForApproval' %} active{% endif %}"
-       hx-get="{% url 'governance:dda_table' %}?status=awaitingForApproval"
-       hx-target="#dda-table-container"
-       hx-swap="innerHTML"
-       hx-push-url="{% url 'governance:dashboard' %}?status=awaitingForApproval">Awaiting Approval</a>
-    <a class="filter-btn{% if current_status == 'approved' %} active{% endif %}"
-       hx-get="{% url 'governance:dda_table' %}?status=approved"
-       hx-target="#dda-table-container"
-       hx-swap="innerHTML"
-       hx-push-url="{% url 'governance:dashboard' %}?status=approved">Approved</a>
-    <a class="filter-btn{% if current_status == 'rejected' %} active{% endif %}"
-       hx-get="{% url 'governance:dda_table' %}?status=rejected"
-       hx-target="#dda-table-container"
-       hx-swap="innerHTML"
-       hx-push-url="{% url 'governance:dashboard' %}?status=rejected">Rejected</a>
+<div class="toolbar-row">
+    <div class="status-filters" id="status-filters">
+        <a class="filter-btn{% if current_status == '' %} active{% endif %}"
+           hx-get="{% url 'governance:dda_table' %}"
+           hx-target="#dda-table-container"
+           hx-swap="innerHTML"
+           hx-push-url="{% url 'governance:dashboard' %}">All</a>
+        <a class="filter-btn{% if current_status == 'listed' %} active{% endif %}"
+           hx-get="{% url 'governance:dda_table' %}?status=listed"
+           hx-target="#dda-table-container"
+           hx-swap="innerHTML"
+           hx-push-url="{% url 'governance:dashboard' %}?status=listed">Listed</a>
+        <a class="filter-btn{% if current_status == 'unlisted' %} active{% endif %}"
+           hx-get="{% url 'governance:dda_table' %}?status=unlisted"
+           hx-target="#dda-table-container"
+           hx-swap="innerHTML"
+           hx-push-url="{% url 'governance:dashboard' %}?status=unlisted">Unlisted</a>
+        <a class="filter-btn{% if current_status == 'awaitingForApproval' %} active{% endif %}"
+           hx-get="{% url 'governance:dda_table' %}?status=awaitingForApproval"
+           hx-target="#dda-table-container"
+           hx-swap="innerHTML"
+           hx-push-url="{% url 'governance:dashboard' %}?status=awaitingForApproval">Awaiting Approval</a>
+        <a class="filter-btn{% if current_status == 'approved' %} active{% endif %}"
+           hx-get="{% url 'governance:dda_table' %}?status=approved"
+           hx-target="#dda-table-container"
+           hx-swap="innerHTML"
+           hx-push-url="{% url 'governance:dashboard' %}?status=approved">Approved</a>
+        <a class="filter-btn{% if current_status == 'rejected' %} active{% endif %}"
+           hx-get="{% url 'governance:dda_table' %}?status=rejected"
+           hx-target="#dda-table-container"
+           hx-swap="innerHTML"
+           hx-push-url="{% url 'governance:dashboard' %}?status=rejected">Rejected</a>
+    </div>
+    <div class="search-box">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="15" y2="15"/></svg>
+        <input type="text"
+               id="search-input"
+               name="search"
+               value="{{ search }}"
+               placeholder="Search by organisation or purpose..."
+               hx-get="{% url 'governance:dda_table' %}"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#dda-table-container"
+               hx-swap="innerHTML"
+               hx-include="[name='search']"
+               autocomplete="off">
+    </div>
 </div>
 
 <div id="dda-table-container">
@@ -55,9 +71,26 @@
 
 {% block scripts %}
 <script>
-    // Update active filter button on HTMX navigation
+    // Convert UTC timestamps to local time
+    function convertLocalTimes() {
+        document.querySelectorAll('time.local-time').forEach(function(el) {
+            var dt = new Date(el.getAttribute('datetime'));
+            if (!isNaN(dt)) {
+                el.textContent = dt.toLocaleString(undefined, {
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            }
+        });
+    }
+
+    // Run on initial load
+    convertLocalTimes();
+
+    // Update active filter button on HTMX navigation and convert times
     document.body.addEventListener('htmx:afterSwap', function(event) {
         if (event.detail.target.id === 'dda-table-container') {
+            convertLocalTimes();
             var url = new URL(window.location);
             var status = url.searchParams.get('status') || '';
             document.querySelectorAll('.filter-btn').forEach(function(btn) {
@@ -70,5 +103,17 @@
             });
         }
     });
+
+    // Preserve current status filter when searching
+    var searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('htmx:configRequest', function(event) {
+            var url = new URL(window.location);
+            var status = url.searchParams.get('status');
+            if (status) {
+                event.detail.parameters['status'] = status;
+            }
+        });
+    }
 </script>
 {% endblock %}

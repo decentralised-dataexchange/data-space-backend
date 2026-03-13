@@ -302,6 +302,58 @@ button, input, select, textarea {
 }
 
 /* ========================================
+   Toolbar (filters + search)
+   ======================================== */
+
+.toolbar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.toolbar-row .status-filters {
+    margin-bottom: 0;
+}
+
+.search-box {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.search-box .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--secondary-color);
+    pointer-events: none;
+}
+
+.search-box input {
+    padding: 8px 16px 8px 34px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-pill);
+    background: var(--white);
+    font-size: 0.8125rem;
+    color: var(--primary-color);
+    width: 280px;
+    outline: none;
+    transition: var(--transition);
+}
+
+.search-box input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.04);
+}
+
+.search-box input::placeholder {
+    color: var(--secondary-color);
+}
+
+/* ========================================
    Table
    ======================================== */
 
@@ -349,6 +401,15 @@ button, input, select, textarea {
 
 .dda-table tbody tr:hover {
     background-color: var(--light-gray);
+}
+
+.dda-table thead th.sortable-th {
+    cursor: pointer;
+    user-select: none;
+}
+
+.dda-table thead th.sortable-th:hover {
+    background: #ebebef;
 }
 
 .dda-table .template-id {

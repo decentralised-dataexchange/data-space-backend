@@ -4,12 +4,37 @@
         <thead>
             <tr>
                 <th>Template ID</th>
-                <th>Purpose</th>
-                <th>Organisation</th>
-                <th>Version</th>
-                <th>Status</th>
+                <th class="sortable-th"
+                    hx-get="{% url 'governance:dda_table' %}?sort=purpose&order={% if current_sort == 'purpose' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+                    hx-target="#dda-table-container"
+                    hx-swap="innerHTML">
+                    Purpose {% if current_sort == 'purpose' %}{% if current_order == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                </th>
+                <th class="sortable-th"
+                    hx-get="{% url 'governance:dda_table' %}?sort=organisation&order={% if current_sort == 'organisation' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+                    hx-target="#dda-table-container"
+                    hx-swap="innerHTML">
+                    Organisation {% if current_sort == 'organisation' %}{% if current_order == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                </th>
+                <th class="sortable-th"
+                    hx-get="{% url 'governance:dda_table' %}?sort=version&order={% if current_sort == 'version' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+                    hx-target="#dda-table-container"
+                    hx-swap="innerHTML">
+                    Version {% if current_sort == 'version' %}{% if current_order == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                </th>
+                <th class="sortable-th"
+                    hx-get="{% url 'governance:dda_table' %}?sort=status&order={% if current_sort == 'status' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+                    hx-target="#dda-table-container"
+                    hx-swap="innerHTML">
+                    Status {% if current_sort == 'status' %}{% if current_order == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                </th>
                 <th>Lawful Basis</th>
-                <th>Last Modified</th>
+                <th class="sortable-th"
+                    hx-get="{% url 'governance:dda_table' %}?sort=updatedAt&order={% if current_sort == 'updatedAt' and current_order == 'asc' %}desc{% else %}asc{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+                    hx-target="#dda-table-container"
+                    hx-swap="innerHTML">
+                    Last Modified {% if current_sort == 'updatedAt' %}{% if current_order == 'asc' %}&#9650;{% else %}&#9660;{% endif %}{% endif %}
+                </th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -30,7 +55,7 @@
                 </td>
                 <td>{% include "governance/partials/status_badge.html" with status=dda.status %}</td>
                 <td>{{ dda.lawful_basis|default:"—" }}</td>
-                <td style="white-space: nowrap;">{{ dda.updatedAt|date:"M d, Y" }}</td>
+                <td style="white-space: nowrap;"><time class="local-time" datetime="{{ dda.updatedAt|date:'c' }}">{{ dda.updatedAt|date:"M d, Y H:i" }}</time></td>
                 <td>
                     <div class="action-buttons">
                         {% if dda.status == "awaitingForApproval" %}
@@ -81,7 +106,7 @@
         <div class="pagination-buttons">
             {% if page_obj.has_previous %}
             <a class="page-btn"
-               hx-get="{% url 'governance:dda_table' %}?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}"
+               hx-get="{% url 'governance:dda_table' %}?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if current_sort %}&sort={{ current_sort }}&order={{ current_order }}{% endif %}"
                hx-target="#dda-table-container"
                hx-swap="innerHTML">Previous</a>
             {% else %}
@@ -89,7 +114,7 @@
             {% endif %}
             {% if page_obj.has_next %}
             <a class="page-btn"
-               hx-get="{% url 'governance:dda_table' %}?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}"
+               hx-get="{% url 'governance:dda_table' %}?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if current_sort %}&sort={{ current_sort }}&order={{ current_order }}{% endif %}"
                hx-target="#dda-table-container"
                hx-swap="innerHTML">Next</a>
             {% else %}
