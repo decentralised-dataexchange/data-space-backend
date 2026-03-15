@@ -382,46 +382,6 @@ button, input, select, textarea {
 }
 
 /* ========================================
-   Metric Cards
-   ======================================== */
-
-.metric-cards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
-}
-
-.metric-card {
-    background: var(--white);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-card);
-    padding: 20px;
-    box-shadow: var(--shadow-card);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.metric-card:hover {
-    box-shadow: var(--shadow-hover);
-    transform: translateY(-2px);
-}
-
-.metric-card .metric-label {
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--secondary-color);
-    margin-bottom: 8px;
-    letter-spacing: -0.01em;
-}
-
-.metric-card .metric-value {
-    font-size: 28px;
-    font-weight: 600;
-    color: var(--primary-color);
-    letter-spacing: -0.02em;
-}
-
-/* ========================================
    Status Filters
    ======================================== */
 
@@ -936,9 +896,6 @@ button, input, select, textarea {
    ======================================== */
 
 @media (max-width: 1239px) {
-    .metric-cards {
-        grid-template-columns: repeat(2, 1fr);
-    }
     .app-bar-title {
         font-size: 1rem;
     }
@@ -961,9 +918,6 @@ button, input, select, textarea {
     .main-content {
         margin-left: 0 !important;
         padding: 20px;
-    }
-    .metric-cards {
-        grid-template-columns: 1fr;
     }
     .login-container {
         padding: 32px 24px 24px;

@@ -8,13 +8,6 @@
     <p>Review and manage Data Disclosure Agreements</p>
 </div>
 
-<div id="metric-cards-container"
-     hx-get="{% url 'governance:metric_cards' %}"
-     hx-trigger="load, dda-status-changed from:body"
-     hx-swap="innerHTML">
-    {% include "governance/partials/metric_cards.html" %}
-</div>
-
 <div class="toolbar-row">
     <div class="status-filters" id="status-filters">
         <a class="filter-btn{% if current_status == '' %} active{% endif %}"

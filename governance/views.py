@@ -120,26 +120,8 @@ def dashboard_view(request):
         "search": search,
         "current_sort": sort,
         "current_order": order,
-        # Metrics
-        "total": qs.count(),
-        "awaiting": qs.filter(status="awaitingForApproval").count(),
-        "listed": qs.filter(status="listed").count(),
-        "rejected": qs.filter(status="rejected").count(),
     }
     return render(request, "governance/dashboard.html", context)
-
-
-@login_required(login_url=LOGIN_URL)
-@require_GET
-def metric_cards_view(request):
-    qs = _get_base_queryset()
-    context = {
-        "total": qs.count(),
-        "awaiting": qs.filter(status="awaitingForApproval").count(),
-        "listed": qs.filter(status="listed").count(),
-        "rejected": qs.filter(status="rejected").count(),
-    }
-    return render(request, "governance/partials/metric_cards.html", context)
 
 
 @login_required(login_url=LOGIN_URL)
